@@ -159,15 +159,338 @@ var (
 
 	rabbit1, fireballPlayer, burn, star, wateranim, plantBull, spikes, spring, posiongas, mushBull, blades, spear, firetrailanim, orbitalanim, floodanim, fishR, fishL, airstrikeanim, boss1anim, boss2anim = xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}
 
-	//UNITS
-	bsU, bsU2, bsU3, bsU4, bsU5, bsU6, bsU7, bsU8, bsU9, bsU10, bsU11, bsU12 = float32(16), bsU * 2, bsU * 3, bsU * 4, bsU * 5, bsU * 6, bsU * 7, bsU * 8, bsU * 9, bsU * 10, bsU * 11, bsU * 12
 
-	bsUi, bsU2i, bsU3i, bsU4i, bsU5i, bsU6i, bsU7i, bsU8i, bsU9i, bsU10i = 16, bsUi * 2, bsUi * 3, bsUi * 4, bsUi * 5, bsUi * 6, bsUi * 7, bsUi * 8, bsUi * 9, bsUi * 10
-
-	bsUi32, bsU2i32, bsU3i32, bsU4i32, bsU5i32, bsU6i32, bsU7i32, bsU8i32, bsU9i32, bsU10i32 = int32(16), bsUi32 * 2, bsUi32 * 3, bsUi32 * 4, bsUi32 * 5, bsUi32 * 6, bsUi32 * 7, bsUi32 * 8, bsUi32 * 9, bsUi32 * 10
-
-	txU, txU2, txU3, txU4, txU5, txU6, txU7, txU8, txU9, txU10 = int32(10), txU * 2, txU * 3, txU * 4, txU * 5, txU * 6, txU * 7, txU * 8, txU * 9, txU * 10
 )
+
+// Constants - these stay as package-level vars since they're computed constants
+var (
+    bsU   = float32(16)
+    bsU2  = bsU * 2
+    bsU3  = bsU * 3
+    bsU4  = bsU * 4
+    bsU5  = bsU * 5
+    bsU6  = bsU * 6
+    bsU7  = bsU * 7
+    bsU8  = bsU * 8
+    bsU9  = bsU * 9
+    bsU10 = bsU * 10
+    bsU11 = bsU * 11
+    bsU12 = bsU * 12
+
+    bsUi   = 16
+    bsU2i  = bsUi * 2
+    bsU3i  = bsUi * 3
+    bsU4i  = bsUi * 4
+    bsU5i  = bsUi * 5
+    bsU6i  = bsUi * 6
+    bsU7i  = bsUi * 7
+    bsU8i  = bsUi * 8
+    bsU9i  = bsUi * 9
+    bsU10i = bsUi * 10
+
+    bsUi32   = int32(16)
+    bsU2i32  = bsUi32 * 2
+    bsU3i32  = bsUi32 * 3
+    bsU4i32  = bsUi32 * 4
+    bsU5i32  = bsUi32 * 5
+    bsU6i32  = bsUi32 * 6
+    bsU7i32  = bsUi32 * 7
+    bsU8i32  = bsUi32 * 8
+    bsU9i32  = bsUi32 * 9
+    bsU10i32 = bsUi32 * 10
+
+    txU   = int32(10)
+    txU2  = txU * 2
+    txU3  = txU * 3
+    txU4  = txU * 4
+    txU5  = txU * 5
+    txU6  = txU * 6
+    txU7  = txU * 7
+    txU8  = txU * 8
+    txU9  = txU * 9
+    txU10 = txU * 10
+)
+
+type GameState struct {
+    Core       CoreState
+    Render     RenderState
+    Audio      AudioState
+    Input      InputState
+    Player     PlayerState
+    Enemies    EnemyState
+    Level      LevelState
+    Shop       ShopState
+    UI         UIState
+    FX         FXState
+    Companions CompanionState
+    Timing     TimingState
+    Mario      MarioState
+}
+
+type CoreState struct {
+    Fps       int32
+    Frames    int
+    ScrW      int
+    ScrH      int
+    ScrW32    int32
+    ScrH32    int32
+    ScrWF32   float32
+    ScrHF32   float32
+    Cnt       rl.Vector2
+    Ori       rl.Vector2
+    MouseV2   rl.Vector2
+    Mousev2cam rl.Vector2
+    Debug     bool
+    Pause     bool
+}
+
+type RenderState struct {
+    Imgs         rl.Texture2D
+    Shader       rl.Shader
+    Shader2      rl.Shader
+    Shader3      rl.Shader
+    RenderTarget rl.RenderTexture2D
+    Cam2         rl.Camera2D
+    ShaderOn     bool
+    Shader2On    bool
+    Shader3On    bool
+    // sprite sheet slices
+    Walltiles  []rl.Rectangle
+    Floortiles []rl.Rectangle
+    Bats       []rl.Rectangle
+    Knight     []rl.Rectangle
+    Etc        []rl.Rectangle
+    Shrines    []rl.Rectangle
+    Plants     []rl.Rectangle
+    Skulls     []rl.Rectangle
+    Candles    []rl.Rectangle
+    Signs      []rl.Rectangle
+    Splats     []rl.Rectangle
+    Statues    []rl.Rectangle
+    Mushrooms  []rl.Rectangle
+    Alien      []rl.Rectangle
+    Patterns   []rl.Rectangle
+    Gems       []rl.Rectangle
+    Coin       rl.Rectangle
+    // animations
+    Rabbit1         xanim
+    FireballPlayer  xanim
+    Burn            xanim
+    Star            xanim
+    Wateranim       xanim
+    PlantBull        xanim
+    Spikes          xanim
+    Spring          xanim
+    Posiongas       xanim
+    MushBull        xanim
+    Blades          xanim
+    Spear           xanim
+    Firetrailanim   xanim
+    Orbitalanim     xanim
+    Floodanim       xanim
+    FishR           xanim
+    FishL           xanim
+    Airstrikeanim   xanim
+    Boss1anim       xanim
+    Boss2anim       xanim
+}
+
+type AudioState struct {
+    Music      rl.Music
+    BackMusic  []rl.Music
+    Sfx        []rl.Sound
+    MusicOn    bool
+    Volume     float32
+    BgMusicNum int
+}
+
+type InputState struct {
+    UseController        bool
+    IsController         bool
+    ControllerOn         bool
+    ControllerDisconnect bool
+    ControllerWasOn      bool
+    KeypressT            int32
+}
+
+type PlayerState struct {
+    Pl                     xplayer
+    Mods                   xmod
+    Max                    xmax
+    Kills                  xkills
+    PlProj                 []xproj
+    Inven                  []xblok
+    InvenOn                bool
+    HpHitY                 float32
+    ReviveY                float32
+    WaterY                 float32
+    HpHitF                 float32
+    ReviveF                float32
+    WaterF                 float32
+    PlVineRec              rl.Rectangle
+    DiedRec                rl.Rectangle
+    DiedIMG                rl.Rectangle
+    TeleportRoomNum        int
+    TeleportRadius         []float32
+    StartdmgT              int32
+    Escaped                bool
+    EscapeRoomFound        bool
+    Teleporton             bool
+    Platkrecon             bool
+    ChainLightingSwingOnOff bool
+    Died                   bool
+}
+
+type EnemyState struct {
+    EnProj     []xproj
+    EnSpikes   xenemy
+    EnGhost    xenemy
+    EnSlime    xenemy
+    EnRock     xenemy
+    EnMushroom xenemy
+}
+
+type LevelState struct {
+    Level             []xroom
+    LevRec            rl.Rectangle
+    LevRecInner       rl.Rectangle
+    WallT             rl.Rectangle
+    LevW              float32
+    BorderWallBlokSiz float32
+    LevX              float32
+    LevY              float32
+    RoomNum           int
+    LevBorderBlokNum  int
+    LevMap            []rl.Rectangle
+    Levelnum          int
+    ExitRoomNum       int
+    ShopRoomNum       int
+    Exited            bool
+    NextLevelScreen   bool
+    Secs              int
+    Mins              int
+    MinsEND           int
+    SecsEND           int
+    RoomChangedTimer  int32
+    AnchorT           int32
+    RunT              int32
+    DiedscrT          int32
+    NextlevelT        int32
+    LevMapOn          bool
+    RoomChanged       bool
+    Night             bool
+    Flipcam           bool
+    Exiton            bool
+    ExitLR            bool
+    Endgame           bool
+    Hardcore          bool
+    // end level
+    Bosses       []xboss
+    Bossnum      int
+    EndgameT     int32
+    EndPauseT    int32
+    EndgopherRec rl.Rectangle
+}
+
+type ShopState struct {
+    ShopOn    bool
+    ShopExitY float32
+    ShopItems []xblok
+    ShopNum   int
+    ShopExitT int32
+}
+
+type UIState struct {
+    OptionNum            int
+    TxtSize              int32
+    OptionT              int32
+    OptionSon            bool
+    HpBarsOn             bool
+    Artifactson          bool
+    Scanlineson          bool
+    Creditson            bool
+    Helpon               bool
+    Invincible           bool
+    Resettimes           bool
+    Restarton            bool
+    OptionsChange        bool
+    StartScreen          bool
+    Intro                bool
+    IntroCount           bool
+    IntroT1              int32
+    IntroT2              int32
+    IntroT3              int32
+    IntroF1              float32
+    IntroF2              float32
+    IntroF3              float32
+    FadeBlinkOn          bool
+    FadeBlinkOn2         bool
+    FadeBlink            float32
+    FadeBlink2           float32
+    TxtSoldList          []xtxt
+    GameTxt              []xtxt
+}
+
+type FXState struct {
+    Fx              []xfx
+    Snow            []ximg
+    ScanlineV2      []rl.Vector2
+    ChainV2         []rl.Vector2
+    ChainLightOn    bool
+    ChainLightTimer int32
+    Rain            []rl.Rectangle
+    FloodRec        rl.Rectangle
+    FloodImg        rl.Rectangle
+    Fish1           rl.Rectangle
+    Fish2           rl.Rectangle
+    FishV2          rl.Vector2
+    Fish2V2         rl.Vector2
+    FishSiz         float32
+    FishSiz2        float32
+    FishLR          bool
+    Fish2LR         bool
+    FishRec         rl.Rectangle
+    FishRec2        rl.Rectangle
+    WaterLR         bool
+    WaterUP         bool
+    AirstrikeT      int32
+    AirstrikebombT  int32
+    AirstrikeDir    int
+    AirstrikeOn     bool
+    AirstrikeV2     []rl.Vector2
+    FireworksCnt    rl.Vector2
+}
+
+type CompanionState struct {
+    MrPlanty  xcompanion
+    MrAlien   xcompanion
+    MrCarrot  xcompanion
+}
+
+type TimingState struct {
+    Times      []int
+    BestTime   bool
+    TimesOn    bool
+    BestTimesT int32
+}
+
+type MarioState struct {
+    MarioOn        bool
+    MarioJump      bool
+    MarioT         int32
+    MarioJumpT     int32
+    MarioRecs      []rl.Rectangle
+    MarioCoins     []rl.Rectangle
+    MarioPL        rl.Rectangle
+    MarioScreenRec rl.Rectangle
+    PatternRec     rl.Rectangle
+    MarioImg       rl.Rectangle
+    MarioV2L       rl.Vector2
+    MarioV2R       rl.Vector2
+    MarioCols      []rl.Color
+    MarioCoinOnOff []bool
+}
+
 
 // MARK: DRAW DRAW DRAW DRAW DRAW DRAW DRAW DRAW DRAW DRAW DRAW DRAW DRAW DRAW DRAW DRAW DRAW
 func drawcam() { //MARK:DRAW CAM
@@ -5570,7 +5893,7 @@ func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
 		case "chain lightning":
 			mods.chainlightning = true
 		case "orbital":
-			mods.orbital = true
+			mods.orbital = truea
 			if mods.orbitalN < max.orbital {
 				mods.orbitalN++
 				if mods.orbitalN == 1 {
