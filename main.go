@@ -18,10 +18,6 @@ import (
 // MARK: VAR
 var (
 
-	//TIMES
-	times             []int
-	besttime, timeson bool
-	besttimesT        int32
 
 	//AUDIO
 	music      rl.Music
@@ -491,6 +487,33 @@ type MarioState struct {
     MarioCoinOnOff []bool
 }
 
+var gs = &GameState{
+	Core: CoreState{
+		Fps: 60,
+		Ori: rl.NewVector2(0, 0),
+	},
+	Audio: AudioState{
+		Volume: 0.2,
+	},
+	UI: UIState{
+		TxtSize:    txU2,
+		FadeBlink:  0.5,
+		FadeBlink2: 0.5,
+	},
+	Input: InputState{
+		ControllerOn: true,
+	},
+	Level: LevelState{
+		LevW: 720,
+		BorderWallBlokSiz: bsU,
+		Levelnum: 1,
+	},
+	Player: PlayerState{
+		HpHitF:  1,
+		ReviveF: 1,
+		WaterF:  1,
+	},
+}
 
 // MARK: DRAW DRAW DRAW DRAW DRAW DRAW DRAW DRAW DRAW DRAW DRAW DRAW DRAW DRAW DRAW DRAW DRAW
 func drawcam() { //MARK:DRAW CAM
@@ -498,7 +521,7 @@ func drawcam() { //MARK:DRAW CAM
 	//INVEN OPTIONS SHOP ON
 	if optionson {
 		drawOptions()
-	} else if timeson {
+	} else if gs.Timing.TimesOn {
 		drawTimes()
 	} else if shopon {
 		drawShop()
@@ -1093,9 +1116,9 @@ func drawDied() { //MARK:DRAW DIED
 
 	if diedRec.Y <= levRecInner.Y || rl.IsKeyPressed(rl.KeySpace) || rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) && diedscrT == 0 {
 		died = false
-		besttime = false
-		timeson = true
-		besttimesT = fps
+		gs.Timing.BestTime = false
+		gs.Timing.TimesOn = true
+		gs.Timing.BestTimesT = fps
 	}
 	txt := "you"
 	txtlen := rl.MeasureText(txt, txU8)
@@ -1114,8 +1137,8 @@ func drawDied() { //MARK:DRAW DIED
 }
 func drawTimes() { //MARK:DRAW TIMES
 
-	if besttimesT > 0 {
-		besttimesT--
+	if gs.Timing.BestTimesT > 0 {
+		gs.Timing.BestTimesT--
 	}
 
 	rl.DrawRectangle(0, 0, scrW32, scrH32, rl.Black)
@@ -1127,8 +1150,8 @@ func drawTimes() { //MARK:DRAW TIMES
 
 	txty += txU7
 
-	for i := 0; i < len(times); i++ {
-		minutes, seconds := times[i]/60, times[i]%60
+	for i := 0; i < len(gs.Timing.Times); i++ {
+		minutes, seconds := gs.Timing.Times[i]/60, gs.Timing.Times[i]%60
 		minTXT := fmt.Sprint(minutes)
 		secsTXT := fmt.Sprint(seconds)
 		if seconds < 10 {
@@ -1152,8 +1175,8 @@ func drawTimes() { //MARK:DRAW TIMES
 	}
 
 	if rl.IsKeyPressed(rl.KeySpace) || rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) {
-		if besttimesT <= 0 {
-			timeson = false
+		if gs.Timing.BestTimesT <= 0 {
+			gs.Timing.TimesOn = false
 			if !optionson {
 				restartgame()
 			}
@@ -1245,8 +1268,8 @@ func drawresettimes() { //MARK:DRAW RESET TIMES
 	if exitLR {
 		rec.X += rec.Width
 		if rl.IsKeyPressed(rl.KeySpace) || rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) {
-			for i := 0; i < len(times); i++ {
-				times[i] = 600
+			for i := 0; i < len(gs.Timing.Times); i++ {
+				gs.Timing.Times[i] = 600
 			}
 			savetimes()
 			resettimes = false
@@ -1284,8 +1307,8 @@ func drawresettimes() { //MARK:DRAW RESET TIMES
 	}
 
 	if rl.IsKeyPressed(rl.KeyY) {
-		for i := 0; i < len(times); i++ {
-			times[i] = 600
+		for i := 0; i < len(gs.Timing.Times); i++ {
+			gs.Timing.Times[i] = 600
 		}
 		savetimes()
 		resettimes = false
@@ -1411,7 +1434,7 @@ func drawOptions() { //MARK:DRAW OPTIONS
 	rl.DrawRectangle(0, 0, scrW32, scrH32, rl.Black)
 	if creditson {
 		drawCredits()
-	} else if timeson {
+	} else if gs.Timing.TimesOn {
 		drawTimes()
 	} else if helpon {
 		drawHelp()
@@ -1498,7 +1521,7 @@ func drawOptions() { //MARK:DRAW OPTIONS
 			case 10:
 				restarton = true
 			case 11:
-				timeson = true
+				gs.Timing.TimesOn = true
 			case 12:
 				helpon = true
 			case 13:
@@ -5033,17 +5056,17 @@ func addtime() { //MARK:ADD TIME
 	canadd := false
 	changenum := 0
 
-	for i := 0; i < len(times); i++ {
-		if checktime < times[i] {
+	for i := 0; i < len(gs.Timing.Times); i++ {
+		if checktime < gs.Timing.Times[i] {
 			canadd = true
-			checktime = times[i]
+			checktime = gs.Timing.Times[i]
 			changenum = i
 		}
 	}
 	if canadd {
-		times[changenum] = totaltime
-		sort.Ints(times)
-		besttime = true
+		gs.Timing.Times[changenum] = totaltime
+		sort.Ints(gs.Timing.Times)
+		gs.Timing.BestTime = true
 		savetimes()
 	}
 
@@ -5115,11 +5138,11 @@ func savetimes() { //MARK: SAVE TIMES
 	}
 
 	scoresTXT := ""
-	for i := 0; i < len(times); i++ {
-		if i == len(times)-1 {
-			scoresTXT = scoresTXT + fmt.Sprint(times[i])
+	for i := 0; i < len(gs.Timing.Times); i++ {
+		if i == len(gs.Timing.Times)-1 {
+			scoresTXT = scoresTXT + fmt.Sprint(gs.Timing.Times[i])
 		} else {
-			scoresTXT = scoresTXT + fmt.Sprint(times[i]) + ","
+			scoresTXT = scoresTXT + fmt.Sprint(gs.Timing.Times[i]) + ","
 		}
 	}
 
@@ -5893,7 +5916,7 @@ func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
 		case "chain lightning":
 			mods.chainlightning = true
 		case "orbital":
-			mods.orbital = truea
+			mods.orbital = true
 			if mods.orbitalN < max.orbital {
 				mods.orbitalN++
 				if mods.orbitalN == 1 {
@@ -6913,8 +6936,8 @@ func maketimes() { //MARK: MAKE TIMES
 
 	for i := 0; i < len(txtTimes); i++ {
 		num, _ := strconv.Atoi(txtTimes[i])
-		times = append(times, num)
-		sort.Ints(times)
+		gs.Timing.Times = append(gs.Timing.Times, num)
+		sort.Ints(gs.Timing.Times)
 	}
 
 }
@@ -10633,7 +10656,7 @@ func inp() { //MARK:INP
 
 	if rl.IsKeyPressed(rl.KeyEscape) && !intro && !marioon && !died && !nextlevelscreen {
 
-		if optionson && !exiton && !shopon && !levMapOn && !invenon && !creditson && !helpon && !timeson {
+		if optionson && !exiton && !shopon && !levMapOn && !invenon && !creditson && !helpon && !gs.Timing.TimesOn {
 			if optionsChange {
 				savesettings()
 			}
@@ -10644,7 +10667,7 @@ func inp() { //MARK:INP
 			pause = false
 		} else if optionson && exiton {
 			exiton = false
-		} else if !optionson && !shopon && !levMapOn && !invenon && !creditson && !helpon && !timeson {
+		} else if !optionson && !shopon && !levMapOn && !invenon && !creditson && !helpon && !gs.Timing.TimesOn {
 			pause = true
 			creditson = false
 			helpon = false
@@ -10652,24 +10675,24 @@ func inp() { //MARK:INP
 			optionson = true
 			optionsChange = false
 			optionnum = 0
-		} else if !optionson && shopon && !levMapOn && !invenon && !creditson && !helpon && !timeson {
+		} else if !optionson && shopon && !levMapOn && !invenon && !creditson && !helpon && !gs.Timing.TimesOn {
 			shopon = false
 			pl.cnt.Y = shopExitY
 			upPlayerRec()
 			pause = false
-		} else if !optionson && !shopon && levMapOn && !invenon && !creditson && !helpon && !timeson {
+		} else if !optionson && !shopon && levMapOn && !invenon && !creditson && !helpon && !gs.Timing.TimesOn {
 			levMapOn = false
 			pause = false
-		} else if !optionson && !shopon && !levMapOn && invenon && !creditson && !helpon && !timeson {
+		} else if !optionson && !shopon && !levMapOn && invenon && !creditson && !helpon && !gs.Timing.TimesOn {
 			invenon = false
 			pause = false
-		} else if optionson && !shopon && !levMapOn && !invenon && creditson && !helpon && !timeson {
+		} else if optionson && !shopon && !levMapOn && !invenon && creditson && !helpon && !gs.Timing.TimesOn {
 			creditson = false
 			optionson = true
-		} else if optionson && !shopon && !levMapOn && !invenon && !creditson && helpon && !timeson {
+		} else if optionson && !shopon && !levMapOn && !invenon && !creditson && helpon && !gs.Timing.TimesOn {
 			helpon = false
-		} else if !optionson && !shopon && !levMapOn && !invenon && !creditson && !helpon && timeson {
-			timeson = false
+		} else if !optionson && !shopon && !levMapOn && !invenon && !creditson && !helpon && gs.Timing.TimesOn {
+			gs.Timing.TimesOn = false
 			restartgame()
 		}
 
@@ -10742,7 +10765,7 @@ func inp() { //MARK:INP
 			}
 		}
 		if useController {
-			if rl.IsGamepadButtonPressed(0, 6) && !optionson && !invenon && !shopon && !timeson && !nextlevelscreen && !helpon && !creditson {
+			if rl.IsGamepadButtonPressed(0, 6) && !optionson && !invenon && !shopon && !gs.Timing.TimesOn && !nextlevelscreen && !helpon && !creditson {
 				if levMapOn {
 					levMapOn = false
 					pause = false
@@ -10750,25 +10773,25 @@ func inp() { //MARK:INP
 					levMapOn = true
 					pause = true
 				}
-			} else if rl.IsGamepadButtonPressed(0, 6) && optionson && !shopon && !timeson && !nextlevelscreen && !helpon && !creditson {
+			} else if rl.IsGamepadButtonPressed(0, 6) && optionson && !shopon && !gs.Timing.TimesOn && !nextlevelscreen && !helpon && !creditson {
 				if optionsChange {
 					savesettings()
 				}
 				optionson = false
 				pause = false
 
-			} else if rl.IsGamepadButtonPressed(0, 6) && invenon && !shopon && !timeson && !nextlevelscreen && !helpon && !creditson {
+			} else if rl.IsGamepadButtonPressed(0, 6) && invenon && !shopon && !gs.Timing.TimesOn && !nextlevelscreen && !helpon && !creditson {
 				invenon = false
 				pause = false
-			} else if rl.IsGamepadButtonPressed(0, 6) && optionson && !invenon && !shopon && timeson && !nextlevelscreen && !helpon && !creditson {
-				timeson = false
-			} else if rl.IsGamepadButtonPressed(0, 6) && optionson && !invenon && !shopon && !timeson && !nextlevelscreen && helpon && !creditson {
+			} else if rl.IsGamepadButtonPressed(0, 6) && optionson && !invenon && !shopon && gs.Timing.TimesOn && !nextlevelscreen && !helpon && !creditson {
+				gs.Timing.TimesOn = false
+			} else if rl.IsGamepadButtonPressed(0, 6) && optionson && !invenon && !shopon && !gs.Timing.TimesOn && !nextlevelscreen && helpon && !creditson {
 				helpon = false
-			} else if rl.IsGamepadButtonPressed(0, 6) && optionson && !invenon && !shopon && !timeson && !nextlevelscreen && !helpon && creditson {
+			} else if rl.IsGamepadButtonPressed(0, 6) && optionson && !invenon && !shopon && !gs.Timing.TimesOn && !nextlevelscreen && !helpon && creditson {
 				creditson = false
 			}
 			//INVEN ON
-			if rl.IsGamepadButtonPressed(0, 5) && !optionson && !levMapOn && !shopon && !timeson && !nextlevelscreen && !helpon && !creditson {
+			if rl.IsGamepadButtonPressed(0, 5) && !optionson && !levMapOn && !shopon && !gs.Timing.TimesOn && !nextlevelscreen && !helpon && !creditson {
 				if invenon {
 					invenon = false
 					pause = false
@@ -11041,6 +11064,9 @@ func unload() { //MARK:UNLOAD
 }
 
 func main() { //MARK:MAIN
+  gs.UI.IntroT1 = gs.Core.Fps * 2
+  gs.UI.IntroT2 = gs.Core.Fps * 2
+  gs.UI.IntroT3 = gs.Core.Fps * 3
 
 	rl.SetConfigFlags(rl.FlagMsaa4xHint)
 	//rl.SetConfigFlags(rl.FlagWindowResizable)
