@@ -17,16 +17,6 @@ import (
 
 // MARK: VAR
 var (
-
-
-	//AUDIO
-	music      rl.Music
-	backMusic  []rl.Music
-	sfx        []rl.Sound
-	musicon    bool
-	volume     = float32(0.2)
-	bgMusicNum int
-
 	//END LEVEL
 	bosses              []xboss
 	bossnum             int
@@ -281,7 +271,7 @@ type RenderState struct {
     Boss1anim       xanim
     Boss2anim       xanim
 }
-
+// Done
 type AudioState struct {
     Music      rl.Music
     BackMusic  []rl.Music
@@ -780,7 +770,7 @@ func drawEndGame() { //MARK:DRAW END GAME
 	}
 
 	rl.DrawTexturePro(imgs, etc[55], endgopherrec, rl.Vector2Zero(), 0, rl.White)
-	rl.PlaySound(sfx[19])
+	rl.PlaySound(gs.Audio.Sfx[19])
 	txt := "you"
 	txtlen := rl.MeasureText(txt, txU8)
 	rl.DrawText(txt, int32(cnt.X)-txtlen/2-3, int32(cnt.Y)-txU8+3, txU8, rl.Black)
@@ -872,7 +862,7 @@ func drawShop() { //MARK:DRAW SHOP
 				clearinven("wallet")
 				gs.Shop.ShopItems[gs.Shop.ShopNum].shopoff = true
 				addshopitem(gs.Shop.ShopNum)
-				rl.PlaySound(sfx[21])
+				rl.PlaySound(gs.Audio.Sfx[21])
 			} else if !gs.Shop.ShopItems[gs.Shop.ShopNum].shopoff && pl.coins >= gs.Shop.ShopItems[gs.Shop.ShopNum].shopprice {
 				if !gs.Shop.ShopItems[gs.Shop.ShopNum].shopoff {
 					gs.Shop.ShopItems[gs.Shop.ShopNum].shopoff = true
@@ -880,9 +870,9 @@ func drawShop() { //MARK:DRAW SHOP
 				}
 				gs.Shop.ShopItems[gs.Shop.ShopNum].shopoff = true
 				addshopitem(gs.Shop.ShopNum)
-				rl.PlaySound(sfx[21])
+				rl.PlaySound(gs.Audio.Sfx[21])
 			} else {
-				rl.PlaySound(sfx[22])
+				rl.PlaySound(gs.Audio.Sfx[22])
 			}
 		}
 	}
@@ -1501,15 +1491,15 @@ func drawOptions() { //MARK:DRAW OPTIONS
 					useController = false
 				}
 			case 7:
-				if musicon {
-					musicon = false
+				if gs.Audio.MusicOn {
+					gs.Audio.MusicOn = false
 				} else {
-					rl.StopMusicStream(music)
-					music = backMusic[bgMusicNum]
-					music.Looping = true
-					musicon = true
-					rl.PlayMusicStream(music)
-					musicon = true
+					rl.StopMusicStream(gs.Audio.Music)
+					gs.Audio.Music = gs.Audio.BackMusic[gs.Audio.BgMusicNum]
+					gs.Audio.Music.Looping = true
+					gs.Audio.MusicOn = true
+					rl.PlayMusicStream(gs.Audio.Music)
+					gs.Audio.MusicOn = true
 				}
 
 			case 10:
@@ -1576,12 +1566,12 @@ func drawOptions() { //MARK:DRAW OPTIONS
 		txty += txtSize + txtSize/2
 		txt = "music"
 		rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-		musicon = onoff(onoffx, txty, float32(txtSize), musicon)
+		gs.Audio.MusicOn = onoff(onoffx, txty, float32(txtSize), gs.Audio.MusicOn)
 		txty += txtSize + txtSize/2
 
 		txt = "music track"
 		rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-		bgMusicNum = int(updownswitch(onoffx, txty, float32(txtSize), float32(bgMusicNum), 2))
+		gs.Audio.BgMusicNum = int(updownswitch(onoffx, txty, float32(txtSize), float32(gs.Audio.BgMusicNum), 2))
 		txty += txtSize + txtSize/2
 
 		//CHANGE MUSIC TRACK
@@ -1591,29 +1581,29 @@ func drawOptions() { //MARK:DRAW OPTIONS
 			if rl.IsKeyPressed(rl.KeyD) || rl.IsKeyPressed(rl.KeyRight) || rl.GetGamepadAxisMovement(0, 0) > 0 || rl.IsGamepadButtonDown(0, 2) {
 				if optionT == 0 {
 					optionT = gs.Core.Fps / 5
-					bgMusicNum++
-					if bgMusicNum > 2 {
-						bgMusicNum = 0
+					gs.Audio.BgMusicNum++
+					if gs.Audio.BgMusicNum > 2 {
+						gs.Audio.BgMusicNum = 0
 					}
-					rl.StopMusicStream(music)
-					music = backMusic[bgMusicNum]
-					music.Looping = true
-					musicon = true
-					rl.PlayMusicStream(music)
+					rl.StopMusicStream(gs.Audio.Music)
+					gs.Audio.Music = gs.Audio.BackMusic[gs.Audio.BgMusicNum]
+					gs.Audio.Music.Looping = true
+					gs.Audio.MusicOn = true
+					rl.PlayMusicStream(gs.Audio.Music)
 					optionsChange = true
 				}
 			} else if rl.IsKeyPressed(rl.KeyA) || rl.IsKeyPressed(rl.KeyLeft) || rl.GetGamepadAxisMovement(0, 0) < 0 || rl.IsGamepadButtonDown(0, 4) {
 				if optionT == 0 {
 					optionT = gs.Core.Fps / 5
-					bgMusicNum--
-					if bgMusicNum < 0 {
-						bgMusicNum = 2
+					gs.Audio.BgMusicNum--
+					if gs.Audio.BgMusicNum < 0 {
+						gs.Audio.BgMusicNum = 2
 					}
-					rl.StopMusicStream(music)
-					music = backMusic[bgMusicNum]
-					music.Looping = true
-					musicon = true
-					rl.PlayMusicStream(music)
+					rl.StopMusicStream(gs.Audio.Music)
+					gs.Audio.Music = gs.Audio.BackMusic[gs.Audio.BgMusicNum]
+					gs.Audio.Music.Looping = true
+					gs.Audio.MusicOn = true
+					rl.PlayMusicStream(gs.Audio.Music)
 					optionsChange = true
 				}
 			}
@@ -1621,7 +1611,7 @@ func drawOptions() { //MARK:DRAW OPTIONS
 
 		txt = "volume - 0 is off"
 		rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-		volume = updownswitch(onoffx, txty, float32(txtSize), volume, 1)
+		gs.Audio.Volume = updownswitch(onoffx, txty, float32(txtSize), gs.Audio.Volume, 1)
 		txty += txtSize + txtSize/2
 
 		//VOLUME LR
@@ -1631,19 +1621,19 @@ func drawOptions() { //MARK:DRAW OPTIONS
 			if rl.IsKeyPressed(rl.KeyD) || rl.IsKeyPressed(rl.KeyRight) || rl.GetGamepadAxisMovement(0, 0) > 0 || rl.IsGamepadButtonDown(0, 2) {
 				if optionT == 0 {
 					optionT = gs.Core.Fps / 5
-					if volume < 1 {
-						volume += 0.1
+					if gs.Audio.Volume < 1 {
+						gs.Audio.Volume += 0.1
 					}
 					optionsChange = true
 				}
 			} else if rl.IsKeyPressed(rl.KeyA) || rl.IsKeyPressed(rl.KeyLeft) || rl.GetGamepadAxisMovement(0, 0) < 0 || rl.IsGamepadButtonDown(0, 4) {
 				if optionT == 0 {
 					optionT = gs.Core.Fps / 5
-					if volume > 0 {
-						volume -= 0.1
+					if gs.Audio.Volume > 0 {
+						gs.Audio.Volume -= 0.1
 					}
-					if volume < 0 {
-						volume = 0
+					if gs.Audio.Volume < 0 {
+						gs.Audio.Volume = 0
 					}
 					optionsChange = true
 				}
@@ -1742,7 +1732,7 @@ func drawUpMario() { //MARK:DRAW UP MARIO
 					if mariocoinonoff[i] {
 						pl.coins++
 						mariocoinonoff[i] = false
-						rl.PlaySound(sfx[18])
+						rl.PlaySound(gs.Audio.Sfx[18])
 					}
 				}
 			}
@@ -2088,7 +2078,7 @@ func drawPlayer() { //MARK:DRAW PLAYER
 		}
 
 		if roll18() == 18 {
-			rl.PlaySound(sfx[24])
+			rl.PlaySound(gs.Audio.Sfx[24])
 		}
 
 	}
@@ -2444,8 +2434,8 @@ func drawnocam() { //MARK:DRAW NO CAM
 					runT = 0
 					mins = 0
 					secs = 0
-					if musicon {
-						rl.PlayMusicStream(music)
+					if gs.Audio.MusicOn {
+						rl.PlayMusicStream(gs.Audio.Music)
 					}
 				}
 
@@ -2471,7 +2461,7 @@ func drawnocam() { //MARK:DRAW NO CAM
 				if rl.IsKeyPressed(rl.KeySpace) || rl.IsGamepadButtonPressed(0, 7) {
 					introcount = true
 					startdmgT = gs.Core.Fps * 7
-					rl.PlaySound(sfx[13])
+					rl.PlaySound(gs.Audio.Sfx[13])
 				}
 
 				if introF3 > 0.5 {
@@ -3168,12 +3158,12 @@ func drawUpPlayerProj() { //MARK:DRAW UP PLAYER PROJECTILES
 								destroyPowerupBlok(b)
 								makeFX(3, level[roomNum].etc[b].cnt)
 								level[roomNum].etc[b].onoff = false
-								rl.PlaySound(sfx[6])
+								rl.PlaySound(gs.Audio.Sfx[6])
 							case "oilbarrel":
 								makeFX(4, level[roomNum].etc[b].cnt)
 								level[roomNum].etc[b].onoff = false
-								rl.PlaySound(sfx[10])
-								rl.PlaySound(sfx[5])
+								rl.PlaySound(gs.Audio.Sfx[10])
+								rl.PlaySound(gs.Audio.Sfx[5])
 							}
 						}
 					}
@@ -3275,7 +3265,7 @@ func drawUpPlayerProj() { //MARK:DRAW UP PLAYER PROJECTILES
 							endgame = true
 						}
 					}
-					rl.PlaySound(sfx[11])
+					rl.PlaySound(gs.Audio.Sfx[11])
 				}
 
 			}
@@ -3336,7 +3326,7 @@ func drawUpEtc() { //MARK:DRAW UP ETC
 					pl.slideT = gs.Core.Fps / 2
 					pl.slideDIR = level[roomNum].etc[a].slideDIR
 
-					rl.PlaySound(sfx[3])
+					rl.PlaySound(gs.Audio.Sfx[3])
 				}
 				if level[roomNum].etc[a].onoffswitch {
 					if frames%4 == 0 {
@@ -3364,7 +3354,7 @@ func drawUpEtc() { //MARK:DRAW UP ETC
 				if rl.CheckCollisionRecs(pl.crec, level[roomNum].etc[a].rec) && level[roomNum].etc[a].timer == 0 {
 					level[roomNum].etc[a].timer = gs.Core.Fps * 3
 					makegascloud(level[roomNum].etc[a].cnt)
-					rl.PlaySound(sfx[20])
+					rl.PlaySound(gs.Audio.Sfx[20])
 				}
 
 			} else if level[roomNum].etc[a].name == "gascloud" {
@@ -3384,7 +3374,7 @@ func drawUpEtc() { //MARK:DRAW UP ETC
 						pl.poisonCount = 2
 						pl.poisonT = gs.Core.Fps * 3
 						txtHere("poisoned", pl.rec)
-						rl.PlaySound(sfx[23])
+						rl.PlaySound(gs.Audio.Sfx[23])
 					}
 				}
 
@@ -3473,8 +3463,8 @@ func drawUpEtc() { //MARK:DRAW UP ETC
 				}
 
 				if rl.CheckCollisionRecs(pl.crec, level[roomNum].etc[a].rec) {
-					if !rl.IsSoundPlaying(sfx[30]) {
-						rl.PlaySound(sfx[30])
+					if !rl.IsSoundPlaying(gs.Audio.Sfx[30]) {
+						rl.PlaySound(gs.Audio.Sfx[30])
 					}
 					hitPL(0, 2)
 				}
@@ -3486,7 +3476,7 @@ func drawUpEtc() { //MARK:DRAW UP ETC
 					hitPL(0, 2)
 					if frames%4 == 0 {
 						if level[roomNum].etc[a].img.X == spear.xl {
-							rl.PlaySound(sfx[26])
+							rl.PlaySound(gs.Audio.Sfx[26])
 						}
 						level[roomNum].etc[a].img.X += spear.W
 						if level[roomNum].etc[a].img.X > spear.xl+spear.frames*spear.W {
@@ -3522,7 +3512,7 @@ func drawUpEtc() { //MARK:DRAW UP ETC
 				drawBlok(level[roomNum].etc[a], false, true, 4)
 				if frames%5 == 0 {
 					if level[roomNum].etc[a].img.X == airstrikeanim.xl {
-						rl.PlaySound(sfx[28])
+						rl.PlaySound(gs.Audio.Sfx[28])
 					}
 					level[roomNum].etc[a].img.X += airstrikeanim.W
 					if level[roomNum].etc[a].img.X > airstrikeanim.xl+airstrikeanim.frames*airstrikeanim.W {
@@ -3549,7 +3539,7 @@ func drawUpEtc() { //MARK:DRAW UP ETC
 					rl.DrawText(txt, txtx, txty, 20, ranCol())
 
 					if rl.CheckCollisionRecs(level[roomNum].etc[a].rec, pl.crec) {
-						rl.PlaySound(sfx[15])
+						rl.PlaySound(gs.Audio.Sfx[15])
 						exited = true
 					}
 				}
@@ -3557,7 +3547,7 @@ func drawUpEtc() { //MARK:DRAW UP ETC
 				if level[roomNum].etc[a].name == "chest" && level[roomNum].etc[a].img.X < 493 {
 
 					if rl.CheckCollisionRecs(pl.arec, level[roomNum].etc[a].crec) && mods.key && !level[roomNum].etc[a].onoffswitch {
-						rl.PlaySound(sfx[17])
+						rl.PlaySound(gs.Audio.Sfx[17])
 						level[roomNum].etc[a].onoffswitch = true
 						mods.keyN--
 						if mods.keyN == 0 {
@@ -3568,7 +3558,7 @@ func drawUpEtc() { //MARK:DRAW UP ETC
 					} else if rl.CheckCollisionRecs(pl.arec, level[roomNum].etc[a].crec) && !mods.key && !level[roomNum].etc[a].onoffswitch && level[roomNum].etc[a].txtT == 0 {
 						txtHere("locked", level[roomNum].etc[a].rec)
 						level[roomNum].etc[a].txtT = gs.Core.Fps * 3
-						rl.PlaySound(sfx[25])
+						rl.PlaySound(gs.Audio.Sfx[25])
 					}
 
 					if level[roomNum].etc[a].onoffswitch {
@@ -3592,7 +3582,7 @@ func drawUpEtc() { //MARK:DRAW UP ETC
 
 				case "switch": //MARK: SWITCHES ON/OFF
 					if level[roomNum].etc[a].timer == 0 {
-						rl.PlaySound(sfx[12])
+						rl.PlaySound(gs.Audio.Sfx[12])
 						level[roomNum].etc[a].timer = gs.Core.Fps * 2
 						level[roomNum].etc[a].onoffswitch = !level[roomNum].etc[a].onoffswitch
 						if level[roomNum].etc[a].img == etc[21] {
@@ -3636,7 +3626,7 @@ func drawUpEtc() { //MARK:DRAW UP ETC
 			}
 			//COLLISIONS PLAYER CREC > ETC CREC2
 			if rl.CheckCollisionRecs(pl.crec, level[roomNum].etc[a].crec2) && level[roomNum].etc[a].name == "shop" && !pl.escape && gs.Shop.ShopExitT == 0 {
-				rl.PlaySound(sfx[16])
+				rl.PlaySound(gs.Audio.Sfx[16])
 				gs.Shop.ShopExitY = level[roomNum].etc[a].rec.Y + level[roomNum].etc[a].rec.Height + bsU2
 				gs.Shop.ShopOn = true
 				pause = true
@@ -3650,8 +3640,8 @@ func drawUpEtc() { //MARK:DRAW UP ETC
 					if pl.atk {
 						makeFX(4, level[roomNum].etc[a].cnt)
 						level[roomNum].etc[a].onoff = false
-						rl.PlaySound(sfx[10])
-						rl.PlaySound(sfx[5])
+						rl.PlaySound(gs.Audio.Sfx[10])
+						rl.PlaySound(gs.Audio.Sfx[5])
 					}
 				case "powerupBlok":
 					if pl.atk {
@@ -3661,7 +3651,7 @@ func drawUpEtc() { //MARK:DRAW UP ETC
 						}
 						destroyPowerupBlok(a)
 						level[roomNum].etc[a].onoff = false
-						rl.PlaySound(sfx[6])
+						rl.PlaySound(gs.Audio.Sfx[6])
 					}
 				}
 			}
@@ -4039,7 +4029,7 @@ func drawUpBoss() { //MARK: DRAW UP BOSS
 						endgame = true
 					}
 				}
-				rl.PlaySound(sfx[29])
+				rl.PlaySound(gs.Audio.Sfx[29])
 			}
 		}
 	}
@@ -4124,12 +4114,12 @@ func checkNextMove(rec rl.Rectangle, velx, vely float32, destroyEtc bool) bool {
 								destroyPowerupBlok(a)
 								makeFX(3, level[roomNum].etc[a].cnt)
 								level[roomNum].etc[a].onoff = false
-								rl.PlaySound(sfx[6])
+								rl.PlaySound(gs.Audio.Sfx[6])
 							case "oilbarrel":
 								makeFX(4, level[roomNum].etc[a].cnt)
 								level[roomNum].etc[a].onoff = false
-								rl.PlaySound(sfx[10])
-								rl.PlaySound(sfx[5])
+								rl.PlaySound(gs.Audio.Sfx[10])
+								rl.PlaySound(gs.Audio.Sfx[5])
 							}
 						}
 					}
@@ -4512,7 +4502,7 @@ func moveboss() { //MARK:MOVE BOSS
 							endgame = true
 						}
 					}
-					rl.PlaySound(sfx[29])
+					rl.PlaySound(gs.Audio.Sfx[29])
 				}
 			}
 		}
@@ -4531,7 +4521,7 @@ func moveboss() { //MARK:MOVE BOSS
 						addtime()
 						endgame = true
 					}
-					rl.PlaySound(sfx[29])
+					rl.PlaySound(gs.Audio.Sfx[29])
 				}
 			}
 
@@ -4550,7 +4540,7 @@ func moveboss() { //MARK:MOVE BOSS
 							endgame = true
 						}
 					}
-					rl.PlaySound(sfx[29])
+					rl.PlaySound(gs.Audio.Sfx[29])
 				}
 			}
 
@@ -4571,7 +4561,7 @@ func moveboss() { //MARK:MOVE BOSS
 							addtime()
 							endgame = true
 						}
-						rl.PlaySound(sfx[29])
+						rl.PlaySound(gs.Audio.Sfx[29])
 					}
 				}
 			}
@@ -4595,7 +4585,7 @@ func moveboss() { //MARK:MOVE BOSS
 							endgame = true
 						}
 					}
-					rl.PlaySound(sfx[29])
+					rl.PlaySound(gs.Audio.Sfx[29])
 				}
 			}
 		}
@@ -4760,9 +4750,9 @@ func moveenemy(num int) { //MARK:MOVE ENEMY
 						makeFX(2, cntr)
 					} else {
 						if flipcoin() {
-							rl.PlaySound(sfx[1])
+							rl.PlaySound(gs.Audio.Sfx[1])
 						} else {
-							rl.PlaySound(sfx[2])
+							rl.PlaySound(gs.Audio.Sfx[2])
 						}
 					}
 				}
@@ -5018,16 +5008,16 @@ func savesettings() { //MARK:SAVE SETTINGS
 	} else {
 		settingsTXT = settingsTXT + "0,"
 	}
-	if musicon {
+	if gs.Audio.MusicOn {
 		settingsTXT = settingsTXT + "1,"
 	} else {
 		settingsTXT = settingsTXT + "0,"
 	}
 
-	musicTXT := fmt.Sprint(bgMusicNum)
+	musicTXT := fmt.Sprint(gs.Audio.BgMusicNum)
 	settingsTXT = settingsTXT + musicTXT + ","
 
-	voltxt := fmt.Sprintf("%.0f", volume*10)
+	voltxt := fmt.Sprintf("%.0f", gs.Audio.Volume*10)
 	settingsTXT = settingsTXT + voltxt + ","
 
 	if hardcore {
@@ -5120,7 +5110,7 @@ func restartgame() { //MARK: RESTART GAME
 
 	intro = true
 	startdmgT = gs.Core.Fps * 7
-	rl.PlaySound(sfx[13])
+	rl.PlaySound(gs.Audio.Sfx[13])
 
 }
 func savetimes() { //MARK: SAVE TIMES
@@ -5188,7 +5178,7 @@ func addshopitem(num int) { //MARK: ADD SHOP ITEM
 				case "orbital":
 					if mods.orbitalN < max.orbital {
 						inven[a].numof++
-						rl.PlaySound(sfx[8])
+						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
 						pl.coins++
 						txtSold("orbital")
@@ -5197,7 +5187,7 @@ func addshopitem(num int) { //MARK: ADD SHOP ITEM
 				case "coffee":
 					if mods.coffeeN < max.coffee {
 						inven[a].numof++
-						rl.PlaySound(sfx[8])
+						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
 						pl.coins++
 						txtSold("coffee")
@@ -5210,7 +5200,7 @@ func addshopitem(num int) { //MARK: ADD SHOP ITEM
 				case "health potion":
 					if mods.hppotionN < max.hppotion {
 						inven[a].numof++
-						rl.PlaySound(sfx[8])
+						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
 						pl.coins++
 						txtSold("health potion")
@@ -5219,7 +5209,7 @@ func addshopitem(num int) { //MARK: ADD SHOP ITEM
 				case "firetrail":
 					if mods.firetrailN < max.firetrail {
 						inven[a].numof++
-						rl.PlaySound(sfx[8])
+						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
 						pl.coins++
 						txtSold("firetrail")
@@ -5232,7 +5222,7 @@ func addshopitem(num int) { //MARK: ADD SHOP ITEM
 				case "apple":
 					if mods.appleN < max.apple {
 						inven[a].numof++
-						rl.PlaySound(sfx[8])
+						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
 						pl.coins++
 						txtSold("apple")
@@ -5241,7 +5231,7 @@ func addshopitem(num int) { //MARK: ADD SHOP ITEM
 				case "key":
 					if mods.keyN < max.key {
 						inven[a].numof++
-						rl.PlaySound(sfx[8])
+						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
 						pl.coins++
 						txtSold("key")
@@ -5250,7 +5240,7 @@ func addshopitem(num int) { //MARK: ADD SHOP ITEM
 				case "bounce":
 					if mods.bounceN < max.bounce {
 						inven[a].numof++
-						rl.PlaySound(sfx[8])
+						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
 						pl.coins++
 						txtSold("bounce")
@@ -5259,7 +5249,7 @@ func addshopitem(num int) { //MARK: ADD SHOP ITEM
 				case "fireball":
 					if mods.fireballN < max.fireball {
 						inven[a].numof++
-						rl.PlaySound(sfx[8])
+						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
 						pl.coins++
 						txtSold("fireball")
@@ -5268,7 +5258,7 @@ func addshopitem(num int) { //MARK: ADD SHOP ITEM
 				case "throwing axe":
 					if mods.axeN < max.axe {
 						inven[a].numof++
-						rl.PlaySound(sfx[8])
+						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
 						pl.coins++
 						txtSold("axe")
@@ -5280,11 +5270,11 @@ func addshopitem(num int) { //MARK: ADD SHOP ITEM
 		}
 		if !foundsame {
 			inven = append(inven, gs.Shop.ShopItems[num])
-			rl.PlaySound(sfx[8])
+			rl.PlaySound(gs.Audio.Sfx[8])
 		}
 	} else {
 		inven = append(inven, gs.Shop.ShopItems[num])
-		rl.PlaySound(sfx[8])
+		rl.PlaySound(gs.Audio.Sfx[8])
 	}
 
 	//UP MODS
@@ -5366,9 +5356,9 @@ func addshopitem(num int) { //MARK: ADD SHOP ITEM
 
 func playenemyhit() { //MARK:PLAYER ENEMY HIT SOUND
 	if flipcoin() {
-		rl.PlaySound(sfx[1])
+		rl.PlaySound(gs.Audio.Sfx[1])
 	} else {
-		rl.PlaySound(sfx[2])
+		rl.PlaySound(gs.Audio.Sfx[2])
 	}
 }
 func updownswitch(x32, y32 int32, siz, value float32, numType int) float32 { //MARK:UP DOWN SWITCH
@@ -5636,7 +5626,7 @@ func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
 				case "birthday cake":
 					if mods.cakeN < max.cake {
 						inven[a].numof++
-						rl.PlaySound(sfx[8])
+						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
 						pl.coins++
 						txtSold("birthday cake")
@@ -5649,7 +5639,7 @@ func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
 				case "cherry":
 					if mods.cherryN < max.cherry {
 						inven[a].numof++
-						rl.PlaySound(sfx[8])
+						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
 						pl.coins++
 						txtSold("cherry")
@@ -5677,7 +5667,7 @@ func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
 						if pl.armor < pl.armorMax {
 							pl.armor++
 						}
-						rl.PlaySound(sfx[8])
+						rl.PlaySound(gs.Audio.Sfx[8])
 					} else if mods.armorN == max.armor && pl.armor < pl.armorMax {
 						pl.armor++
 					} else {
@@ -5688,7 +5678,7 @@ func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
 				case "health ring":
 					if mods.hpringN < max.hpring {
 						inven[a].numof++
-						rl.PlaySound(sfx[8])
+						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
 						pl.coins++
 						txtSold("health ring")
@@ -5701,7 +5691,7 @@ func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
 				case "orbital":
 					if mods.orbitalN < max.orbital {
 						inven[a].numof++
-						rl.PlaySound(sfx[8])
+						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
 						pl.coins++
 						txtSold("orbital")
@@ -5710,7 +5700,7 @@ func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
 				case "attack damage":
 					if mods.atkdmgN < max.atkdmg {
 						inven[a].numof++
-						rl.PlaySound(sfx[8])
+						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
 						pl.coins++
 						txtSold("attack damage")
@@ -5719,7 +5709,7 @@ func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
 				case "attack range":
 					if mods.atkrangeN < max.atkrange {
 						inven[a].numof++
-						rl.PlaySound(sfx[8])
+						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
 						pl.coins++
 						txtSold("attack range")
@@ -5728,7 +5718,7 @@ func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
 				case "coffee":
 					if mods.coffeeN < max.coffee {
 						inven[a].numof++
-						rl.PlaySound(sfx[8])
+						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
 						pl.coins++
 						txtSold("coffee")
@@ -5741,7 +5731,7 @@ func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
 				case "health potion":
 					if mods.hppotionN < max.hppotion {
 						inven[a].numof++
-						rl.PlaySound(sfx[8])
+						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
 						pl.coins++
 						txtSold("health potion")
@@ -5750,7 +5740,7 @@ func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
 				case "firetrail":
 					if mods.firetrailN < max.firetrail {
 						inven[a].numof++
-						rl.PlaySound(sfx[8])
+						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
 						pl.coins++
 						txtSold("firetrail")
@@ -5775,7 +5765,7 @@ func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
 				case "apple":
 					if mods.appleN < max.apple {
 						inven[a].numof++
-						rl.PlaySound(sfx[8])
+						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
 						pl.coins++
 						txtSold("apple")
@@ -5784,7 +5774,7 @@ func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
 				case "key":
 					if mods.keyN < max.key {
 						inven[a].numof++
-						rl.PlaySound(sfx[8])
+						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
 						pl.coins++
 						txtSold("key")
@@ -5797,7 +5787,7 @@ func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
 				case "bounce":
 					if mods.bounceN < max.bounce {
 						inven[a].numof++
-						rl.PlaySound(sfx[8])
+						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
 						pl.coins++
 						txtSold("bounce")
@@ -5806,7 +5796,7 @@ func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
 				case "fireball":
 					if mods.fireballN < max.fireball {
 						inven[a].numof++
-						rl.PlaySound(sfx[8])
+						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
 						pl.coins++
 						txtSold("fireball")
@@ -5819,7 +5809,7 @@ func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
 				case "throwing axe":
 					if mods.axeN < max.axe {
 						inven[a].numof++
-						rl.PlaySound(sfx[8])
+						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
 						pl.coins++
 						txtSold("axe")
@@ -5831,12 +5821,12 @@ func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
 		}
 		if !foundsame && level[roomNum].etc[blokNum].name != "teleport" {
 			inven = append(inven, level[roomNum].etc[blokNum])
-			rl.PlaySound(sfx[8])
+			rl.PlaySound(gs.Audio.Sfx[8])
 		}
 	} else {
 		if level[roomNum].etc[blokNum].name != "teleport" {
 			inven = append(inven, level[roomNum].etc[blokNum])
-			rl.PlaySound(sfx[8])
+			rl.PlaySound(gs.Audio.Sfx[8])
 		}
 	}
 
@@ -5938,7 +5928,7 @@ func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
 			maketeleport()
 			teleportRoomNum = rInt(0, len(level))
 			teleporton = true
-			rl.PlaySound(sfx[9])
+			rl.PlaySound(gs.Audio.Sfx[9])
 		case "coffee":
 			if mods.coffeeN < max.coffee {
 				mods.coffeeN++
@@ -6297,7 +6287,7 @@ func hitPL(numEnProj, numType int) { //MARK:HIT PLAYER
 				}
 
 			}
-			rl.PlaySound(sfx[14])
+			rl.PlaySound(gs.Audio.Sfx[14])
 
 		}
 	}
@@ -6321,10 +6311,10 @@ func addkill(num int) { //MARK:ADD KILL
 	case "slime":
 		kills.slimes++
 	}
-	rl.PlaySound(sfx[7])
+	rl.PlaySound(gs.Audio.Sfx[7])
 }
 func txtSold(name string) { //MARK:TEXT SOLD
-	rl.PlaySound(sfx[18])
+	rl.PlaySound(gs.Audio.Sfx[18])
 	ztxt := xtxt{}
 	ztxt.onoff = true
 	ztxt.col = rl.White
@@ -6352,7 +6342,7 @@ func txtCompanion() { //MARK:TEXT COMPANION
 	txtSoldlist = append(txtSoldlist, ztxt)
 }
 func txtAddCoin() { //MARK:TEXT ADD 1 COIN
-	rl.PlaySound(sfx[18])
+	rl.PlaySound(gs.Audio.Sfx[18])
 	ztxt := xtxt{}
 	ztxt.onoff = true
 	ztxt.col = rl.White
@@ -6367,7 +6357,7 @@ func txtAddCoin() { //MARK:TEXT ADD 1 COIN
 
 }
 func txtAddCoinMulti() { //MARK:TEXT ADD MULTIPLE COINS
-	rl.PlaySound(sfx[18])
+	rl.PlaySound(gs.Audio.Sfx[18])
 	ztxt := xtxt{}
 	ztxt.onoff = true
 	ztxt.col = rl.White
@@ -6407,7 +6397,7 @@ func up() { //MARK:UP
 	mouseV2 = rl.GetMousePosition()
 	mousev2cam = rl.GetScreenToWorld2D(mouseV2, cam2)
 
-	if musicon {
+	if gs.Audio.MusicOn {
 		upaudio()
 	}
 
@@ -6441,17 +6431,17 @@ func up() { //MARK:UP
 
 }
 func upaudio() { //MARK:UP AUDIO
-	rl.UpdateMusicStream(music)
+	rl.UpdateMusicStream(gs.Audio.Music)
 }
 func upvolume() { //MARK:UP VOLUME
 
-	rl.SetMusicVolume(music, volume)
+	rl.SetMusicVolume(gs.Audio.Music, gs.Audio.Volume)
 
-	for a := 0; a < len(sfx); a++ {
-		rl.SetSoundVolume(sfx[a], volume+0.1)
+	for a := 0; a < len(gs.Audio.Sfx); a++ {
+		rl.SetSoundVolume(gs.Audio.Sfx[a], gs.Audio.Volume+0.1)
 	}
 
-	rl.SetMasterVolume(volume)
+	rl.SetMasterVolume(gs.Audio.Volume)
 
 }
 func upPlayerMods() { //MARK:UP PLAYER MODS
@@ -6575,7 +6565,7 @@ func upPlayerMods() { //MARK:UP PLAYER MODS
 
 	//ESCAPE VINE
 	if pl.hp == 1 && mods.vine && levelnum != 6 {
-		rl.PlaySound(sfx[27])
+		rl.PlaySound(gs.Audio.Sfx[27])
 		mods.vine = false
 		clearinven("vine")
 		escaped = false
@@ -6848,41 +6838,41 @@ func upPlayerRec() { //MARK:UP PLAYER REC CENTER CHANGED
 // MARK:MAKE MAKE MAKE MAKE MAKE MAKE MAKE MAKE MAKE MAKE MAKE MAKE MAKE MAKE MAKE MAKE MAKE MAKE
 func makeaudio() { //MARK:MAKE AUDIO
 
-	backMusic = append(backMusic, rl.LoadMusicStream("audio/1.ogg"))  //0
-	backMusic = append(backMusic, rl.LoadMusicStream("audio/2.ogg"))  //1
-	backMusic = append(backMusic, rl.LoadMusicStream("audio/16.ogg")) //2
+	gs.Audio.BackMusic = append(gs.Audio.BackMusic, rl.LoadMusicStream("audio/1.ogg"))  //0
+	gs.Audio.BackMusic = append(gs.Audio.BackMusic, rl.LoadMusicStream("audio/2.ogg"))  //1
+	gs.Audio.BackMusic = append(gs.Audio.BackMusic, rl.LoadMusicStream("audio/16.ogg")) //2
 
-	sfx = append(sfx, rl.LoadSound("audio/3.ogg"))  //0 PLAYER SWORD
-	sfx = append(sfx, rl.LoadSound("audio/4.ogg"))  //1 ENEMY HIT1
-	sfx = append(sfx, rl.LoadSound("audio/5.ogg"))  //2 ENEMY HIT2
-	sfx = append(sfx, rl.LoadSound("audio/6.ogg"))  //3 SPRING
-	sfx = append(sfx, rl.LoadSound("audio/7.ogg"))  //4 SPEAR
-	sfx = append(sfx, rl.LoadSound("audio/8.ogg"))  //5 OIL BARREL BURN
-	sfx = append(sfx, rl.LoadSound("audio/9.ogg"))  //6 POWER UP BLOCK DESTROY
-	sfx = append(sfx, rl.LoadSound("audio/10.ogg")) //7 ENEMY DEATH
-	sfx = append(sfx, rl.LoadSound("audio/11.ogg")) //8 ITEM PICKUP
-	sfx = append(sfx, rl.LoadSound("audio/12.ogg")) //9 TELEPORT
-	sfx = append(sfx, rl.LoadSound("audio/13.ogg")) //10 OIL BARREL EXPLODE
-	sfx = append(sfx, rl.LoadSound("audio/14.ogg")) //11 LIGHTNING
-	sfx = append(sfx, rl.LoadSound("audio/15.ogg")) //12 SWITCH
-	sfx = append(sfx, rl.LoadSound("audio/17.ogg")) //13 COUNTDOWN
-	sfx = append(sfx, rl.LoadSound("audio/18.ogg")) //14 PLAYER HIT
-	sfx = append(sfx, rl.LoadSound("audio/19.ogg")) //15 STAIRS
-	sfx = append(sfx, rl.LoadSound("audio/20.ogg")) //16 SHOP DOOR
-	sfx = append(sfx, rl.LoadSound("audio/21.ogg")) //17 CHEST OPENING
-	sfx = append(sfx, rl.LoadSound("audio/22.ogg")) //18 COIN ADDED
-	sfx = append(sfx, rl.LoadSound("audio/23.ogg")) //19 WIN GAME
-	sfx = append(sfx, rl.LoadSound("audio/24.ogg")) //20 GAS TRAP
-	sfx = append(sfx, rl.LoadSound("audio/25.ogg")) //21 SHOP PURCHASE
-	sfx = append(sfx, rl.LoadSound("audio/26.ogg")) //22d NO MONEY SHOP PURCHASE
-	sfx = append(sfx, rl.LoadSound("audio/27.ogg")) //23 POISONED
-	sfx = append(sfx, rl.LoadSound("audio/28.ogg")) //24 UNDERWATER
-	sfx = append(sfx, rl.LoadSound("audio/29.ogg")) //25 LOCKED CHEST
-	sfx = append(sfx, rl.LoadSound("audio/30.ogg")) //26 SPEAR
-	sfx = append(sfx, rl.LoadSound("audio/31.ogg")) //27 VINE
-	sfx = append(sfx, rl.LoadSound("audio/32.ogg")) //28 AIR STRIKE EPLOSION
-	sfx = append(sfx, rl.LoadSound("audio/33.ogg")) //29 BOSS HIT
-	sfx = append(sfx, rl.LoadSound("audio/34.ogg")) //30 CIRCULAR SAW
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/3.ogg"))  //0 PLAYER SWORD
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/4.ogg"))  //1 ENEMY HIT1
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/5.ogg"))  //2 ENEMY HIT2
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/6.ogg"))  //3 SPRING
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/7.ogg"))  //4 SPEAR
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/8.ogg"))  //5 OIL BARREL BURN
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/9.ogg"))  //6 POWER UP BLOCK DESTROY
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/10.ogg")) //7 ENEMY DEATH
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/11.ogg")) //8 ITEM PICKUP
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/12.ogg")) //9 TELEPORT
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/13.ogg")) //10 OIL BARREL EXPLODE
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/14.ogg")) //11 LIGHTNING
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/15.ogg")) //12 SWITCH
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/17.ogg")) //13 COUNTDOWN
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/18.ogg")) //14 PLAYER HIT
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/19.ogg")) //15 STAIRS
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/20.ogg")) //16 SHOP DOOR
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/21.ogg")) //17 CHEST OPENING
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/22.ogg")) //18 COIN ADDED
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/23.ogg")) //19 WIN GAME
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/24.ogg")) //20 GAS TRAP
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/25.ogg")) //21 SHOP PURCHASE
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/26.ogg")) //22d NO MONEY SHOP PURCHASE
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/27.ogg")) //23 POISONED
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/28.ogg")) //24 UNDERWATER
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/29.ogg")) //25 LOCKED CHEST
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/30.ogg")) //26 SPEAR
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/31.ogg")) //27 VINE
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/32.ogg")) //28 AIR STRIKE EPLOSION
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/33.ogg")) //29 BOSS HIT
+	gs.Audio.Sfx = append(gs.Audio.Sfx, rl.LoadSound("audio/34.ogg")) //30 CIRCULAR SAW
 
 	upvolume()
 
@@ -6983,9 +6973,9 @@ func makesettings() { //MARK: MAKE SETTINGS
 		contolleron = true
 	}
 	if txtSettings[7] == "1" {
-		musicon = true
+		gs.Audio.MusicOn = true
 	} else {
-		musicon = false
+		gs.Audio.MusicOn = false
 	}
 	if txtSettings[10] == "1" {
 		hardcore = true
@@ -6995,10 +6985,10 @@ func makesettings() { //MARK: MAKE SETTINGS
 
 	//BG MUSIC
 	num, _ := strconv.Atoi(txtSettings[8])
-	bgMusicNum = num
+	gs.Audio.BgMusicNum = num
 	//VOLUME
 	num, _ = strconv.Atoi(txtSettings[9])
-	volume = float32(num) / 10
+	gs.Audio.Volume = float32(num) / 10
 
 }
 func makeshop() { //MARK: MAKE SHOP
@@ -8405,7 +8395,7 @@ func makeChainLightning() { //MARK:MAKE CHAIN LIGHTNING
 		}
 		chainLightTimer = gs.Core.Fps / 3
 		chainLightOn = true
-		rl.PlaySound(sfx[11])
+		rl.PlaySound(gs.Audio.Sfx[11])
 	}
 }
 func makeenemies() { //MARK:MAKE ENEMIES
@@ -10801,7 +10791,7 @@ func inp() { //MARK:INP
 			if !pl.escape {
 				if rl.IsKeyPressed(rl.KeySpace) {
 					if pl.atkTimer == 0 {
-						rl.PlaySound(sfx[0])
+						rl.PlaySound(gs.Audio.Sfx[0])
 						chainLightingSwingOnOff = false
 						pl.atk = true
 						pl.atkTimer = gs.Core.Fps / 3
@@ -10857,7 +10847,7 @@ func inp() { //MARK:INP
 				if useController {
 					if rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) {
 						if pl.atkTimer == 0 {
-							rl.PlaySound(sfx[0])
+							rl.PlaySound(gs.Audio.Sfx[0])
 							chainLightingSwingOnOff = false
 							pl.atk = true
 							pl.atkTimer = gs.Core.Fps / 3
@@ -11027,10 +11017,10 @@ func initialWindow() { //MARK:INITIAL WINDOW
 	maketimes()
 	cams()
 
-	music = backMusic[bgMusicNum]
-	music.Looping = true
+	gs.Audio.Music = gs.Audio.BackMusic[gs.Audio.BgMusicNum]
+	gs.Audio.Music.Looping = true
 	rl.SetMasterVolume(4) //CHANGE VOLUME
-	rl.SetMusicVolume(music, volume)
+	rl.SetMusicVolume(gs.Audio.Music, gs.Audio.Volume)
 	upvolume()
 
 	diedRec = rl.NewRectangle(cnt.X-bsU, cnt.Y-bsU, bsU2, bsU2)
@@ -11046,12 +11036,12 @@ func unload() { //MARK:UNLOAD
 	rl.UnloadRenderTexture(renderTarget)
 	rl.UnloadTexture(imgs)
 
-	rl.StopMusicStream(music)
-	rl.UnloadMusicStream(music)
-	rl.UnloadMusicStream(backMusic[bgMusicNum])
+	rl.StopMusicStream(gs.Audio.Music)
+	rl.UnloadMusicStream(gs.Audio.Music)
+	rl.UnloadMusicStream(gs.Audio.BackMusic[gs.Audio.BgMusicNum])
 
-	for a := 0; a < len(sfx); a++ {
-		rl.UnloadSound(sfx[a])
+	for a := 0; a < len(gs.Audio.Sfx); a++ {
+		rl.UnloadSound(gs.Audio.Sfx[a])
 	}
 	rl.CloseAudioDevice()
 
