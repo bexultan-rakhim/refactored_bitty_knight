@@ -47,13 +47,6 @@ var (
 	marioCols                                     []rl.Color
 	mariocoinonoff                                []bool
 
-	//SHOP
-	shopon    bool
-	shopExitY float32
-	shopitems []xblok
-	shopnum   int
-	shopExitT int32
-
 	//OPTIONS CREDITS
 	optionnum int
 	txtSize   = txU2
@@ -113,8 +106,6 @@ var (
 
 	levMapOn, roomChanged, night, flipcam, shader2on, shader3on, exiton, exitLR, endgame, hardcore bool
 
-	//COMPANIONS
-	mrplanty, mralien, mrcarrot = xcompanion{}, xcompanion{}, xcompanion{}
 
 	//PLAYER
 	pl                          = xplayer{}
@@ -388,6 +379,7 @@ type LevelState struct {
     EndgopherRec rl.Rectangle
 }
 
+// Done
 type ShopState struct {
     ShopOn    bool
     ShopExitY float32
@@ -457,12 +449,14 @@ type FXState struct {
     FireworksCnt    rl.Vector2
 }
 
+// Done
 type CompanionState struct {
     MrPlanty  xcompanion
     MrAlien   xcompanion
     MrCarrot  xcompanion
 }
 
+// Done
 type TimingState struct {
     Times      []int
     BestTime   bool
@@ -523,7 +517,7 @@ func drawcam() { //MARK:DRAW CAM
 		drawOptions()
 	} else if gs.Timing.TimesOn {
 		drawTimes()
-	} else if shopon {
+	} else if gs.Shop.ShopOn {
 		drawShop()
 	} else if marioon {
 		drawUpMario()
@@ -757,7 +751,7 @@ func drawnextlevelscreen() { //MARK:DRAW NEXT LEVEL SCREEN
 	if nextlevelT > 0 {
 		nextlevelT--
 	} else {
-		startdmgT = fps * 5
+		startdmgT = gs.Core.Fps * 5
 		if rl.IsKeyPressed(rl.KeySpace) {
 			nextlevelscreen = false
 			pause = false
@@ -813,79 +807,79 @@ func drawShop() { //MARK:DRAW SHOP
 
 	if rl.IsKeyPressed(rl.KeyA) || rl.GetGamepadAxisMovement(0, 0) < 0 || rl.IsGamepadButtonDown(0, 4) {
 		if optionT == 0 {
-			optionT = fps / 5
-			shopnum--
-			if shopnum < 0 {
-				shopnum = 4
+			optionT = gs.Core.Fps / 5
+			gs.Shop.ShopNum--
+			if gs.Shop.ShopNum < 0 {
+				gs.Shop.ShopNum = 4
 			}
 		}
 	}
 	if rl.IsKeyPressed(rl.KeyD) || rl.GetGamepadAxisMovement(0, 0) > 0 || rl.IsGamepadButtonDown(0, 2) {
 		if optionT == 0 {
-			optionT = fps / 5
-			shopnum++
-			if shopnum > 4 {
-				shopnum = 0
+			optionT = gs.Core.Fps / 5
+			gs.Shop.ShopNum++
+			if gs.Shop.ShopNum > 4 {
+				gs.Shop.ShopNum = 0
 			}
 		}
 	}
 	if rl.IsKeyPressed(rl.KeyS) || rl.GetGamepadAxisMovement(0, 1) > 0 || rl.IsGamepadButtonDown(0, 3) {
 		if optionT == 0 {
-			optionT = fps / 5
-			if shopnum == 0 {
-				shopnum = 2
-			} else if shopnum == 2 {
-				shopnum = 4
-			} else if shopnum == 4 {
-				shopnum = 0
+			optionT = gs.Core.Fps / 5
+			if gs.Shop.ShopNum == 0 {
+				gs.Shop.ShopNum = 2
+			} else if gs.Shop.ShopNum == 2 {
+				gs.Shop.ShopNum = 4
+			} else if gs.Shop.ShopNum == 4 {
+				gs.Shop.ShopNum = 0
 			}
-			if shopnum == 1 {
-				shopnum = 3
-			} else if shopnum == 3 {
-				shopnum = 4
+			if gs.Shop.ShopNum == 1 {
+				gs.Shop.ShopNum = 3
+			} else if gs.Shop.ShopNum == 3 {
+				gs.Shop.ShopNum = 4
 			}
 		}
 	}
 	if rl.IsKeyPressed(rl.KeyW) || rl.GetGamepadAxisMovement(0, 1) < 0 || rl.IsGamepadButtonDown(0, 1) {
 		if optionT == 0 {
-			optionT = fps / 5
-			if shopnum == 0 {
-				shopnum = 4
-			} else if shopnum == 2 {
-				shopnum = 0
+			optionT = gs.Core.Fps / 5
+			if gs.Shop.ShopNum == 0 {
+				gs.Shop.ShopNum = 4
+			} else if gs.Shop.ShopNum == 2 {
+				gs.Shop.ShopNum = 0
 			}
-			if shopnum == 1 {
-				shopnum = 4
-			} else if shopnum == 3 {
-				shopnum = 1
+			if gs.Shop.ShopNum == 1 {
+				gs.Shop.ShopNum = 4
+			} else if gs.Shop.ShopNum == 3 {
+				gs.Shop.ShopNum = 1
 			}
-			if shopnum == 4 {
-				shopnum = 0
+			if gs.Shop.ShopNum == 4 {
+				gs.Shop.ShopNum = 0
 			}
 		}
 	}
 	if rl.IsKeyPressed(rl.KeySpace) || rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) {
 
-		if shopnum == 4 {
-			shopExitT = fps * 2
-			shopon = false
-			pl.cnt.Y = shopExitY
+		if gs.Shop.ShopNum == 4 {
+			gs.Shop.ShopExitT = gs.Core.Fps * 2
+			gs.Shop.ShopOn = false
+			pl.cnt.Y = gs.Shop.ShopExitY
 			upPlayerRec()
 			pause = false
 		} else {
 			if mods.wallet {
 				mods.wallet = false
 				clearinven("wallet")
-				shopitems[shopnum].shopoff = true
-				addshopitem(shopnum)
+				gs.Shop.ShopItems[gs.Shop.ShopNum].shopoff = true
+				addshopitem(gs.Shop.ShopNum)
 				rl.PlaySound(sfx[21])
-			} else if !shopitems[shopnum].shopoff && pl.coins >= shopitems[shopnum].shopprice {
-				if !shopitems[shopnum].shopoff {
-					shopitems[shopnum].shopoff = true
-					pl.coins -= shopitems[shopnum].shopprice
+			} else if !gs.Shop.ShopItems[gs.Shop.ShopNum].shopoff && pl.coins >= gs.Shop.ShopItems[gs.Shop.ShopNum].shopprice {
+				if !gs.Shop.ShopItems[gs.Shop.ShopNum].shopoff {
+					gs.Shop.ShopItems[gs.Shop.ShopNum].shopoff = true
+					pl.coins -= gs.Shop.ShopItems[gs.Shop.ShopNum].shopprice
 				}
-				shopitems[shopnum].shopoff = true
-				addshopitem(shopnum)
+				gs.Shop.ShopItems[gs.Shop.ShopNum].shopoff = true
+				addshopitem(gs.Shop.ShopNum)
 				rl.PlaySound(sfx[21])
 			} else {
 				rl.PlaySound(sfx[22])
@@ -905,112 +899,112 @@ func drawShop() { //MARK:DRAW SHOP
 	x -= siz * 2
 
 	rec := rl.NewRectangle(x, y, siz, siz)
-	if shopnum == 0 {
-		if shopitems[0].shopoff {
+	if gs.Shop.ShopNum == 0 {
+		if gs.Shop.ShopItems[0].shopoff {
 			rl.DrawRectangleRec(rec, rl.Fade(rl.Red, fadeblink))
 		} else {
 			rl.DrawRectangleRec(rec, rl.Fade(rl.Green, fadeblink))
 		}
 	}
-	if shopitems[0].shopoff {
+	if gs.Shop.ShopItems[0].shopoff {
 		col := ranRed()
-		rl.DrawTexturePro(imgs, shopitems[0].img, rec, rl.Vector2Zero(), 0, col)
-		rl.DrawTexturePro(imgs, shopitems[0].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(col, 0.2))
+		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[0].img, rec, rl.Vector2Zero(), 0, col)
+		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[0].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(col, 0.2))
 	} else {
 
-		rl.DrawTexturePro(imgs, shopitems[0].img, rec, rl.Vector2Zero(), 0, shopitems[0].color)
-		rl.DrawTexturePro(imgs, shopitems[0].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(shopitems[0].color, 0.2))
+		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[0].img, rec, rl.Vector2Zero(), 0, gs.Shop.ShopItems[0].color)
+		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[0].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(gs.Shop.ShopItems[0].color, 0.2))
 		coinx := rec.X + rec.Width + bsU
 		coiny := rec.Y + bsU
-		txtlen = rl.MeasureText("x"+fmt.Sprint(shopitems[0].shopprice), txtSize)
+		txtlen = rl.MeasureText("x"+fmt.Sprint(gs.Shop.ShopItems[0].shopprice), txtSize)
 		txtx = int32(coinx+siz/4) - txtlen/2
 		txty = int32(coiny+siz/2) + bsUi32/3
-		rl.DrawText("x"+fmt.Sprint(shopitems[0].shopprice), txtx, txty, txtSize, rl.White)
+		rl.DrawText("x"+fmt.Sprint(gs.Shop.ShopItems[0].shopprice), txtx, txty, txtSize, rl.White)
 		rl.DrawTexturePro(imgs, coin, rl.NewRectangle(coinx, coiny, siz/2, siz/2), ori, 0, rl.White)
 	}
-	txtlen = rl.MeasureText(shopitems[0].name, txtSize)
-	rl.DrawText(shopitems[0].name, rec.ToInt32().X+rec.ToInt32().Width/2-txtlen/2, rec.ToInt32().Y+rec.ToInt32().Height+bsUi32/4, txtSize, rl.White)
+	txtlen = rl.MeasureText(gs.Shop.ShopItems[0].name, txtSize)
+	rl.DrawText(gs.Shop.ShopItems[0].name, rec.ToInt32().X+rec.ToInt32().Width/2-txtlen/2, rec.ToInt32().Y+rec.ToInt32().Height+bsUi32/4, txtSize, rl.White)
 
 	rec.X += (siz * 2) + siz/2
-	if shopnum == 1 {
-		if shopitems[1].shopoff {
+	if gs.Shop.ShopNum == 1 {
+		if gs.Shop.ShopItems[1].shopoff {
 			rl.DrawRectangleRec(rec, rl.Fade(rl.Red, fadeblink))
 		} else {
 			rl.DrawRectangleRec(rec, rl.Fade(rl.Green, fadeblink))
 		}
 	}
 
-	if shopitems[1].shopoff {
+	if gs.Shop.ShopItems[1].shopoff {
 		col := ranRed()
-		rl.DrawTexturePro(imgs, shopitems[1].img, rec, rl.Vector2Zero(), 0, col)
-		rl.DrawTexturePro(imgs, shopitems[1].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(col, 0.2))
+		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[1].img, rec, rl.Vector2Zero(), 0, col)
+		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[1].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(col, 0.2))
 	} else {
-		rl.DrawTexturePro(imgs, shopitems[1].img, rec, rl.Vector2Zero(), 0, shopitems[1].color)
-		rl.DrawTexturePro(imgs, shopitems[1].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(shopitems[1].color, 0.2))
+		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[1].img, rec, rl.Vector2Zero(), 0, gs.Shop.ShopItems[1].color)
+		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[1].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(gs.Shop.ShopItems[1].color, 0.2))
 		coinx := rec.X + rec.Width + bsU
 		coiny := rec.Y + bsU
-		txtlen = rl.MeasureText("x"+fmt.Sprint(shopitems[1].shopprice), txtSize)
+		txtlen = rl.MeasureText("x"+fmt.Sprint(gs.Shop.ShopItems[1].shopprice), txtSize)
 		txtx = int32(coinx+siz/4) - txtlen/2
 		txty = int32(coiny+siz/2) + bsUi32/3
-		rl.DrawText("x"+fmt.Sprint(shopitems[1].shopprice), txtx, txty, txtSize, rl.White)
+		rl.DrawText("x"+fmt.Sprint(gs.Shop.ShopItems[1].shopprice), txtx, txty, txtSize, rl.White)
 		rl.DrawTexturePro(imgs, coin, rl.NewRectangle(coinx, coiny, siz/2, siz/2), ori, 0, rl.White)
 	}
-	txtlen = rl.MeasureText(shopitems[1].name, txtSize)
-	rl.DrawText(shopitems[1].name, rec.ToInt32().X+rec.ToInt32().Width/2-txtlen/2, rec.ToInt32().Y+rec.ToInt32().Height+bsUi32/4, txtSize, rl.White)
+	txtlen = rl.MeasureText(gs.Shop.ShopItems[1].name, txtSize)
+	rl.DrawText(gs.Shop.ShopItems[1].name, rec.ToInt32().X+rec.ToInt32().Width/2-txtlen/2, rec.ToInt32().Y+rec.ToInt32().Height+bsUi32/4, txtSize, rl.White)
 
 	rec.Y += siz * 2
-	if shopnum == 3 {
-		if shopitems[3].shopoff {
+	if gs.Shop.ShopNum == 3 {
+		if gs.Shop.ShopItems[3].shopoff {
 			rl.DrawRectangleRec(rec, rl.Fade(rl.Red, fadeblink))
 		} else {
 			rl.DrawRectangleRec(rec, rl.Fade(rl.Green, fadeblink))
 		}
 	}
 
-	if shopitems[3].shopoff {
+	if gs.Shop.ShopItems[3].shopoff {
 		col := ranRed()
-		rl.DrawTexturePro(imgs, shopitems[3].img, rec, rl.Vector2Zero(), 0, col)
-		rl.DrawTexturePro(imgs, shopitems[3].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(col, 0.2))
+		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[3].img, rec, rl.Vector2Zero(), 0, col)
+		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[3].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(col, 0.2))
 	} else {
-		rl.DrawTexturePro(imgs, shopitems[3].img, rec, rl.Vector2Zero(), 0, shopitems[3].color)
-		rl.DrawTexturePro(imgs, shopitems[3].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(shopitems[3].color, 0.2))
+		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[3].img, rec, rl.Vector2Zero(), 0, gs.Shop.ShopItems[3].color)
+		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[3].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(gs.Shop.ShopItems[3].color, 0.2))
 		coinx := rec.X + rec.Width + bsU
 		coiny := rec.Y + bsU
-		txtlen = rl.MeasureText("x"+fmt.Sprint(shopitems[3].shopprice), txtSize)
+		txtlen = rl.MeasureText("x"+fmt.Sprint(gs.Shop.ShopItems[3].shopprice), txtSize)
 		txtx = int32(coinx+siz/4) - txtlen/2
 		txty = int32(coiny+siz/2) + bsUi32/3
-		rl.DrawText("x"+fmt.Sprint(shopitems[3].shopprice), txtx, txty, txtSize, rl.White)
+		rl.DrawText("x"+fmt.Sprint(gs.Shop.ShopItems[3].shopprice), txtx, txty, txtSize, rl.White)
 		rl.DrawTexturePro(imgs, coin, rl.NewRectangle(coinx, coiny, siz/2, siz/2), ori, 0, rl.White)
 	}
-	txtlen = rl.MeasureText(shopitems[3].name, txtSize)
-	rl.DrawText(shopitems[3].name, rec.ToInt32().X+rec.ToInt32().Width/2-txtlen/2, rec.ToInt32().Y+rec.ToInt32().Height+bsUi32/4, txtSize, rl.White)
+	txtlen = rl.MeasureText(gs.Shop.ShopItems[3].name, txtSize)
+	rl.DrawText(gs.Shop.ShopItems[3].name, rec.ToInt32().X+rec.ToInt32().Width/2-txtlen/2, rec.ToInt32().Y+rec.ToInt32().Height+bsUi32/4, txtSize, rl.White)
 
 	rec.X -= (siz * 2) + siz/2
-	if shopnum == 2 {
-		if shopitems[2].shopoff {
+	if gs.Shop.ShopNum == 2 {
+		if gs.Shop.ShopItems[2].shopoff {
 			rl.DrawRectangleRec(rec, rl.Fade(rl.Red, fadeblink))
 		} else {
 			rl.DrawRectangleRec(rec, rl.Fade(rl.Green, fadeblink))
 		}
 	}
 
-	if shopitems[2].shopoff {
+	if gs.Shop.ShopItems[2].shopoff {
 		col := ranRed()
-		rl.DrawTexturePro(imgs, shopitems[2].img, rec, rl.Vector2Zero(), 0, col)
-		rl.DrawTexturePro(imgs, shopitems[2].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(col, 0.2))
+		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[2].img, rec, rl.Vector2Zero(), 0, col)
+		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[2].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(col, 0.2))
 	} else {
-		rl.DrawTexturePro(imgs, shopitems[2].img, rec, rl.Vector2Zero(), 0, shopitems[2].color)
-		rl.DrawTexturePro(imgs, shopitems[2].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(shopitems[2].color, 0.2))
+		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[2].img, rec, rl.Vector2Zero(), 0, gs.Shop.ShopItems[2].color)
+		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[2].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(gs.Shop.ShopItems[2].color, 0.2))
 		coinx := rec.X + rec.Width + bsU
 		coiny := rec.Y + bsU
-		txtlen = rl.MeasureText("x"+fmt.Sprint(shopitems[2].shopprice), txtSize)
+		txtlen = rl.MeasureText("x"+fmt.Sprint(gs.Shop.ShopItems[2].shopprice), txtSize)
 		txtx = int32(coinx+siz/4) - txtlen/2
 		txty = int32(coiny+siz/2) + bsUi32/3
-		rl.DrawText("x"+fmt.Sprint(shopitems[2].shopprice), txtx, txty, txtSize, rl.White)
+		rl.DrawText("x"+fmt.Sprint(gs.Shop.ShopItems[2].shopprice), txtx, txty, txtSize, rl.White)
 		rl.DrawTexturePro(imgs, coin, rl.NewRectangle(coinx, coiny, siz/2, siz/2), ori, 0, rl.White)
 	}
-	txtlen = rl.MeasureText(shopitems[2].name, txtSize)
-	rl.DrawText(shopitems[2].name, rec.ToInt32().X+rec.ToInt32().Width/2-txtlen/2, rec.ToInt32().Y+rec.ToInt32().Height+bsUi32/4, txtSize, rl.White)
+	txtlen = rl.MeasureText(gs.Shop.ShopItems[2].name, txtSize)
+	rl.DrawText(gs.Shop.ShopItems[2].name, rec.ToInt32().X+rec.ToInt32().Width/2-txtlen/2, rec.ToInt32().Y+rec.ToInt32().Height+bsUi32/4, txtSize, rl.White)
 
 	//WALLET
 	if mods.wallet {
@@ -1044,7 +1038,7 @@ func drawShop() { //MARK:DRAW SHOP
 
 	rec = rl.NewRectangle(cnt.X-wid/2, float32(txty)-bsU/4, wid, heig)
 
-	if shopnum == 4 {
+	if gs.Shop.ShopNum == 4 {
 		rl.DrawRectangleRec(rec, ranRed())
 	} else {
 		rl.DrawRectangleLinesEx(rec, 2, ranCol())
@@ -1118,7 +1112,7 @@ func drawDied() { //MARK:DRAW DIED
 		died = false
 		gs.Timing.BestTime = false
 		gs.Timing.TimesOn = true
-		gs.Timing.BestTimesT = fps
+		gs.Timing.BestTimesT = gs.Core.Fps
 	}
 	txt := "you"
 	txtlen := rl.MeasureText(txt, txU8)
@@ -1296,12 +1290,12 @@ func drawresettimes() { //MARK:DRAW RESET TIMES
 
 	if rl.IsKeyPressed(rl.KeyA) || rl.GetGamepadAxisMovement(0, 0) < 0 && rl.GetGamepadAxisMovement(0, 0) > -0.3 || rl.IsGamepadButtonDown(0, 4) {
 		if optionT == 0 {
-			optionT = fps / 5
+			optionT = gs.Core.Fps / 5
 			exitLR = !exitLR
 		}
 	} else if rl.IsKeyPressed(rl.KeyD) || rl.GetGamepadAxisMovement(0, 0) > 0 && rl.GetGamepadAxisMovement(0, 0) < 0.3 || rl.IsGamepadButtonDown(0, 2) {
 		if optionT == 0 {
-			optionT = fps / 5
+			optionT = gs.Core.Fps / 5
 			exitLR = !exitLR
 		}
 	}
@@ -1355,12 +1349,12 @@ func drawrestartconfirm() { //MARK:DRAW RESTART CONFIRM
 
 	if rl.IsKeyPressed(rl.KeyA) || rl.IsKeyPressed(rl.KeyLeft) || rl.GetGamepadAxisMovement(0, 0) < 0 && rl.GetGamepadAxisMovement(0, 0) > -0.3 || rl.IsGamepadButtonDown(0, 4) {
 		if optionT == 0 {
-			optionT = fps / 5
+			optionT = gs.Core.Fps / 5
 			exitLR = !exitLR
 		}
 	} else if rl.IsKeyPressed(rl.KeyD) || rl.IsKeyPressed(rl.KeyRight) || rl.GetGamepadAxisMovement(0, 0) > 0 && rl.GetGamepadAxisMovement(0, 0) < 0.3 || rl.IsGamepadButtonDown(0, 2) {
 		if optionT == 0 {
-			optionT = fps / 5
+			optionT = gs.Core.Fps / 5
 			exitLR = !exitLR
 		}
 	}
@@ -1411,12 +1405,12 @@ func drawExit() { //MARK:DRAW EXIT
 
 	if rl.IsKeyPressed(rl.KeyA) || rl.IsKeyPressed(rl.KeyLeft) || rl.GetGamepadAxisMovement(0, 0) < 0 && rl.GetGamepadAxisMovement(0, 0) > -0.3 || rl.IsGamepadButtonDown(0, 4) {
 		if optionT == 0 {
-			optionT = fps / 5
+			optionT = gs.Core.Fps / 5
 			exitLR = !exitLR
 		}
 	} else if rl.IsKeyPressed(rl.KeyD) || rl.IsKeyPressed(rl.KeyRight) || rl.GetGamepadAxisMovement(0, 0) > 0 && rl.GetGamepadAxisMovement(0, 0) < 0.3 || rl.IsGamepadButtonDown(0, 2) {
 		if optionT == 0 {
-			optionT = fps / 5
+			optionT = gs.Core.Fps / 5
 			exitLR = !exitLR
 		}
 	}
@@ -1465,7 +1459,7 @@ func drawOptions() { //MARK:DRAW OPTIONS
 		//KEYS GAMEPAD INP
 		if rl.IsKeyPressed(rl.KeyW) || rl.IsKeyPressed(rl.KeyUp) || rl.GetGamepadAxisMovement(0, 1) < 0 || rl.IsGamepadButtonDown(0, 1) {
 			if optionT == 0 {
-				optionT = fps / 5
+				optionT = gs.Core.Fps / 5
 				optionnum--
 				if optionnum < 0 {
 					optionnum = 16
@@ -1474,7 +1468,7 @@ func drawOptions() { //MARK:DRAW OPTIONS
 		}
 		if rl.IsKeyPressed(rl.KeyS) || rl.IsKeyPressed(rl.KeyDown) || rl.GetGamepadAxisMovement(0, 1) > 0 || rl.IsGamepadButtonDown(0, 3) {
 			if optionT == 0 {
-				optionT = fps / 5
+				optionT = gs.Core.Fps / 5
 				optionnum++
 				if optionnum > 16 {
 					optionnum = 0
@@ -1596,7 +1590,7 @@ func drawOptions() { //MARK:DRAW OPTIONS
 			rl.DrawText(txt, txtx, txty+txtSize+txtSize/2, txtSize, ranCol())
 			if rl.IsKeyPressed(rl.KeyD) || rl.IsKeyPressed(rl.KeyRight) || rl.GetGamepadAxisMovement(0, 0) > 0 || rl.IsGamepadButtonDown(0, 2) {
 				if optionT == 0 {
-					optionT = fps / 5
+					optionT = gs.Core.Fps / 5
 					bgMusicNum++
 					if bgMusicNum > 2 {
 						bgMusicNum = 0
@@ -1610,7 +1604,7 @@ func drawOptions() { //MARK:DRAW OPTIONS
 				}
 			} else if rl.IsKeyPressed(rl.KeyA) || rl.IsKeyPressed(rl.KeyLeft) || rl.GetGamepadAxisMovement(0, 0) < 0 || rl.IsGamepadButtonDown(0, 4) {
 				if optionT == 0 {
-					optionT = fps / 5
+					optionT = gs.Core.Fps / 5
 					bgMusicNum--
 					if bgMusicNum < 0 {
 						bgMusicNum = 2
@@ -1636,7 +1630,7 @@ func drawOptions() { //MARK:DRAW OPTIONS
 			rl.DrawText(txt, txtx, txty, txtSize, ranCol())
 			if rl.IsKeyPressed(rl.KeyD) || rl.IsKeyPressed(rl.KeyRight) || rl.GetGamepadAxisMovement(0, 0) > 0 || rl.IsGamepadButtonDown(0, 2) {
 				if optionT == 0 {
-					optionT = fps / 5
+					optionT = gs.Core.Fps / 5
 					if volume < 1 {
 						volume += 0.1
 					}
@@ -1644,7 +1638,7 @@ func drawOptions() { //MARK:DRAW OPTIONS
 				}
 			} else if rl.IsKeyPressed(rl.KeyA) || rl.IsKeyPressed(rl.KeyLeft) || rl.GetGamepadAxisMovement(0, 0) < 0 || rl.IsGamepadButtonDown(0, 4) {
 				if optionT == 0 {
-					optionT = fps / 5
+					optionT = gs.Core.Fps / 5
 					if volume > 0 {
 						volume -= 0.1
 					}
@@ -1709,7 +1703,7 @@ func drawUpMario() { //MARK:DRAW UP MARIO
 	if rl.IsKeyPressed(rl.KeyW) || rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) {
 		if !mariojump {
 			mariojump = true
-			mariojumpT = fps / 3
+			mariojumpT = gs.Core.Fps / 3
 		}
 	}
 
@@ -2006,7 +2000,7 @@ func drawChainLight() { //MARK:DRAW CHAIN LIGHTNING
 
 	if chainLightTimer <= 0 {
 		for a := 0; a < len(level[roomNum].enemies); a++ {
-			level[roomNum].enemies[a].hppause = fps / 2
+			level[roomNum].enemies[a].hppause = gs.Core.Fps / 2
 			level[roomNum].enemies[a].hp -= 1
 			if level[roomNum].enemies[a].hp <= 0 {
 				cntr := level[roomNum].enemies[a].cnt
@@ -2244,122 +2238,122 @@ func drawUpCompanions() { //MARK:DRAW UP COMPANIONS
 
 	if mods.carrot {
 
-		mrcarrot.timer--
-		if mrcarrot.timer == 0 {
-			mrcarrot.timer = fps * rI32(1, 5)
-			makeProjectile("mrcarrot")
+		gs.Companions.MrCarrot.timer--
+		if gs.Companions.MrCarrot.timer == 0 {
+			gs.Companions.MrCarrot.timer = gs.Core.Fps * rI32(1, 5)
+			makeProjectile("gs.Companions.MrCarrot")
 		}
 		//MOVE
-		if checkNextMove(mrcarrot.rec, mrcarrot.velx, mrcarrot.vely, false) {
-			mrcarrot.rec.X += mrcarrot.velx
-			mrcarrot.rec.Y += mrcarrot.vely
+		if checkNextMove(gs.Companions.MrCarrot.rec, gs.Companions.MrCarrot.velx, gs.Companions.MrCarrot.vely, false) {
+			gs.Companions.MrCarrot.rec.X += gs.Companions.MrCarrot.velx
+			gs.Companions.MrCarrot.rec.Y += gs.Companions.MrCarrot.vely
 		} else {
-			mrcarrot.velx = rF32(-mrcarrot.vel, mrcarrot.vel)
-			mrcarrot.vely = rF32(-mrcarrot.vel, mrcarrot.vel)
+			gs.Companions.MrCarrot.velx = rF32(-gs.Companions.MrCarrot.vel, gs.Companions.MrCarrot.vel)
+			gs.Companions.MrCarrot.vely = rF32(-gs.Companions.MrCarrot.vel, gs.Companions.MrCarrot.vel)
 		}
 
 		//IMG
 
-		shadowRec := mrcarrot.rec
+		shadowRec := gs.Companions.MrCarrot.rec
 		shadowRec.X -= 5
 		shadowRec.Y += 5
-		if mrcarrot.velx > 0 {
-			rl.DrawTexturePro(imgs, mrcarrot.imgr, shadowRec, ori, 0, rl.Fade(rl.Black, 0.8))
-			rl.DrawTexturePro(imgs, mrcarrot.imgr, mrcarrot.rec, ori, 0, rl.White)
+		if gs.Companions.MrCarrot.velx > 0 {
+			rl.DrawTexturePro(imgs, gs.Companions.MrCarrot.imgr, shadowRec, ori, 0, rl.Fade(rl.Black, 0.8))
+			rl.DrawTexturePro(imgs, gs.Companions.MrCarrot.imgr, gs.Companions.MrCarrot.rec, ori, 0, rl.White)
 		} else {
-			rl.DrawTexturePro(imgs, mrcarrot.imgl, shadowRec, ori, 0, rl.Fade(rl.Black, 0.8))
-			rl.DrawTexturePro(imgs, mrcarrot.imgl, mrcarrot.rec, ori, 0, rl.White)
+			rl.DrawTexturePro(imgs, gs.Companions.MrCarrot.imgl, shadowRec, ori, 0, rl.Fade(rl.Black, 0.8))
+			rl.DrawTexturePro(imgs, gs.Companions.MrCarrot.imgl, gs.Companions.MrCarrot.rec, ori, 0, rl.White)
 		}
 
 		//ANIM
 		if frames%6 == 0 {
-			mrcarrot.imgl.X += mrcarrot.imgl.Width
-			if mrcarrot.imgl.X > mrcarrot.imgl.Width*float32(mrcarrot.frames) {
-				mrcarrot.imgl.X = 0
+			gs.Companions.MrCarrot.imgl.X += gs.Companions.MrCarrot.imgl.Width
+			if gs.Companions.MrCarrot.imgl.X > gs.Companions.MrCarrot.imgl.Width*float32(gs.Companions.MrCarrot.frames) {
+				gs.Companions.MrCarrot.imgl.X = 0
 			}
-			mrcarrot.imgr.X += mrcarrot.imgr.Width
-			if mrcarrot.imgr.X > 228+(mrcarrot.imgr.Width*float32(mrcarrot.frames)) {
-				mrcarrot.imgr.X = 228
+			gs.Companions.MrCarrot.imgr.X += gs.Companions.MrCarrot.imgr.Width
+			if gs.Companions.MrCarrot.imgr.X > 228+(gs.Companions.MrCarrot.imgr.Width*float32(gs.Companions.MrCarrot.frames)) {
+				gs.Companions.MrCarrot.imgr.X = 228
 			}
 		}
 	}
 
 	if mods.alien {
-		mralien.timer--
-		if mralien.timer == 0 {
-			mralien.timer = fps * rI32(3, 8)
-			makeProjectile("mralien")
+		gs.Companions.MrAlien.timer--
+		if gs.Companions.MrAlien.timer == 0 {
+			gs.Companions.MrAlien.timer = gs.Core.Fps * rI32(3, 8)
+			makeProjectile("gs.Companions.MrAlien")
 		}
 		//MOVE
-		if checkNextMove(mralien.rec, mralien.velx, mralien.vely, false) {
-			mralien.rec.X += mralien.velx
-			mralien.rec.Y += mralien.vely
+		if checkNextMove(gs.Companions.MrAlien.rec, gs.Companions.MrAlien.velx, gs.Companions.MrAlien.vely, false) {
+			gs.Companions.MrAlien.rec.X += gs.Companions.MrAlien.velx
+			gs.Companions.MrAlien.rec.Y += gs.Companions.MrAlien.vely
 		} else {
-			mralien.velx = rF32(-mralien.vel, mralien.vel)
-			mralien.vely = rF32(-mralien.vel, mralien.vel)
+			gs.Companions.MrAlien.velx = rF32(-gs.Companions.MrAlien.vel, gs.Companions.MrAlien.vel)
+			gs.Companions.MrAlien.vely = rF32(-gs.Companions.MrAlien.vel, gs.Companions.MrAlien.vel)
 		}
 
 		//IMG
-		shadowRec := mralien.rec
+		shadowRec := gs.Companions.MrAlien.rec
 		shadowRec.X -= 5
 		shadowRec.Y += 5
-		rl.DrawTexturePro(imgs, mralien.img, shadowRec, ori, 0, rl.Fade(rl.Black, 0.8))
-		rl.DrawTexturePro(imgs, mralien.img, mralien.rec, ori, 0, rl.White)
+		rl.DrawTexturePro(imgs, gs.Companions.MrAlien.img, shadowRec, ori, 0, rl.Fade(rl.Black, 0.8))
+		rl.DrawTexturePro(imgs, gs.Companions.MrAlien.img, gs.Companions.MrAlien.rec, ori, 0, rl.White)
 
-		if getabs(mralien.velx) > getabs(mralien.vely) {
-			if mralien.velx > 0 {
-				mralien.img.Y = 898
+		if getabs(gs.Companions.MrAlien.velx) > getabs(gs.Companions.MrAlien.vely) {
+			if gs.Companions.MrAlien.velx > 0 {
+				gs.Companions.MrAlien.img.Y = 898
 			} else {
-				mralien.img.Y = 834
+				gs.Companions.MrAlien.img.Y = 834
 			}
 		} else {
-			if mralien.vely > 0 {
-				mralien.img.Y = 770
+			if gs.Companions.MrAlien.vely > 0 {
+				gs.Companions.MrAlien.img.Y = 770
 			} else {
-				mralien.img.Y = 962
+				gs.Companions.MrAlien.img.Y = 962
 			}
 		}
 
 		if frames%3 == 0 {
-			mralien.img.X += mralien.img.Width
-			if mralien.img.X >= 1200 {
-				mralien.img.X = 1008
+			gs.Companions.MrAlien.img.X += gs.Companions.MrAlien.img.Width
+			if gs.Companions.MrAlien.img.X >= 1200 {
+				gs.Companions.MrAlien.img.X = 1008
 			}
 		}
 	}
 
 	if mods.planty {
 		//MOVE
-		if checkNextMove(mrplanty.rec, mrplanty.velx, mrplanty.vely, false) {
-			mrplanty.rec.X += mrplanty.velx
-			mrplanty.rec.Y += mrplanty.vely
+		if checkNextMove(gs.Companions.MrPlanty.rec, gs.Companions.MrPlanty.velx, gs.Companions.MrPlanty.vely, false) {
+			gs.Companions.MrPlanty.rec.X += gs.Companions.MrPlanty.velx
+			gs.Companions.MrPlanty.rec.Y += gs.Companions.MrPlanty.vely
 		} else {
-			mrplanty.velx = rF32(-mrplanty.vel, mrplanty.vel)
-			mrplanty.vely = rF32(-mrplanty.vel, mrplanty.vel)
+			gs.Companions.MrPlanty.velx = rF32(-gs.Companions.MrPlanty.vel, gs.Companions.MrPlanty.vel)
+			gs.Companions.MrPlanty.vely = rF32(-gs.Companions.MrPlanty.vel, gs.Companions.MrPlanty.vel)
 		}
-		mrplanty.cnt = rl.NewVector2(mrplanty.rec.Width/2, mrplanty.rec.Height/2)
+		gs.Companions.MrPlanty.cnt = rl.NewVector2(gs.Companions.MrPlanty.rec.Width/2, gs.Companions.MrPlanty.rec.Height/2)
 
 		//IMG
-		shadowRec := mrplanty.rec
+		shadowRec := gs.Companions.MrPlanty.rec
 		shadowRec.X -= 5
 		shadowRec.Y += 5
-		if mrplanty.velx > 0 {
-			rl.DrawTexturePro(imgs, mrplanty.imgr, shadowRec, ori, 0, rl.Fade(rl.Black, 0.8))
-			rl.DrawTexturePro(imgs, mrplanty.imgr, mrplanty.rec, ori, 0, rl.White)
+		if gs.Companions.MrPlanty.velx > 0 {
+			rl.DrawTexturePro(imgs, gs.Companions.MrPlanty.imgr, shadowRec, ori, 0, rl.Fade(rl.Black, 0.8))
+			rl.DrawTexturePro(imgs, gs.Companions.MrPlanty.imgr, gs.Companions.MrPlanty.rec, ori, 0, rl.White)
 		} else {
-			rl.DrawTexturePro(imgs, mrplanty.imgl, shadowRec, ori, 0, rl.Fade(rl.Black, 0.8))
-			rl.DrawTexturePro(imgs, mrplanty.imgl, mrplanty.rec, ori, 0, rl.White)
+			rl.DrawTexturePro(imgs, gs.Companions.MrPlanty.imgl, shadowRec, ori, 0, rl.Fade(rl.Black, 0.8))
+			rl.DrawTexturePro(imgs, gs.Companions.MrPlanty.imgl, gs.Companions.MrPlanty.rec, ori, 0, rl.White)
 		}
 
 		//ANIM
 		if frames%6 == 0 {
-			mrplanty.imgl.X += mrplanty.imgl.Width
-			if mrplanty.imgl.X > mrplanty.imgl.Width*float32(mrplanty.frames) {
-				mrplanty.imgl.X = 0
+			gs.Companions.MrPlanty.imgl.X += gs.Companions.MrPlanty.imgl.Width
+			if gs.Companions.MrPlanty.imgl.X > gs.Companions.MrPlanty.imgl.Width*float32(gs.Companions.MrPlanty.frames) {
+				gs.Companions.MrPlanty.imgl.X = 0
 			}
-			mrplanty.imgr.X += mrplanty.imgr.Width
-			if mrplanty.imgr.X > 352+(mrplanty.imgr.Width*float32(mrplanty.frames)) {
-				mrplanty.imgr.X = 352
+			gs.Companions.MrPlanty.imgr.X += gs.Companions.MrPlanty.imgr.Width
+			if gs.Companions.MrPlanty.imgr.X > 352+(gs.Companions.MrPlanty.imgr.Width*float32(gs.Companions.MrPlanty.frames)) {
+				gs.Companions.MrPlanty.imgr.X = 352
 			}
 		}
 
@@ -2426,13 +2420,13 @@ func drawnocam() { //MARK:DRAW NO CAM
 			if introcount {
 
 				introT3--
-				if introT3 > fps*2 {
+				if introT3 > gs.Core.Fps*2 {
 					txt := "3"
 					txtlen := rl.MeasureText(txt, 200)
 					txty := int32(cnt.Y) - 100
 					txtx := int32(cnt.X) - txtlen/2
 					rl.DrawText(txt, txtx, txty, 200, rl.Green)
-				} else if introT3 > fps {
+				} else if introT3 > gs.Core.Fps {
 					txt := "2"
 					txtlen := rl.MeasureText(txt, 200)
 					txty := int32(cnt.Y) - 100
@@ -2476,7 +2470,7 @@ func drawnocam() { //MARK:DRAW NO CAM
 				}
 				if rl.IsKeyPressed(rl.KeySpace) || rl.IsGamepadButtonPressed(0, 7) {
 					introcount = true
-					startdmgT = fps * 7
+					startdmgT = gs.Core.Fps * 7
 					rl.PlaySound(sfx[13])
 				}
 
@@ -2581,13 +2575,13 @@ func drawnocam() { //MARK:DRAW NO CAM
 
 				cntCompanion := pl.cnt
 				if mods.carrot {
-					mrcarrot.rec = rl.NewRectangle(cntCompanion.X-mrcarrot.rec.Width/2, cntCompanion.Y-mrcarrot.rec.Width/2, mrcarrot.rec.Width, mrcarrot.rec.Width)
+					gs.Companions.MrCarrot.rec = rl.NewRectangle(cntCompanion.X-gs.Companions.MrCarrot.rec.Width/2, cntCompanion.Y-gs.Companions.MrCarrot.rec.Width/2, gs.Companions.MrCarrot.rec.Width, gs.Companions.MrCarrot.rec.Width)
 				}
 				if mods.alien {
-					mralien.rec = rl.NewRectangle(cntCompanion.X-mralien.rec.Width/2, cntCompanion.Y-mralien.rec.Width/2, mralien.rec.Width, mralien.rec.Width)
+					gs.Companions.MrAlien.rec = rl.NewRectangle(cntCompanion.X-gs.Companions.MrAlien.rec.Width/2, cntCompanion.Y-gs.Companions.MrAlien.rec.Width/2, gs.Companions.MrAlien.rec.Width, gs.Companions.MrAlien.rec.Width)
 				}
 				if mods.planty {
-					mrplanty.rec = rl.NewRectangle(cntCompanion.X-mrplanty.rec.Width/2, cntCompanion.Y-mrplanty.rec.Width/2, mrplanty.rec.Width, mrplanty.rec.Width)
+					gs.Companions.MrPlanty.rec = rl.NewRectangle(cntCompanion.X-gs.Companions.MrPlanty.rec.Width/2, cntCompanion.Y-gs.Companions.MrPlanty.rec.Width/2, gs.Companions.MrPlanty.rec.Width, gs.Companions.MrPlanty.rec.Width)
 				}
 
 				roomNum = teleportRoomNum
@@ -2734,7 +2728,7 @@ func drawDebug() { //MARK:DRAW DEBUG
 	txtY += txU
 	rl.DrawText("bosses[bossnum].timer"+" "+fmt.Sprint(bosses[bossnum].timer), txtX, txtY, txU, rl.White)
 	txtY += txU
-	rl.DrawText("shopitems[0].shopoff"+" "+fmt.Sprint(shopitems[0].shopoff), txtX, txtY, txU, rl.White)
+	rl.DrawText("gs.Shop.ShopItems[0].shopoff"+" "+fmt.Sprint(gs.Shop.ShopItems[0].shopoff), txtX, txtY, txU, rl.White)
 	txtY += txU
 	rl.DrawText("floodRec.Y"+" "+fmt.Sprint(floodRec.Y), txtX, txtY, txU, rl.White)
 	txtY += txU
@@ -3118,7 +3112,7 @@ func drawUpAirStrike() { //MARK:DRAW UP AIR STRIKE
 			level[roomNum].etc = append(level[roomNum].etc, zblok)
 		}
 
-		airstrikebombT = rI32(int(fps/4), int(fps*2))
+		airstrikebombT = rI32(int(gs.Core.Fps/4), int(gs.Core.Fps*2))
 	}
 
 }
@@ -3146,7 +3140,7 @@ func drawUpPlayerProj() { //MARK:DRAW UP PLAYER PROJECTILES
 			plProj[a].drec.Y += plProj[a].rec.Height / 2
 
 			switch plProj[a].name {
-			case "mrcarrot":
+			case "gs.Companions.MrCarrot":
 				plProj[a].ro += 8
 			case "plantbull":
 				if frames%4 == 0 {
@@ -3243,7 +3237,7 @@ func drawUpPlayerProj() { //MARK:DRAW UP PLAYER PROJECTILES
 			if plProj[a].onoff {
 				for b := 0; b < len(level[roomNum].enemies); b++ {
 					if rl.CheckCollisionRecs(plProj[a].rec, level[roomNum].enemies[b].rec) && level[roomNum].enemies[b].hppause == 0 {
-						level[roomNum].enemies[b].hppause = fps / 2
+						level[roomNum].enemies[b].hppause = gs.Core.Fps / 2
 						level[roomNum].enemies[b].hp -= plProj[a].dmg
 						playenemyhit()
 						if level[roomNum].enemies[b].hp <= 0 {
@@ -3265,7 +3259,7 @@ func drawUpPlayerProj() { //MARK:DRAW UP PLAYER PROJECTILES
 			if plProj[a].onoff {
 
 				if rl.CheckCollisionRecs(plProj[a].rec, bosses[bossnum].crec) && bosses[bossnum].hppause == 0 {
-					bosses[bossnum].hppause = fps
+					bosses[bossnum].hppause = gs.Core.Fps
 					bosses[bossnum].hp -= plProj[a].dmg
 					if bosses[bossnum].hp <= 0 {
 						cntr := bosses[bossnum].cnt
@@ -3277,7 +3271,7 @@ func drawUpPlayerProj() { //MARK:DRAW UP PLAYER PROJECTILES
 							secsEND = secs
 							addtime()
 							endgopherrec = rl.NewRectangle(cnt.X-bsU4, levRec.Y+levRec.Height, bsU8, bsU8)
-							endgameT = fps * 3
+							endgameT = gs.Core.Fps * 3
 							endgame = true
 						}
 					}
@@ -3327,7 +3321,7 @@ func drawUpEtc() { //MARK:DRAW UP ETC
 
 				level[roomNum].etc[a].ro++
 				if level[roomNum].etc[a].timer <= 0 {
-					level[roomNum].etc[a].timer = rI32(1, 3) * fps
+					level[roomNum].etc[a].timer = rI32(1, 3) * gs.Core.Fps
 					makeProjectileEnemy(1, level[roomNum].etc[a].cnt)
 				}
 			} else if level[roomNum].etc[a].name == "spring" {
@@ -3335,11 +3329,11 @@ func drawUpEtc() { //MARK:DRAW UP ETC
 				drawBlokDrec(level[roomNum].etc[a], false, true, 4)
 
 				if rl.CheckCollisionRecs(pl.crec, level[roomNum].etc[a].crec) && level[roomNum].etc[a].timer == 0 {
-					level[roomNum].etc[a].timer = fps * 3
+					level[roomNum].etc[a].timer = gs.Core.Fps * 3
 					level[roomNum].etc[a].onoffswitch = true
 
 					pl.slide = true
-					pl.slideT = fps / 2
+					pl.slideT = gs.Core.Fps / 2
 					pl.slideDIR = level[roomNum].etc[a].slideDIR
 
 					rl.PlaySound(sfx[3])
@@ -3368,7 +3362,7 @@ func drawUpEtc() { //MARK:DRAW UP ETC
 				level[roomNum].etc[a].ro++
 
 				if rl.CheckCollisionRecs(pl.crec, level[roomNum].etc[a].rec) && level[roomNum].etc[a].timer == 0 {
-					level[roomNum].etc[a].timer = fps * 3
+					level[roomNum].etc[a].timer = gs.Core.Fps * 3
 					makegascloud(level[roomNum].etc[a].cnt)
 					rl.PlaySound(sfx[20])
 				}
@@ -3378,7 +3372,7 @@ func drawUpEtc() { //MARK:DRAW UP ETC
 				rl.DrawTexturePro(imgs, etc[58], level[roomNum].etc[a].drec, level[roomNum].etc[a].ori, level[roomNum].etc[a].ro, rl.Fade(ranGreen(), rF32(0.3, 0.8)))
 
 				if rl.CheckCollisionRecs(pl.crec, level[roomNum].etc[a].crec) && !pl.poison && pl.poisonCollisT == 0 {
-					pl.poisonCollisT = fps * 3
+					pl.poisonCollisT = gs.Core.Fps * 3
 					if mods.apple {
 						mods.appleN--
 						if mods.appleN == 0 {
@@ -3388,7 +3382,7 @@ func drawUpEtc() { //MARK:DRAW UP ETC
 					} else {
 						pl.poison = true
 						pl.poisonCount = 2
-						pl.poisonT = fps * 3
+						pl.poisonT = gs.Core.Fps * 3
 						txtHere("poisoned", pl.rec)
 						rl.PlaySound(sfx[23])
 					}
@@ -3435,7 +3429,7 @@ func drawUpEtc() { //MARK:DRAW UP ETC
 
 				if level[roomNum].etc[a].name == "slimetrail" {
 					if rl.CheckCollisionRecs(pl.crec, level[roomNum].etc[a].crec) && !pl.poison && pl.poisonCollisT == 0 {
-						pl.poisonCollisT = fps * 3
+						pl.poisonCollisT = gs.Core.Fps * 3
 						if mods.apple {
 							mods.appleN--
 							if mods.appleN == 0 {
@@ -3445,7 +3439,7 @@ func drawUpEtc() { //MARK:DRAW UP ETC
 						} else {
 							pl.poison = true
 							pl.poisonCount = 2
-							pl.poisonT = fps * 3
+							pl.poisonT = gs.Core.Fps * 3
 							txtHere("poisoned", pl.rec)
 						}
 					}
@@ -3573,7 +3567,7 @@ func drawUpEtc() { //MARK:DRAW UP ETC
 						makechestitem(a)
 					} else if rl.CheckCollisionRecs(pl.arec, level[roomNum].etc[a].crec) && !mods.key && !level[roomNum].etc[a].onoffswitch && level[roomNum].etc[a].txtT == 0 {
 						txtHere("locked", level[roomNum].etc[a].rec)
-						level[roomNum].etc[a].txtT = fps * 3
+						level[roomNum].etc[a].txtT = gs.Core.Fps * 3
 						rl.PlaySound(sfx[25])
 					}
 
@@ -3599,7 +3593,7 @@ func drawUpEtc() { //MARK:DRAW UP ETC
 				case "switch": //MARK: SWITCHES ON/OFF
 					if level[roomNum].etc[a].timer == 0 {
 						rl.PlaySound(sfx[12])
-						level[roomNum].etc[a].timer = fps * 2
+						level[roomNum].etc[a].timer = gs.Core.Fps * 2
 						level[roomNum].etc[a].onoffswitch = !level[roomNum].etc[a].onoffswitch
 						if level[roomNum].etc[a].img == etc[21] {
 							level[roomNum].etc[a].img = etc[22]
@@ -3641,10 +3635,10 @@ func drawUpEtc() { //MARK:DRAW UP ETC
 				}
 			}
 			//COLLISIONS PLAYER CREC > ETC CREC2
-			if rl.CheckCollisionRecs(pl.crec, level[roomNum].etc[a].crec2) && level[roomNum].etc[a].name == "shop" && !pl.escape && shopExitT == 0 {
+			if rl.CheckCollisionRecs(pl.crec, level[roomNum].etc[a].crec2) && level[roomNum].etc[a].name == "shop" && !pl.escape && gs.Shop.ShopExitT == 0 {
 				rl.PlaySound(sfx[16])
-				shopExitY = level[roomNum].etc[a].rec.Y + level[roomNum].etc[a].rec.Height + bsU2
-				shopon = true
+				gs.Shop.ShopExitY = level[roomNum].etc[a].rec.Y + level[roomNum].etc[a].rec.Height + bsU2
+				gs.Shop.ShopOn = true
 				pause = true
 			}
 
@@ -3920,7 +3914,7 @@ func drawUpEnemies() { //MARK:DRAW UP ENEMIES
 			if rl.CheckCollisionRecs(pl.atkrec, level[roomNum].enemies[a].rec) {
 				if level[roomNum].enemies[a].hppause == 0 {
 					if pl.atk {
-						level[roomNum].enemies[a].hppause = fps / 2
+						level[roomNum].enemies[a].hppause = gs.Core.Fps / 2
 						level[roomNum].enemies[a].hp -= pl.atkDMG
 						if level[roomNum].enemies[a].hp <= 0 {
 							cntr := level[roomNum].enemies[a].cnt
@@ -4014,7 +4008,7 @@ func drawUpBoss() { //MARK: DRAW UP BOSS
 	//TIMERS
 	bosses[bossnum].timer--
 	if bosses[bossnum].timer <= 0 {
-		bosses[bossnum].timer = fps * rI32(1, 4)
+		bosses[bossnum].timer = gs.Core.Fps * rI32(1, 4)
 		switch bosses[bossnum].atkType {
 		case 1:
 			makeProjectileEnemy(7, bosses[bossnum].cnt)
@@ -4032,7 +4026,7 @@ func drawUpBoss() { //MARK: DRAW UP BOSS
 	if rl.CheckCollisionRecs(pl.atkrec, bosses[bossnum].crec) {
 		if bosses[bossnum].hppause == 0 {
 			if pl.atk {
-				bosses[bossnum].hppause = fps
+				bosses[bossnum].hppause = gs.Core.Fps
 				bosses[bossnum].hp -= pl.atkDMG
 				if bosses[bossnum].hp <= 0 {
 					cntr := bosses[bossnum].cnt
@@ -4505,7 +4499,7 @@ func moveboss() { //MARK:MOVE BOSS
 		if mods.socks && bosses[bossnum].hppause == 0 {
 			for a := 0; a < len(level[roomNum].etc); a++ {
 				if level[roomNum].etc[a].name == "footprints" && bosses[bossnum].hppause == 0 && rl.CheckCollisionRecs(level[roomNum].etc[a].rec, bosses[bossnum].crec) {
-					bosses[bossnum].hppause = fps
+					bosses[bossnum].hppause = gs.Core.Fps
 					bosses[bossnum].hp--
 					if bosses[bossnum].hp <= 0 {
 						cntr := bosses[bossnum].cnt
@@ -4525,7 +4519,7 @@ func moveboss() { //MARK:MOVE BOSS
 		//CHECK ORBITAL COLLIS
 		if mods.orbital && bosses[bossnum].hppause == 0 {
 			if rl.CheckCollisionRecs(pl.orbrec1, bosses[bossnum].crec) {
-				bosses[bossnum].hppause = fps
+				bosses[bossnum].hppause = gs.Core.Fps
 				bosses[bossnum].hp--
 				if bosses[bossnum].hp <= 0 {
 					cntr := bosses[bossnum].cnt
@@ -4543,7 +4537,7 @@ func moveboss() { //MARK:MOVE BOSS
 
 			if mods.orbitalN == 2 {
 				if rl.CheckCollisionRecs(pl.orbrec2, bosses[bossnum].crec) {
-					bosses[bossnum].hppause = fps
+					bosses[bossnum].hppause = gs.Core.Fps
 					bosses[bossnum].hp--
 					if bosses[bossnum].hp <= 0 {
 						cntr := bosses[bossnum].cnt
@@ -4565,7 +4559,7 @@ func moveboss() { //MARK:MOVE BOSS
 		if mods.airstrike && bosses[bossnum].hppause == 0 {
 			for a := 0; a < len(level[roomNum].etc); a++ {
 				if level[roomNum].etc[a].name == "airbomb" && rl.CheckCollisionRecs(level[roomNum].etc[a].crec, bosses[bossnum].crec) {
-					bosses[bossnum].hppause = fps
+					bosses[bossnum].hppause = gs.Core.Fps
 					bosses[bossnum].hp--
 					if bosses[bossnum].hp <= 0 {
 						cntr := bosses[bossnum].cnt
@@ -4586,11 +4580,11 @@ func moveboss() { //MARK:MOVE BOSS
 		if mods.firetrail {
 			for a := 0; a < len(level[roomNum].etc); a++ {
 				if level[roomNum].etc[a].name == "flamefiretrail" && bosses[bossnum].hppause == 0 && rl.CheckCollisionRecs(level[roomNum].etc[a].rec, bosses[bossnum].crec) {
-					bosses[bossnum].hppause = fps
+					bosses[bossnum].hppause = gs.Core.Fps
 					bosses[bossnum].hp--
 					if bosses[bossnum].hp <= 0 && !endgame {
 						pause = true
-						endPauseT = fps * 5
+						endPauseT = gs.Core.Fps * 5
 						cntr := bosses[bossnum].cnt
 						bosses[bossnum].off = true
 						makeFX(2, cntr)
@@ -4726,7 +4720,7 @@ func moveenemy(num int) { //MARK:MOVE ENEMY
 		if mods.socks && level[roomNum].enemies[num].hppause == 0 && !level[roomNum].enemies[num].fly {
 			for a := 0; a < len(level[roomNum].etc); a++ {
 				if level[roomNum].etc[a].name == "footprints" && level[roomNum].enemies[num].hppause == 0 && rl.CheckCollisionRecs(level[roomNum].etc[a].rec, level[roomNum].enemies[num].crec) {
-					level[roomNum].enemies[num].hppause = fps / 2
+					level[roomNum].enemies[num].hppause = gs.Core.Fps / 2
 					level[roomNum].enemies[num].hp--
 					if level[roomNum].enemies[num].hp <= 0 {
 						cntr := level[roomNum].enemies[num].cnt
@@ -4743,7 +4737,7 @@ func moveenemy(num int) { //MARK:MOVE ENEMY
 		if mods.orbital && level[roomNum].enemies[num].hppause == 0 {
 
 			if rl.CheckCollisionRecs(pl.orbrec1, level[roomNum].enemies[num].crec) {
-				level[roomNum].enemies[num].hppause = fps / 2
+				level[roomNum].enemies[num].hppause = gs.Core.Fps / 2
 				level[roomNum].enemies[num].hp--
 				if level[roomNum].enemies[num].hp <= 0 {
 					cntr := level[roomNum].enemies[num].cnt
@@ -4757,7 +4751,7 @@ func moveenemy(num int) { //MARK:MOVE ENEMY
 
 			if mods.orbitalN == 2 {
 				if rl.CheckCollisionRecs(pl.orbrec2, level[roomNum].enemies[num].crec) {
-					level[roomNum].enemies[num].hppause = fps / 2
+					level[roomNum].enemies[num].hppause = gs.Core.Fps / 2
 					level[roomNum].enemies[num].hp--
 					if level[roomNum].enemies[num].hp <= 0 {
 						cntr := level[roomNum].enemies[num].cnt
@@ -4791,7 +4785,7 @@ func moveenemy(num int) { //MARK:MOVE ENEMY
 		if mods.firetrail && !level[roomNum].enemies[num].fly {
 			for a := 0; a < len(level[roomNum].etc); a++ {
 				if level[roomNum].etc[a].name == "flamefiretrail" && level[roomNum].enemies[num].hppause == 0 && rl.CheckCollisionRecs(level[roomNum].etc[a].rec, level[roomNum].enemies[num].crec) {
-					level[roomNum].enemies[num].hppause = fps / 2
+					level[roomNum].enemies[num].hppause = gs.Core.Fps / 2
 					level[roomNum].enemies[num].hp--
 					if level[roomNum].enemies[num].hp <= 0 {
 						cntr := level[roomNum].enemies[num].cnt
@@ -4817,7 +4811,7 @@ func moveenemy(num int) { //MARK:MOVE ENEMY
 
 		case "mushroom":
 			if level[roomNum].enemies[num].T1 == 0 {
-				level[roomNum].enemies[num].T1 = rI32(int(fps*2), int(fps*5))
+				level[roomNum].enemies[num].T1 = rI32(int(gs.Core.Fps*2), int(gs.Core.Fps*5))
 				zproj := xproj{}
 				zproj.img = mushBull.recTL
 				zproj.onoff = true
@@ -4835,7 +4829,7 @@ func moveenemy(num int) { //MARK:MOVE ENEMY
 		case "rock":
 			if level[roomNum].enemies[num].T1 == 0 && level[roomNum].enemies[num].spawnN > 0 {
 				level[roomNum].enemies[num].spawnN--
-				level[roomNum].enemies[num].T1 = rI32(int(fps*2), int(fps*5))
+				level[roomNum].enemies[num].T1 = rI32(int(gs.Core.Fps*2), int(gs.Core.Fps*5))
 				zen := xenemy{}
 				zen = enRock
 				zen.spawnN = 0
@@ -4853,7 +4847,7 @@ func moveenemy(num int) { //MARK:MOVE ENEMY
 			}
 		case "slime":
 			if level[roomNum].enemies[num].T1 == 0 {
-				level[roomNum].enemies[num].T1 = rI32(int(fps/2), int(fps*2))
+				level[roomNum].enemies[num].T1 = rI32(int(gs.Core.Fps/2), int(gs.Core.Fps*2))
 				zblok := xblok{}
 				zblok.rec = level[roomNum].enemies[num].rec
 				zblok.crec = zblok.rec
@@ -5122,10 +5116,10 @@ func restartgame() { //MARK: RESTART GAME
 	roomNum = 0
 
 	introcount = true
-	introT3 = fps * 3
+	introT3 = gs.Core.Fps * 3
 
 	intro = true
-	startdmgT = fps * 7
+	startdmgT = gs.Core.Fps * 7
 	rl.PlaySound(sfx[13])
 
 }
@@ -5172,9 +5166,9 @@ func addshopitem(num int) { //MARK: ADD SHOP ITEM
 	if len(inven) > 0 {
 		foundsame := false
 		for a := 0; a < len(inven); a++ {
-			if shopitems[num].name == inven[a].name {
+			if gs.Shop.ShopItems[num].name == inven[a].name {
 
-				switch shopitems[num].name {
+				switch gs.Shop.ShopItems[num].name {
 				case "fireworks":
 					pl.coins++
 					txtSold("fireworks")
@@ -5285,17 +5279,17 @@ func addshopitem(num int) { //MARK: ADD SHOP ITEM
 			}
 		}
 		if !foundsame {
-			inven = append(inven, shopitems[num])
+			inven = append(inven, gs.Shop.ShopItems[num])
 			rl.PlaySound(sfx[8])
 		}
 	} else {
-		inven = append(inven, shopitems[num])
+		inven = append(inven, gs.Shop.ShopItems[num])
 		rl.PlaySound(sfx[8])
 	}
 
 	//UP MODS
 	if !sold {
-		switch shopitems[num].name {
+		switch gs.Shop.ShopItems[num].name {
 		case "fireworks":
 			mods.fireworks = true
 		case "peace":
@@ -5355,15 +5349,15 @@ func addshopitem(num int) { //MARK: ADD SHOP ITEM
 			}
 		case "santa":
 			mods.santa = true
-			mods.santaT = rI32(7, 21) * fps
+			mods.santaT = rI32(7, 21) * gs.Core.Fps
 		case "throwing axe":
 			mods.axe = true
 			if mods.axeN < max.axe {
 				mods.axeN++
-				mods.axeT = (int32(max.axe) * fps) - (int32(mods.axeN) * fps)
+				mods.axeT = (int32(max.axe) * gs.Core.Fps) - (int32(mods.axeN) * gs.Core.Fps)
 			}
-			if mods.axeT < fps {
-				mods.axeT = fps
+			if mods.axeT < gs.Core.Fps {
+				mods.axeT = gs.Core.Fps
 			}
 
 		}
@@ -5856,7 +5850,7 @@ func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
 		case "mr carrot":
 			if !mods.alien && !mods.planty {
 				mods.carrot = true
-				mrcarrot.rec = rl.NewRectangle(pl.cnt.X-mrcarrot.rec.Width/2, pl.cnt.Y-mrcarrot.rec.Width/2, mrcarrot.rec.Width, mrcarrot.rec.Width)
+				gs.Companions.MrCarrot.rec = rl.NewRectangle(pl.cnt.X-gs.Companions.MrCarrot.rec.Width/2, pl.cnt.Y-gs.Companions.MrCarrot.rec.Width/2, gs.Companions.MrCarrot.rec.Width, gs.Companions.MrCarrot.rec.Width)
 			} else {
 				txtCompanion()
 			}
@@ -5864,11 +5858,11 @@ func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
 			mods.fireworks = true
 		case "air strike":
 			mods.airstrike = true
-			airstrikeT = fps * rI32(3, 8)
+			airstrikeT = gs.Core.Fps * rI32(3, 8)
 		case "mr alien":
 			if !mods.carrot && !mods.planty {
 				mods.alien = true
-				mralien.rec = rl.NewRectangle(pl.cnt.X-mralien.rec.Width/2, pl.cnt.Y-mralien.rec.Width/2, mralien.rec.Width, mralien.rec.Width)
+				gs.Companions.MrAlien.rec = rl.NewRectangle(pl.cnt.X-gs.Companions.MrAlien.rec.Width/2, pl.cnt.Y-gs.Companions.MrAlien.rec.Width/2, gs.Companions.MrAlien.rec.Width, gs.Companions.MrAlien.rec.Width)
 			} else {
 				txtCompanion()
 			}
@@ -5940,7 +5934,7 @@ func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
 			pl.atkrec.Width += bsU2
 			pl.atkrec.Height += bsU2
 		case "teleport":
-			pl.hppause = fps * 5
+			pl.hppause = gs.Core.Fps * 5
 			maketeleport()
 			teleportRoomNum = rInt(0, len(level))
 			teleporton = true
@@ -5975,7 +5969,7 @@ func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
 		case "mr planty":
 			if !mods.alien && !mods.carrot {
 				mods.planty = true
-				mrplanty.rec = rl.NewRectangle(pl.cnt.X-mrplanty.rec.Width/2, pl.cnt.Y-mrplanty.rec.Width/2, mrplanty.rec.Width, mrplanty.rec.Width)
+				gs.Companions.MrPlanty.rec = rl.NewRectangle(pl.cnt.X-gs.Companions.MrPlanty.rec.Width/2, pl.cnt.Y-gs.Companions.MrPlanty.rec.Width/2, gs.Companions.MrPlanty.rec.Width, gs.Companions.MrPlanty.rec.Width)
 			} else {
 				txtCompanion()
 			}
@@ -5999,15 +5993,15 @@ func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
 			}
 		case "santa":
 			mods.santa = true
-			mods.santaT = rI32(7, 21) * fps
+			mods.santaT = rI32(7, 21) * gs.Core.Fps
 		case "throwing axe":
 			mods.axe = true
 			if mods.axeN < max.axe {
 				mods.axeN++
-				mods.axeT = (int32(max.axe) * fps) - (int32(mods.axeN) * fps)
+				mods.axeT = (int32(max.axe) * gs.Core.Fps) - (int32(mods.axeN) * gs.Core.Fps)
 			}
-			if mods.axeT < fps {
-				mods.axeT = fps
+			if mods.axeT < gs.Core.Fps {
+				mods.axeT = gs.Core.Fps
 			}
 
 		}
@@ -6255,7 +6249,7 @@ func cleanlevel() { //MARK:CLEAN LEVEL
 func hitPL(numEnProj, numType int) { //MARK:HIT PLAYER
 
 	if pl.hppause == 0 && pl.peaceT == 0 && startdmgT == 0 {
-		pl.hppause = fps * 2
+		pl.hppause = gs.Core.Fps * 2
 		hpHitY = 0
 		hpHitF = 1
 
@@ -6289,13 +6283,13 @@ func hitPL(numEnProj, numType int) { //MARK:HIT PLAYER
 				if mods.medikit {
 					pl.hp = pl.hpmax
 					pl.revived = true
-					pl.hppause = fps * 3
+					pl.hppause = gs.Core.Fps * 3
 					reviveY = 0
 					reviveF = 1
 					mods.medikit = false
 					clearinven("medi kit")
 				} else {
-					diedscrT = fps * 3
+					diedscrT = gs.Core.Fps * 3
 					pause = true
 					died = true
 					diedRec = rl.NewRectangle(cnt.X-bsU, cnt.Y-bsU, bsU2, bsU2)
@@ -6466,7 +6460,7 @@ func upPlayerMods() { //MARK:UP PLAYER MODS
 	if mods.airstrike {
 		airstrikeT--
 		if airstrikeT <= 0 {
-			airstrikeT = fps * rI32(3, 8)
+			airstrikeT = gs.Core.Fps * rI32(3, 8)
 			makeairstrike()
 		}
 
@@ -6568,10 +6562,10 @@ func upPlayerMods() { //MARK:UP PLAYER MODS
 	//HP POTION
 	if mods.hppotion && pl.hppotionT == 0 {
 		if pl.hp <= 2 {
-			pl.hppotionT = fps
+			pl.hppotionT = gs.Core.Fps
 			pl.hp = pl.hpmax
 			mods.hppotionN--
-			pl.hppause = fps * 3
+			pl.hppause = gs.Core.Fps * 3
 			if mods.hppotionN <= 0 {
 				mods.hppotion = false
 				clearinven("health potion")
@@ -6587,7 +6581,7 @@ func upPlayerMods() { //MARK:UP PLAYER MODS
 		escaped = false
 		escapeRoomFound = false
 		pl.escape = true
-		pl.hppause = fps * 5
+		pl.hppause = gs.Core.Fps * 5
 	}
 
 	//SANTA
@@ -6600,7 +6594,7 @@ func upPlayerMods() { //MARK:UP PLAYER MODS
 				makesnow()
 				mods.snowon = true
 			}
-			mods.santaT = rI32(7, 21) * fps
+			mods.santaT = rI32(7, 21) * gs.Core.Fps
 		}
 	}
 	//AXE
@@ -6639,11 +6633,11 @@ func upRoomChange() { //MARK:UP ROOM CHANGE
 
 	//PEACE PAUSE
 	if mods.peace {
-		pl.peaceT = fps * 2
+		pl.peaceT = gs.Core.Fps * 2
 	}
 	//ANCHOR PAUSE
 	if mods.anchor {
-		anchorT = fps * 2
+		anchorT = gs.Core.Fps * 2
 	}
 
 }
@@ -6662,7 +6656,7 @@ func upplayer() { //MARK:UP PLAYER
 		if pl.crec.Y > v2.Y {
 			pl.underWater = true
 			pl.waterT++
-			if pl.waterT == fps*3 {
+			if pl.waterT == gs.Core.Fps*3 {
 				hitPL(0, 2)
 				pl.waterT = 0
 			}
@@ -6700,7 +6694,7 @@ func upplayer() { //MARK:UP PLAYER
 				pl.poisonT = 0
 				pl.poison = false
 			} else {
-				pl.poisonT = fps * 3
+				pl.poisonT = gs.Core.Fps * 3
 			}
 		}
 	}
@@ -6774,7 +6768,7 @@ func upplayer() { //MARK:UP PLAYER
 	if !roomChanged {
 		if !rl.CheckCollisionPointRec(pl.cnt, levRec) {
 			roomChanged = true
-			roomChangedTimer = fps / 2
+			roomChangedTimer = gs.Core.Fps / 2
 			upRoomChange()
 			cntCompanion := pl.cnt
 			if pl.cnt.X <= levX {
@@ -6824,13 +6818,13 @@ func upplayer() { //MARK:UP PLAYER
 			}
 
 			if mods.carrot {
-				mrcarrot.rec = rl.NewRectangle(cntCompanion.X-mrcarrot.rec.Width/2, cntCompanion.Y-mrcarrot.rec.Width/2, mrcarrot.rec.Width, mrcarrot.rec.Width)
+				gs.Companions.MrCarrot.rec = rl.NewRectangle(cntCompanion.X-gs.Companions.MrCarrot.rec.Width/2, cntCompanion.Y-gs.Companions.MrCarrot.rec.Width/2, gs.Companions.MrCarrot.rec.Width, gs.Companions.MrCarrot.rec.Width)
 			}
 			if mods.alien {
-				mralien.rec = rl.NewRectangle(cntCompanion.X-mralien.rec.Width/2, cntCompanion.Y-mralien.rec.Width/2, mralien.rec.Width, mralien.rec.Width)
+				gs.Companions.MrAlien.rec = rl.NewRectangle(cntCompanion.X-gs.Companions.MrAlien.rec.Width/2, cntCompanion.Y-gs.Companions.MrAlien.rec.Width/2, gs.Companions.MrAlien.rec.Width, gs.Companions.MrAlien.rec.Width)
 			}
 			if mods.planty {
-				mrplanty.rec = rl.NewRectangle(cntCompanion.X-mrplanty.rec.Width/2, cntCompanion.Y-mrplanty.rec.Width/2, mrplanty.rec.Width, mrplanty.rec.Width)
+				gs.Companions.MrPlanty.rec = rl.NewRectangle(cntCompanion.X-gs.Companions.MrPlanty.rec.Width/2, cntCompanion.Y-gs.Companions.MrPlanty.rec.Width/2, gs.Companions.MrPlanty.rec.Width, gs.Companions.MrPlanty.rec.Width)
 			}
 		}
 	}
@@ -7009,8 +7003,8 @@ func makesettings() { //MARK: MAKE SETTINGS
 }
 func makeshop() { //MARK: MAKE SHOP
 
-	shopitems = nil
-	shopnum = 0
+	gs.Shop.ShopItems = nil
+	gs.Shop.ShopNum = 0
 	countbreak := 100
 
 	//SHOP IMG
@@ -7154,21 +7148,21 @@ func makeshop() { //MARK: MAKE SHOP
 			zblok.img = etc[1]
 		}
 
-		if len(shopitems) > 0 {
+		if len(gs.Shop.ShopItems) > 0 {
 			canadd := true
-			for a := 0; a < len(shopitems); a++ {
-				if shopitems[a].name == zblok.name {
+			for a := 0; a < len(gs.Shop.ShopItems); a++ {
+				if gs.Shop.ShopItems[a].name == zblok.name {
 					canadd = false
 				}
 			}
 			if canadd {
 				zblok.shopprice = rInt(2, 8)
-				shopitems = append(shopitems, zblok)
+				gs.Shop.ShopItems = append(gs.Shop.ShopItems, zblok)
 				num--
 			}
 		} else {
 			zblok.shopprice = rInt(2, 8)
-			shopitems = append(shopitems, zblok)
+			gs.Shop.ShopItems = append(gs.Shop.ShopItems, zblok)
 			num--
 		}
 
@@ -8052,19 +8046,19 @@ func makenewlevel() { //MARK:MAKE NEW LEVEL
 	} else {
 		makelevel()
 	}
-	nextlevelT = fps
+	nextlevelT = gs.Core.Fps
 
 	pl.cnt = cnt
 	cntCompanion := pl.cnt
 
 	if mods.carrot {
-		mrcarrot.rec = rl.NewRectangle(cntCompanion.X-mrcarrot.rec.Width/2, cntCompanion.Y-mrcarrot.rec.Width/2, mrcarrot.rec.Width, mrcarrot.rec.Width)
+		gs.Companions.MrCarrot.rec = rl.NewRectangle(cntCompanion.X-gs.Companions.MrCarrot.rec.Width/2, cntCompanion.Y-gs.Companions.MrCarrot.rec.Width/2, gs.Companions.MrCarrot.rec.Width, gs.Companions.MrCarrot.rec.Width)
 	}
 	if mods.alien {
-		mralien.rec = rl.NewRectangle(cntCompanion.X-mralien.rec.Width/2, cntCompanion.Y-mralien.rec.Width/2, mralien.rec.Width, mralien.rec.Width)
+		gs.Companions.MrAlien.rec = rl.NewRectangle(cntCompanion.X-gs.Companions.MrAlien.rec.Width/2, cntCompanion.Y-gs.Companions.MrAlien.rec.Width/2, gs.Companions.MrAlien.rec.Width, gs.Companions.MrAlien.rec.Width)
 	}
 	if mods.planty {
-		mrplanty.rec = rl.NewRectangle(cntCompanion.X-mrplanty.rec.Width/2, cntCompanion.Y-mrplanty.rec.Width/2, mrplanty.rec.Width, mrplanty.rec.Width)
+		gs.Companions.MrPlanty.rec = rl.NewRectangle(cntCompanion.X-gs.Companions.MrPlanty.rec.Width/2, cntCompanion.Y-gs.Companions.MrPlanty.rec.Width/2, gs.Companions.MrPlanty.rec.Width, gs.Companions.MrPlanty.rec.Width)
 	}
 
 	roomNum = 0
@@ -8132,7 +8126,7 @@ func makemario() { //MARK:MAKE MARIO
 	marioCols = nil
 	mariocoins = nil
 	mariocoinonoff = nil
-	marioT = fps * 5
+	marioT = gs.Core.Fps * 5
 
 	//IMG
 	marioImg = knight[0]
@@ -8259,7 +8253,7 @@ func makeairstrike() { //MARK:MAKE AIR STRIKE
 		airstrikeV2 = append(airstrikeV2, v2)
 	}
 
-	airstrikebombT = rI32(int(fps/4), int(fps*2))
+	airstrikebombT = rI32(int(gs.Core.Fps/4), int(gs.Core.Fps*2))
 	airstrikeOn = true
 }
 func makefish() { //MARK:MAKE FISH
@@ -8409,7 +8403,7 @@ func makeChainLightning() { //MARK:MAKE CHAIN LIGHTNING
 				chainV2 = append(chainV2, level[roomNum].enemies[a].cnt)
 			}
 		}
-		chainLightTimer = fps / 3
+		chainLightTimer = gs.Core.Fps / 3
 		chainLightOn = true
 		rl.PlaySound(sfx[11])
 	}
@@ -8427,7 +8421,7 @@ func makeenemies() { //MARK:MAKE ENEMIES
 			if flipcoin() { //MUSHROOM
 				zen = xenemy{}
 				zen = enMushroom
-				zen.T1 = rI32(int(fps*2), int(fps*5))
+				zen.T1 = rI32(int(gs.Core.Fps*2), int(gs.Core.Fps*5))
 				canadd := true
 				zen.rec, canadd = findRecPos(enMushroom.rec.Width, a)
 				zen.crec = zen.rec
@@ -8443,7 +8437,7 @@ func makeenemies() { //MARK:MAKE ENEMIES
 				if flipcoin() { //MUSHROOM
 					zen = xenemy{}
 					zen = enMushroom
-					zen.T1 = rI32(int(fps*2), int(fps*5))
+					zen.T1 = rI32(int(gs.Core.Fps*2), int(gs.Core.Fps*5))
 					canadd := true
 					zen.rec, canadd = findRecPos(enMushroom.rec.Width, a)
 					zen.crec = zen.rec
@@ -8458,7 +8452,7 @@ func makeenemies() { //MARK:MAKE ENEMIES
 				if flipcoin() { //MUSHROOM
 					zen = xenemy{}
 					zen = enMushroom
-					zen.T1 = rI32(int(fps*2), int(fps*5))
+					zen.T1 = rI32(int(gs.Core.Fps*2), int(gs.Core.Fps*5))
 					canadd := true
 					zen.rec, canadd = findRecPos(enMushroom.rec.Width, a)
 					zen.crec = zen.rec
@@ -8556,7 +8550,7 @@ func makeenemies() { //MARK:MAKE ENEMIES
 			if flipcoin() { //SLIME
 				zen = xenemy{}
 				zen = enSlime
-				zen.T1 = rI32(int(fps/2), int(fps*2))
+				zen.T1 = rI32(int(gs.Core.Fps/2), int(gs.Core.Fps*2))
 				canadd := true
 				zen.rec, canadd = findRecPos(enSlime.rec.Width, a)
 				zen.crec = zen.rec
@@ -8573,7 +8567,7 @@ func makeenemies() { //MARK:MAKE ENEMIES
 				if flipcoin() { //SLIME
 					zen = xenemy{}
 					zen = enSlime
-					zen.T1 = rI32(int(fps/2), int(fps*2))
+					zen.T1 = rI32(int(gs.Core.Fps/2), int(gs.Core.Fps*2))
 					canadd := true
 					zen.rec, canadd = findRecPos(enSlime.rec.Width, a)
 					zen.crec = zen.rec
@@ -8588,7 +8582,7 @@ func makeenemies() { //MARK:MAKE ENEMIES
 				if flipcoin() { //SLIME
 					zen = xenemy{}
 					zen = enSlime
-					zen.T1 = rI32(int(fps/2), int(fps*2))
+					zen.T1 = rI32(int(gs.Core.Fps/2), int(gs.Core.Fps*2))
 					canadd := true
 					zen.rec, canadd = findRecPos(enSlime.rec.Width, a)
 					zen.crec = zen.rec
@@ -8607,7 +8601,7 @@ func makeenemies() { //MARK:MAKE ENEMIES
 			zen = xenemy{}
 			zen = enRock
 			zen.spawnN = rInt(2, 11)
-			zen.T1 = rI32(int(fps*2), int(fps*5))
+			zen.T1 = rI32(int(gs.Core.Fps*2), int(gs.Core.Fps*5))
 			canadd := true
 			zen.rec, canadd = findRecPos(enRock.rec.Width, a)
 			zen.crec = zen.rec
@@ -8646,7 +8640,7 @@ func makeenemies() { //MARK:MAKE ENEMIES
 				zen = xenemy{}
 				zen = enRock
 				zen.spawnN = rInt(2, 11)
-				zen.T1 = rI32(int(fps*2), int(fps*5))
+				zen.T1 = rI32(int(gs.Core.Fps*2), int(gs.Core.Fps*5))
 				canadd := true
 				zen.rec, canadd = findRecPos(enRock.rec.Width, a)
 				zen.crec = zen.rec
@@ -9486,10 +9480,10 @@ func makeProjectile(name string) { //MARK:MAKE PROJECTILE
 	siz := bsU + bsU/2
 
 	switch name {
-	case "mrcarrot":
+	case "gs.Companions.MrCarrot":
 		siz = bsU2
-		zproj.cnt = rl.NewVector2(mrcarrot.rec.X+mrcarrot.rec.Width/2, mrcarrot.rec.Y+mrcarrot.rec.Height/2)
-		zproj.rec = rl.NewRectangle(mrcarrot.cnt.X-siz/2, mrcarrot.cnt.Y-siz/2, siz, siz)
+		zproj.cnt = rl.NewVector2(gs.Companions.MrCarrot.rec.X+gs.Companions.MrCarrot.rec.Width/2, gs.Companions.MrCarrot.rec.Y+gs.Companions.MrCarrot.rec.Height/2)
+		zproj.rec = rl.NewRectangle(gs.Companions.MrCarrot.cnt.X-siz/2, gs.Companions.MrCarrot.cnt.Y-siz/2, siz, siz)
 		zproj.drec = zproj.rec
 		zproj.drec.X += zproj.rec.Width / 2
 		zproj.drec.Y += zproj.rec.Height / 2
@@ -9597,9 +9591,9 @@ func makeProjectile(name string) { //MARK:MAKE PROJECTILE
 		zproj.ro = 180
 		plProj = append(plProj, zproj)
 
-	case "mralien":
+	case "gs.Companions.MrAlien":
 		siz = bsU
-		zproj.cnt = rl.NewVector2(mralien.rec.X+mralien.rec.Width/2, mralien.rec.Y+mralien.rec.Height/2)
+		zproj.cnt = rl.NewVector2(gs.Companions.MrAlien.rec.X+gs.Companions.MrAlien.rec.Width/2, gs.Companions.MrAlien.rec.Y+gs.Companions.MrAlien.rec.Height/2)
 		zproj.rec = rl.NewRectangle(zproj.cnt.X-siz/2, zproj.cnt.Y-siz/2, siz, siz)
 		zproj.drec = zproj.rec
 		zproj.drec.X += zproj.rec.Width / 2
@@ -9635,7 +9629,7 @@ func makeProjectile(name string) { //MARK:MAKE PROJECTILE
 
 	case "plantbull":
 		siz = bsU
-		zproj.cnt = rl.NewVector2(mrplanty.rec.X+mrplanty.rec.Width/2, mrplanty.rec.Y+mrplanty.rec.Height/2)
+		zproj.cnt = rl.NewVector2(gs.Companions.MrPlanty.rec.X+gs.Companions.MrPlanty.rec.Width/2, gs.Companions.MrPlanty.rec.Y+gs.Companions.MrPlanty.rec.Height/2)
 		zproj.rec = rl.NewRectangle(zproj.cnt.X-siz/2, zproj.cnt.Y-siz/2, siz, siz)
 		zproj.drec = zproj.rec
 		zproj.drec.X += zproj.rec.Width / 2
@@ -9644,7 +9638,7 @@ func makeProjectile(name string) { //MARK:MAKE PROJECTILE
 		zproj.drec = zproj.rec
 		zproj.img = plantBull.recTL
 		zproj.col = ranGreen()
-		if mrplanty.velx > 0 {
+		if gs.Companions.MrPlanty.velx > 0 {
 			zproj.velx = bsU / 4
 		} else {
 			zproj.velx = -bsU / 4
@@ -9905,7 +9899,7 @@ func maketurrets() { //MARK: MAKE TURRETS
 				zblok.color = rl.White
 				zblok.crec = zblok.rec
 				zblok.ro = rF32(0, 360)
-				zblok.timer = rI32(1, 3) * fps
+				zblok.timer = rI32(1, 3) * gs.Core.Fps
 				level[a].etc = append(level[a].etc, zblok)
 				num--
 			}
@@ -9918,13 +9912,13 @@ func makeFX(numType int, cnt rl.Vector2) { //MARK: MAKE FX
 
 	zfx := xfx{}
 	zfx.onoff = true
-	zfx.timer = fps * 2
+	zfx.timer = gs.Core.Fps * 2
 	zfx.cnt = cnt
 
 	switch numType {
 	case 4:
 		zfx.name = "fxBurnOilBarrel"
-		zfx.timer = fps * 4
+		zfx.timer = gs.Core.Fps * 4
 		siz := bsU2
 		cnt2 := cnt
 		cnt2.X -= siz
@@ -9980,7 +9974,7 @@ func makeFX(numType int, cnt rl.Vector2) { //MARK: MAKE FX
 
 	case 3: //BURN WOOD BARREL
 		zfx.name = "fxBurnWoodBarrel"
-		zfx.timer = fps * 4
+		zfx.timer = gs.Core.Fps * 4
 		siz := bsU2
 		cnt2 := cnt
 
@@ -10209,37 +10203,37 @@ func makecompanions() { //MARK: MAKE COMPANIONS
 
 	//MR CARROT
 	siz := bsU3
-	mrcarrot.rec = rl.NewRectangle(cnt.X, cnt.Y, siz, siz)
-	mrcarrot.imgl = rl.NewRectangle(0, 248, 38, 38)
-	mrcarrot.imgr = rl.NewRectangle(228, 248, 38, 38)
-	mrcarrot.vel = bsU / 5
-	mrcarrot.velx = rF32(-mrcarrot.vel, mrcarrot.vel)
-	mrcarrot.vely = rF32(-mrcarrot.vel, mrcarrot.vel)
-	mrcarrot.hp = 5
-	mrcarrot.hpmax = mrcarrot.hp
-	mrcarrot.frames = 5
-	mrcarrot.timer = fps * rI32(1, 5)
+	gs.Companions.MrCarrot.rec = rl.NewRectangle(cnt.X, cnt.Y, siz, siz)
+	gs.Companions.MrCarrot.imgl = rl.NewRectangle(0, 248, 38, 38)
+	gs.Companions.MrCarrot.imgr = rl.NewRectangle(228, 248, 38, 38)
+	gs.Companions.MrCarrot.vel = bsU / 5
+	gs.Companions.MrCarrot.velx = rF32(-gs.Companions.MrCarrot.vel, gs.Companions.MrCarrot.vel)
+	gs.Companions.MrCarrot.vely = rF32(-gs.Companions.MrCarrot.vel, gs.Companions.MrCarrot.vel)
+	gs.Companions.MrCarrot.hp = 5
+	gs.Companions.MrCarrot.hpmax = gs.Companions.MrCarrot.hp
+	gs.Companions.MrCarrot.frames = 5
+	gs.Companions.MrCarrot.timer = gs.Core.Fps * rI32(1, 5)
 
 	//MR PLANTY
-	mrplanty.rec = rl.NewRectangle(cnt.X, cnt.Y, siz, siz)
-	mrplanty.imgl = rl.NewRectangle(0, 454, 44, 44)
-	mrplanty.imgr = rl.NewRectangle(352, 454, 44, 44)
-	mrplanty.vel = bsU / 5
-	mrplanty.velx = rF32(-mrplanty.vel, mrplanty.vel)
-	mrplanty.vely = rF32(-mrplanty.vel, mrplanty.vel)
-	mrplanty.hp = 5
-	mrplanty.hpmax = mrplanty.hp
-	mrplanty.frames = 7
+	gs.Companions.MrPlanty.rec = rl.NewRectangle(cnt.X, cnt.Y, siz, siz)
+	gs.Companions.MrPlanty.imgl = rl.NewRectangle(0, 454, 44, 44)
+	gs.Companions.MrPlanty.imgr = rl.NewRectangle(352, 454, 44, 44)
+	gs.Companions.MrPlanty.vel = bsU / 5
+	gs.Companions.MrPlanty.velx = rF32(-gs.Companions.MrPlanty.vel, gs.Companions.MrPlanty.vel)
+	gs.Companions.MrPlanty.vely = rF32(-gs.Companions.MrPlanty.vel, gs.Companions.MrPlanty.vel)
+	gs.Companions.MrPlanty.hp = 5
+	gs.Companions.MrPlanty.hpmax = gs.Companions.MrPlanty.hp
+	gs.Companions.MrPlanty.frames = 7
 
 	//ALIEN
-	mralien.rec = rl.NewRectangle(cnt.X, cnt.Y, siz, siz)
-	mralien.img = alien[0]
-	mralien.vel = bsU / 5
-	mralien.velx = rF32(-mralien.vel, mralien.vel)
-	mralien.vely = rF32(-mralien.vel, mralien.vel)
-	mralien.hp = 5
-	mralien.hpmax = mralien.hp
-	mralien.timer = fps * rI32(3, 8)
+	gs.Companions.MrAlien.rec = rl.NewRectangle(cnt.X, cnt.Y, siz, siz)
+	gs.Companions.MrAlien.img = alien[0]
+	gs.Companions.MrAlien.vel = bsU / 5
+	gs.Companions.MrAlien.velx = rF32(-gs.Companions.MrAlien.vel, gs.Companions.MrAlien.vel)
+	gs.Companions.MrAlien.vely = rF32(-gs.Companions.MrAlien.vel, gs.Companions.MrAlien.vel)
+	gs.Companions.MrAlien.hp = 5
+	gs.Companions.MrAlien.hpmax = gs.Companions.MrAlien.hp
+	gs.Companions.MrAlien.timer = gs.Core.Fps * rI32(3, 8)
 
 }
 func makefxinitial() { //MARK:MAKE FX INITAL
@@ -10270,7 +10264,7 @@ func makebosses() { //MARK:MAKE BOSSES
 	siz := bsU8
 	zboss := xboss{}
 	zboss.hp = 20
-	zboss.timer = fps * 4
+	zboss.timer = gs.Core.Fps * 4
 	zboss.hpmax = zboss.hp
 	zboss.img = rl.NewRectangle(308, 1561, 48, 48)
 	zboss.xl = zboss.img.X
@@ -10656,7 +10650,7 @@ func inp() { //MARK:INP
 
 	if rl.IsKeyPressed(rl.KeyEscape) && !intro && !marioon && !died && !nextlevelscreen {
 
-		if optionson && !exiton && !shopon && !levMapOn && !invenon && !creditson && !helpon && !gs.Timing.TimesOn {
+		if optionson && !exiton && !gs.Shop.ShopOn && !levMapOn && !invenon && !creditson && !helpon && !gs.Timing.TimesOn {
 			if optionsChange {
 				savesettings()
 			}
@@ -10667,7 +10661,7 @@ func inp() { //MARK:INP
 			pause = false
 		} else if optionson && exiton {
 			exiton = false
-		} else if !optionson && !shopon && !levMapOn && !invenon && !creditson && !helpon && !gs.Timing.TimesOn {
+		} else if !optionson && !gs.Shop.ShopOn && !levMapOn && !invenon && !creditson && !helpon && !gs.Timing.TimesOn {
 			pause = true
 			creditson = false
 			helpon = false
@@ -10675,23 +10669,23 @@ func inp() { //MARK:INP
 			optionson = true
 			optionsChange = false
 			optionnum = 0
-		} else if !optionson && shopon && !levMapOn && !invenon && !creditson && !helpon && !gs.Timing.TimesOn {
-			shopon = false
-			pl.cnt.Y = shopExitY
+		} else if !optionson && gs.Shop.ShopOn && !levMapOn && !invenon && !creditson && !helpon && !gs.Timing.TimesOn {
+			gs.Shop.ShopOn = false
+			pl.cnt.Y = gs.Shop.ShopExitY
 			upPlayerRec()
 			pause = false
-		} else if !optionson && !shopon && levMapOn && !invenon && !creditson && !helpon && !gs.Timing.TimesOn {
+		} else if !optionson && !gs.Shop.ShopOn && levMapOn && !invenon && !creditson && !helpon && !gs.Timing.TimesOn {
 			levMapOn = false
 			pause = false
-		} else if !optionson && !shopon && !levMapOn && invenon && !creditson && !helpon && !gs.Timing.TimesOn {
+		} else if !optionson && !gs.Shop.ShopOn && !levMapOn && invenon && !creditson && !helpon && !gs.Timing.TimesOn {
 			invenon = false
 			pause = false
-		} else if optionson && !shopon && !levMapOn && !invenon && creditson && !helpon && !gs.Timing.TimesOn {
+		} else if optionson && !gs.Shop.ShopOn && !levMapOn && !invenon && creditson && !helpon && !gs.Timing.TimesOn {
 			creditson = false
 			optionson = true
-		} else if optionson && !shopon && !levMapOn && !invenon && !creditson && helpon && !gs.Timing.TimesOn {
+		} else if optionson && !gs.Shop.ShopOn && !levMapOn && !invenon && !creditson && helpon && !gs.Timing.TimesOn {
 			helpon = false
-		} else if !optionson && !shopon && !levMapOn && !invenon && !creditson && !helpon && gs.Timing.TimesOn {
+		} else if !optionson && !gs.Shop.ShopOn && !levMapOn && !invenon && !creditson && !helpon && gs.Timing.TimesOn {
 			gs.Timing.TimesOn = false
 			restartgame()
 		}
@@ -10718,7 +10712,7 @@ func inp() { //MARK:INP
 		}
 	}
 	if useController {
-		if rl.IsGamepadButtonPressed(0, rl.GamepadButtonMiddleRight) && !invenon && !shopon && !levMapOn && !intro && !marioon && !died && !nextlevelscreen {
+		if rl.IsGamepadButtonPressed(0, rl.GamepadButtonMiddleRight) && !invenon && !gs.Shop.ShopOn && !levMapOn && !intro && !marioon && !died && !nextlevelscreen {
 			if optionson {
 				if optionsChange {
 					savesettings()
@@ -10743,7 +10737,7 @@ func inp() { //MARK:INP
 	if !intro && !marioon && !died {
 
 		//INVEN ON
-		if rl.IsKeyPressed(rl.KeyTab) && !optionson && !levMapOn && !shopon && !nextlevelscreen {
+		if rl.IsKeyPressed(rl.KeyTab) && !optionson && !levMapOn && !gs.Shop.ShopOn && !nextlevelscreen {
 			if invenon {
 				invenon = false
 				pause = false
@@ -10754,7 +10748,7 @@ func inp() { //MARK:INP
 		}
 
 		//MAP ON
-		if rl.IsKeyPressed(rl.KeyRightControl) && !optionson && !invenon && !shopon && !nextlevelscreen {
+		if rl.IsKeyPressed(rl.KeyRightControl) && !optionson && !invenon && !gs.Shop.ShopOn && !nextlevelscreen {
 
 			if levMapOn {
 				levMapOn = false
@@ -10765,7 +10759,7 @@ func inp() { //MARK:INP
 			}
 		}
 		if useController {
-			if rl.IsGamepadButtonPressed(0, 6) && !optionson && !invenon && !shopon && !gs.Timing.TimesOn && !nextlevelscreen && !helpon && !creditson {
+			if rl.IsGamepadButtonPressed(0, 6) && !optionson && !invenon && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !nextlevelscreen && !helpon && !creditson {
 				if levMapOn {
 					levMapOn = false
 					pause = false
@@ -10773,25 +10767,25 @@ func inp() { //MARK:INP
 					levMapOn = true
 					pause = true
 				}
-			} else if rl.IsGamepadButtonPressed(0, 6) && optionson && !shopon && !gs.Timing.TimesOn && !nextlevelscreen && !helpon && !creditson {
+			} else if rl.IsGamepadButtonPressed(0, 6) && optionson && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !nextlevelscreen && !helpon && !creditson {
 				if optionsChange {
 					savesettings()
 				}
 				optionson = false
 				pause = false
 
-			} else if rl.IsGamepadButtonPressed(0, 6) && invenon && !shopon && !gs.Timing.TimesOn && !nextlevelscreen && !helpon && !creditson {
+			} else if rl.IsGamepadButtonPressed(0, 6) && invenon && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !nextlevelscreen && !helpon && !creditson {
 				invenon = false
 				pause = false
-			} else if rl.IsGamepadButtonPressed(0, 6) && optionson && !invenon && !shopon && gs.Timing.TimesOn && !nextlevelscreen && !helpon && !creditson {
+			} else if rl.IsGamepadButtonPressed(0, 6) && optionson && !invenon && !gs.Shop.ShopOn && gs.Timing.TimesOn && !nextlevelscreen && !helpon && !creditson {
 				gs.Timing.TimesOn = false
-			} else if rl.IsGamepadButtonPressed(0, 6) && optionson && !invenon && !shopon && !gs.Timing.TimesOn && !nextlevelscreen && helpon && !creditson {
+			} else if rl.IsGamepadButtonPressed(0, 6) && optionson && !invenon && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !nextlevelscreen && helpon && !creditson {
 				helpon = false
-			} else if rl.IsGamepadButtonPressed(0, 6) && optionson && !invenon && !shopon && !gs.Timing.TimesOn && !nextlevelscreen && !helpon && creditson {
+			} else if rl.IsGamepadButtonPressed(0, 6) && optionson && !invenon && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !nextlevelscreen && !helpon && creditson {
 				creditson = false
 			}
 			//INVEN ON
-			if rl.IsGamepadButtonPressed(0, 5) && !optionson && !levMapOn && !shopon && !gs.Timing.TimesOn && !nextlevelscreen && !helpon && !creditson {
+			if rl.IsGamepadButtonPressed(0, 5) && !optionson && !levMapOn && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !nextlevelscreen && !helpon && !creditson {
 				if invenon {
 					invenon = false
 					pause = false
@@ -10810,13 +10804,13 @@ func inp() { //MARK:INP
 						rl.PlaySound(sfx[0])
 						chainLightingSwingOnOff = false
 						pl.atk = true
-						pl.atkTimer = fps / 3
+						pl.atkTimer = gs.Core.Fps / 3
 						pl.img.X = pl.imgAtkX
 						if mods.fireball {
 							makeProjectile("fireball")
 						}
 					}
-					keypressT = fps / 2
+					keypressT = gs.Core.Fps / 2
 				}
 				pl.move = false
 
@@ -10866,13 +10860,13 @@ func inp() { //MARK:INP
 							rl.PlaySound(sfx[0])
 							chainLightingSwingOnOff = false
 							pl.atk = true
-							pl.atkTimer = fps / 3
+							pl.atkTimer = gs.Core.Fps / 3
 							pl.img.X = pl.imgAtkX
 							if mods.fireball {
 								makeProjectile("fireball")
 							}
 						}
-						keypressT = fps / 2
+						keypressT = gs.Core.Fps / 2
 					}
 					pl.move = false
 
@@ -10965,12 +10959,12 @@ func inp() { //MARK:INP
 
 func timers() { //MARK:TIMERS
 
-	if shopExitT > 0 {
-		shopExitT--
+	if gs.Shop.ShopExitT > 0 {
+		gs.Shop.ShopExitT--
 	}
 
 	runT++
-	if runT%fps == 0 {
+	if runT%gs.Core.Fps == 0 {
 		secs++
 		runT = 0
 	}
@@ -11041,7 +11035,7 @@ func initialWindow() { //MARK:INITIAL WINDOW
 
 	diedRec = rl.NewRectangle(cnt.X-bsU, cnt.Y-bsU, bsU2, bsU2)
 	diedIMG = splats[rInt(0, len(splats))]
-	endgameT = fps * 5
+	endgameT = gs.Core.Fps * 5
 	endgopherrec = rl.NewRectangle(cnt.X-bsU4, levRec.Y+levRec.Height, bsU8, bsU8)
 
 }
@@ -11118,7 +11112,7 @@ func main() { //MARK:MAIN
 
 	initialWindow() //INITIAL INSIDE WINDOW
 
-	rl.SetTargetFPS(fps)
+	rl.SetTargetFPS(gs.Core.Fps)
 
 	for !rl.WindowShouldClose() {
 		frames++
