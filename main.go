@@ -10849,9 +10849,9 @@ func main() { //MARK:MAIN
 	//rl.SetConfigFlags(rl.FlagWindowResizable)
 	rl.SetTraceLogLevel(rl.LogError)
 
-	rl.InitWindow(0, 0, "BITTY KNIGHT - unklnik.com") //GET SCREEN SIZE
+	rl.InitWindow(1920, 1080, "BITTY KNIGHT - unklnik.com") //GET SCREEN SIZE
 	rl.InitAudioDevice()
-
+	rl.SetWindowMonitor(0)
 	rl.SetWindowState(rl.FlagBorderlessWindowedMode)
 	scrW, scrH = rl.GetScreenWidth(), rl.GetScreenHeight()
 
