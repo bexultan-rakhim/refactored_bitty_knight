@@ -28,21 +28,11 @@ var (
 	introT1, introT2, introT3      = fps * 2, fps * 2, fps * 3
 	introF1, introF2, introF3      = float32(0), float32(0), float32(0)
 
-	//MARIO
-	marioon, mariojump                            bool
-	marioT, mariojumpT                            int32
-	mariorecs, mariocoins                         []rl.Rectangle
-	marioPL, marioScreenRec, patternRec, marioImg rl.Rectangle
-	marioV2L, marioV2R                            rl.Vector2
-	marioCols                                     []rl.Color
-	mariocoinonoff                                []bool
-
 	//OPTIONS CREDITS
-	optionnum int
 	txtSize   = txU2
 	optionT   int32
 
-	shaderon, optionson, hpBarsOn, artifactson, scanlineson, creditson, helpon, invincible, resettimes, restarton, optionsChange, controllerDisconnect, controllerWasOn bool
+	shaderon, hpBarsOn, artifactson, scanlineson, creditson, helpon, invincible, resettimes, restarton, optionsChange bool
 
 	//ENEMIES
 	enProj []xproj
@@ -112,16 +102,12 @@ var (
 
 	escaped, escapeRoomFound, teleporton, platkrecon, chainLightingSwingOnOff, died bool
 
-	//CONTROLLER
-	useController, isController bool
-	contolleron                 = true
-
 	//CORE
 	imgs                      rl.Texture2D
 	shader, shader2, shader3  rl.Shader
 	renderTarget              rl.RenderTexture2D
 	frames, scrW, scrH        int
-	scrW32, scrH32, keypressT int32
+	scrW32, scrH32            int32
 	scrWF32, scrHF32          float32
 	cam2                      rl.Camera2D
 	fps                       = int32(60)
@@ -280,7 +266,7 @@ type AudioState struct {
     Volume     float32
     BgMusicNum int
 }
-
+// Done
 type InputState struct {
     UseController        bool
     IsController         bool
@@ -312,8 +298,8 @@ type PlayerState struct {
     StartdmgT              int32
     Escaped                bool
     EscapeRoomFound        bool
-    Teleporton             bool
-    Platkrecon             bool
+    TeleportOn             bool
+    PlatkrecOn             bool
     ChainLightingSwingOnOff bool
     Died                   bool
 }
@@ -382,15 +368,15 @@ type UIState struct {
     OptionNum            int
     TxtSize              int32
     OptionT              int32
-    OptionSon            bool
+    OptionsOn            bool
     HpBarsOn             bool
-    Artifactson          bool
-    Scanlineson          bool
-    Creditson            bool
-    Helpon               bool
+    ArtifactsOn          bool
+    ScanLinesOn          bool
+    CreditsOn            bool
+    HelpOn               bool
     Invincible           bool
     Resettimes           bool
-    Restarton            bool
+    RestartOn            bool
     OptionsChange        bool
     StartScreen          bool
     Intro                bool
@@ -454,6 +440,7 @@ type TimingState struct {
     BestTimesT int32
 }
 
+// Done
 type MarioState struct {
     MarioOn        bool
     MarioJump      bool
@@ -503,13 +490,13 @@ var gs = &GameState{
 func drawcam() { //MARK:DRAW CAM
 
 	//INVEN OPTIONS SHOP ON
-	if optionson {
+	if gs.UI.OptionsOn {
 		drawOptions()
 	} else if gs.Timing.TimesOn {
 		drawTimes()
 	} else if gs.Shop.ShopOn {
 		drawShop()
-	} else if marioon {
+	} else if gs.Mario.MarioOn {
 		drawUpMario()
 	} else if endgame {
 		drawEndGame()
@@ -704,7 +691,7 @@ func drawcam() { //MARK:DRAW CAM
 	}
 
 	//ARTIFACTS
-	if artifactson {
+	if gs.UI.ArtifactsOn {
 		num := 100
 
 		for {
@@ -746,7 +733,7 @@ func drawnextlevelscreen() { //MARK:DRAW NEXT LEVEL SCREEN
 			nextlevelscreen = false
 			pause = false
 		}
-		if useController {
+		if gs.Input.UseController {
 			if rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) {
 				nextlevelscreen = false
 				pause = false
@@ -780,7 +767,7 @@ func drawEndGame() { //MARK:DRAW END GAME
 	rl.DrawText(txt, int32(cnt.X)-txtlen/2-3, int32(cnt.Y)+txU+3, txU8, rl.Black)
 	rl.DrawText(txt, int32(cnt.X)-txtlen/2, int32(cnt.Y)+txU, txU8, rl.White)
 
-	if keypressT == 0 {
+	if gs.Input.KeypressT == 0 {
 		if endPauseT == 0 {
 			if rl.IsKeyPressed(rl.KeySpace) || rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) || endgameT == 0 {
 				endgame = false
@@ -796,8 +783,8 @@ func drawShop() { //MARK:DRAW SHOP
 	rl.DrawRectangle(0, 0, scrW32, scrH32, rl.Black)
 
 	if rl.IsKeyPressed(rl.KeyA) || rl.GetGamepadAxisMovement(0, 0) < 0 || rl.IsGamepadButtonDown(0, 4) {
-		if optionT == 0 {
-			optionT = gs.Core.Fps / 5
+		if gs.UI.OptionT == 0 {
+			gs.UI.OptionT = gs.Core.Fps / 5
 			gs.Shop.ShopNum--
 			if gs.Shop.ShopNum < 0 {
 				gs.Shop.ShopNum = 4
@@ -805,8 +792,8 @@ func drawShop() { //MARK:DRAW SHOP
 		}
 	}
 	if rl.IsKeyPressed(rl.KeyD) || rl.GetGamepadAxisMovement(0, 0) > 0 || rl.IsGamepadButtonDown(0, 2) {
-		if optionT == 0 {
-			optionT = gs.Core.Fps / 5
+		if gs.UI.OptionT == 0 {
+			gs.UI.OptionT = gs.Core.Fps / 5
 			gs.Shop.ShopNum++
 			if gs.Shop.ShopNum > 4 {
 				gs.Shop.ShopNum = 0
@@ -814,8 +801,8 @@ func drawShop() { //MARK:DRAW SHOP
 		}
 	}
 	if rl.IsKeyPressed(rl.KeyS) || rl.GetGamepadAxisMovement(0, 1) > 0 || rl.IsGamepadButtonDown(0, 3) {
-		if optionT == 0 {
-			optionT = gs.Core.Fps / 5
+		if gs.UI.OptionT == 0 {
+			gs.UI.OptionT = gs.Core.Fps / 5
 			if gs.Shop.ShopNum == 0 {
 				gs.Shop.ShopNum = 2
 			} else if gs.Shop.ShopNum == 2 {
@@ -831,8 +818,8 @@ func drawShop() { //MARK:DRAW SHOP
 		}
 	}
 	if rl.IsKeyPressed(rl.KeyW) || rl.GetGamepadAxisMovement(0, 1) < 0 || rl.IsGamepadButtonDown(0, 1) {
-		if optionT == 0 {
-			optionT = gs.Core.Fps / 5
+		if gs.UI.OptionT == 0 {
+			gs.UI.OptionT = gs.Core.Fps / 5
 			if gs.Shop.ShopNum == 0 {
 				gs.Shop.ShopNum = 4
 			} else if gs.Shop.ShopNum == 2 {
@@ -906,14 +893,14 @@ func drawShop() { //MARK:DRAW SHOP
 		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[0].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(gs.Shop.ShopItems[0].color, 0.2))
 		coinx := rec.X + rec.Width + bsU
 		coiny := rec.Y + bsU
-		txtlen = rl.MeasureText("x"+fmt.Sprint(gs.Shop.ShopItems[0].shopprice), txtSize)
+		txtlen = rl.MeasureText("x"+fmt.Sprint(gs.Shop.ShopItems[0].shopprice), gs.UI.TxtSize)
 		txtx = int32(coinx+siz/4) - txtlen/2
 		txty = int32(coiny+siz/2) + bsUi32/3
-		rl.DrawText("x"+fmt.Sprint(gs.Shop.ShopItems[0].shopprice), txtx, txty, txtSize, rl.White)
+		rl.DrawText("x"+fmt.Sprint(gs.Shop.ShopItems[0].shopprice), txtx, txty, gs.UI.TxtSize, rl.White)
 		rl.DrawTexturePro(imgs, coin, rl.NewRectangle(coinx, coiny, siz/2, siz/2), ori, 0, rl.White)
 	}
-	txtlen = rl.MeasureText(gs.Shop.ShopItems[0].name, txtSize)
-	rl.DrawText(gs.Shop.ShopItems[0].name, rec.ToInt32().X+rec.ToInt32().Width/2-txtlen/2, rec.ToInt32().Y+rec.ToInt32().Height+bsUi32/4, txtSize, rl.White)
+	txtlen = rl.MeasureText(gs.Shop.ShopItems[0].name, gs.UI.TxtSize)
+	rl.DrawText(gs.Shop.ShopItems[0].name, rec.ToInt32().X+rec.ToInt32().Width/2-txtlen/2, rec.ToInt32().Y+rec.ToInt32().Height+bsUi32/4, gs.UI.TxtSize, rl.White)
 
 	rec.X += (siz * 2) + siz/2
 	if gs.Shop.ShopNum == 1 {
@@ -933,14 +920,14 @@ func drawShop() { //MARK:DRAW SHOP
 		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[1].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(gs.Shop.ShopItems[1].color, 0.2))
 		coinx := rec.X + rec.Width + bsU
 		coiny := rec.Y + bsU
-		txtlen = rl.MeasureText("x"+fmt.Sprint(gs.Shop.ShopItems[1].shopprice), txtSize)
+		txtlen = rl.MeasureText("x"+fmt.Sprint(gs.Shop.ShopItems[1].shopprice), gs.UI.TxtSize)
 		txtx = int32(coinx+siz/4) - txtlen/2
 		txty = int32(coiny+siz/2) + bsUi32/3
-		rl.DrawText("x"+fmt.Sprint(gs.Shop.ShopItems[1].shopprice), txtx, txty, txtSize, rl.White)
+		rl.DrawText("x"+fmt.Sprint(gs.Shop.ShopItems[1].shopprice), txtx, txty, gs.UI.TxtSize, rl.White)
 		rl.DrawTexturePro(imgs, coin, rl.NewRectangle(coinx, coiny, siz/2, siz/2), ori, 0, rl.White)
 	}
-	txtlen = rl.MeasureText(gs.Shop.ShopItems[1].name, txtSize)
-	rl.DrawText(gs.Shop.ShopItems[1].name, rec.ToInt32().X+rec.ToInt32().Width/2-txtlen/2, rec.ToInt32().Y+rec.ToInt32().Height+bsUi32/4, txtSize, rl.White)
+	txtlen = rl.MeasureText(gs.Shop.ShopItems[1].name, gs.UI.TxtSize)
+	rl.DrawText(gs.Shop.ShopItems[1].name, rec.ToInt32().X+rec.ToInt32().Width/2-txtlen/2, rec.ToInt32().Y+rec.ToInt32().Height+bsUi32/4, gs.UI.TxtSize, rl.White)
 
 	rec.Y += siz * 2
 	if gs.Shop.ShopNum == 3 {
@@ -960,14 +947,14 @@ func drawShop() { //MARK:DRAW SHOP
 		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[3].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(gs.Shop.ShopItems[3].color, 0.2))
 		coinx := rec.X + rec.Width + bsU
 		coiny := rec.Y + bsU
-		txtlen = rl.MeasureText("x"+fmt.Sprint(gs.Shop.ShopItems[3].shopprice), txtSize)
+		txtlen = rl.MeasureText("x"+fmt.Sprint(gs.Shop.ShopItems[3].shopprice), gs.UI.TxtSize)
 		txtx = int32(coinx+siz/4) - txtlen/2
 		txty = int32(coiny+siz/2) + bsUi32/3
-		rl.DrawText("x"+fmt.Sprint(gs.Shop.ShopItems[3].shopprice), txtx, txty, txtSize, rl.White)
+		rl.DrawText("x"+fmt.Sprint(gs.Shop.ShopItems[3].shopprice), txtx, txty, gs.UI.TxtSize, rl.White)
 		rl.DrawTexturePro(imgs, coin, rl.NewRectangle(coinx, coiny, siz/2, siz/2), ori, 0, rl.White)
 	}
-	txtlen = rl.MeasureText(gs.Shop.ShopItems[3].name, txtSize)
-	rl.DrawText(gs.Shop.ShopItems[3].name, rec.ToInt32().X+rec.ToInt32().Width/2-txtlen/2, rec.ToInt32().Y+rec.ToInt32().Height+bsUi32/4, txtSize, rl.White)
+	txtlen = rl.MeasureText(gs.Shop.ShopItems[3].name, gs.UI.TxtSize)
+	rl.DrawText(gs.Shop.ShopItems[3].name, rec.ToInt32().X+rec.ToInt32().Width/2-txtlen/2, rec.ToInt32().Y+rec.ToInt32().Height+bsUi32/4, gs.UI.TxtSize, rl.White)
 
 	rec.X -= (siz * 2) + siz/2
 	if gs.Shop.ShopNum == 2 {
@@ -987,14 +974,14 @@ func drawShop() { //MARK:DRAW SHOP
 		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[2].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(gs.Shop.ShopItems[2].color, 0.2))
 		coinx := rec.X + rec.Width + bsU
 		coiny := rec.Y + bsU
-		txtlen = rl.MeasureText("x"+fmt.Sprint(gs.Shop.ShopItems[2].shopprice), txtSize)
+		txtlen = rl.MeasureText("x"+fmt.Sprint(gs.Shop.ShopItems[2].shopprice), gs.UI.TxtSize)
 		txtx = int32(coinx+siz/4) - txtlen/2
 		txty = int32(coiny+siz/2) + bsUi32/3
-		rl.DrawText("x"+fmt.Sprint(gs.Shop.ShopItems[2].shopprice), txtx, txty, txtSize, rl.White)
+		rl.DrawText("x"+fmt.Sprint(gs.Shop.ShopItems[2].shopprice), txtx, txty, gs.UI.TxtSize, rl.White)
 		rl.DrawTexturePro(imgs, coin, rl.NewRectangle(coinx, coiny, siz/2, siz/2), ori, 0, rl.White)
 	}
-	txtlen = rl.MeasureText(gs.Shop.ShopItems[2].name, txtSize)
-	rl.DrawText(gs.Shop.ShopItems[2].name, rec.ToInt32().X+rec.ToInt32().Width/2-txtlen/2, rec.ToInt32().Y+rec.ToInt32().Height+bsUi32/4, txtSize, rl.White)
+	txtlen = rl.MeasureText(gs.Shop.ShopItems[2].name, gs.UI.TxtSize)
+	rl.DrawText(gs.Shop.ShopItems[2].name, rec.ToInt32().X+rec.ToInt32().Width/2-txtlen/2, rec.ToInt32().Y+rec.ToInt32().Height+bsUi32/4, gs.UI.TxtSize, rl.White)
 
 	//WALLET
 	if mods.wallet {
@@ -1009,7 +996,7 @@ func drawShop() { //MARK:DRAW SHOP
 
 	txtx = int32(coinx + siz)
 	txty = int32(coiny + siz/4)
-	rl.DrawText("x"+fmt.Sprint(pl.coins), txtx, txty, txtSize*2, rl.White)
+	rl.DrawText("x"+fmt.Sprint(pl.coins), txtx, txty, gs.UI.TxtSize*2, rl.White)
 
 	if frames%6 == 0 {
 		coin.X += 16
@@ -1019,12 +1006,12 @@ func drawShop() { //MARK:DRAW SHOP
 	}
 
 	//EXIT
-	txtlen = rl.MeasureText("exit", txtSize*2)
+	txtlen = rl.MeasureText("exit", gs.UI.TxtSize*2)
 	txtx = int32(cnt.X) - txtlen/2
 	txty = int32(coiny + siz + bsU2)
 
 	wid := float32(txtlen) + bsU2
-	heig := float32(txtSize*2) + bsU/2
+	heig := float32(gs.UI.TxtSize*2) + bsU/2
 
 	rec = rl.NewRectangle(cnt.X-wid/2, float32(txty)-bsU/4, wid, heig)
 
@@ -1034,8 +1021,8 @@ func drawShop() { //MARK:DRAW SHOP
 		rl.DrawRectangleLinesEx(rec, 2, ranCol())
 	}
 
-	rl.DrawText("exit", txtx-2, txty+2, txtSize*2, rl.Black)
-	rl.DrawText("exit", txtx, txty, txtSize*2, rl.White)
+	rl.DrawText("exit", txtx-2, txty+2, gs.UI.TxtSize*2, rl.Black)
+	rl.DrawText("exit", txtx, txty, gs.UI.TxtSize*2, rl.White)
 
 }
 func drawHelp() { //MARK:DRAW HELP
@@ -1051,35 +1038,35 @@ func drawHelp() { //MARK:DRAW HELP
 	txty += txU7
 
 	txt = "five levels collect power ups"
-	rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-	txty += txtSize + txU/4
+	rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+	txty += gs.UI.TxtSize + txU/4
 	txt = "kill enemies avoid traps"
-	rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-	txty += txtSize + txU/4
+	rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+	txty += gs.UI.TxtSize + txU/4
 	txt = "last level defeat boss"
-	rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-	txty += txtSize + txU/4
-	txty += txtSize + txU/4
+	rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+	txty += gs.UI.TxtSize + txU/4
+	txty += gs.UI.TxtSize + txU/4
 	txt = "WASD keys / xbox left stick/dpad > move"
-	rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-	txty += txtSize + txU/4
+	rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+	txty += gs.UI.TxtSize + txU/4
 	txt = "SPACE key / xbox a > attack"
-	rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-	txty += txtSize + txU/4
+	rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+	txty += gs.UI.TxtSize + txU/4
 	txt = "TAB key / xbox y > inventory"
-	rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-	txty += txtSize + txU/4
+	rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+	txty += gs.UI.TxtSize + txU/4
 	txt = "RIGHT CTRL key / xbox b > map"
-	rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-	txty += txtSize + txU/4
+	rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+	txty += gs.UI.TxtSize + txU/4
 	txt = "ESC key / xbox menu > options/exit"
-	rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-	txty += txtSize + txU/4
+	rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+	txty += gs.UI.TxtSize + txU/4
 	txt = "END key > exits game"
-	rl.DrawText(txt, txtx, txty, txtSize, rl.White)
+	rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
 
 	if rl.IsKeyPressed(rl.KeySpace) || rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) {
-		helpon = false
+		gs.UI.HelpOn = false
 	}
 
 }
@@ -1153,15 +1140,15 @@ func drawTimes() { //MARK:DRAW TIMES
 			}
 		}
 		timesTXT := minTXT + ":" + secsTXT
-		txtlen := rl.MeasureText(timesTXT, txtSize*2)
-		rl.DrawText(timesTXT, int32(cnt.X)-txtlen/2, txty, txtSize*2, rl.White)
-		txty += txtSize*2 + txU/2
+		txtlen := rl.MeasureText(timesTXT, gs.UI.TxtSize*2)
+		rl.DrawText(timesTXT, int32(cnt.X)-txtlen/2, txty, gs.UI.TxtSize*2, rl.White)
+		txty += gs.UI.TxtSize*2 + txU/2
 	}
 
 	if rl.IsKeyPressed(rl.KeySpace) || rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) {
 		if gs.Timing.BestTimesT <= 0 {
 			gs.Timing.TimesOn = false
-			if !optionson {
+			if !gs.UI.OptionsOn {
 				restartgame()
 			}
 		}
@@ -1182,61 +1169,61 @@ func drawCredits() { //MARK:DRAW CREDITS
 	txty += txU7
 
 	txt = "kenney.nl"
-	rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-	txty += txtSize + txU/4
+	rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+	txty += gs.UI.TxtSize + txU/4
 	txt = "laredgames.itch.io"
-	rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-	txty += txtSize + txU/4
+	rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+	txty += gs.UI.TxtSize + txU/4
 	txt = "pixelfelix.itch.io"
-	rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-	txty += txtSize + txU/4
+	rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+	txty += gs.UI.TxtSize + txU/4
 	txt = "piiixl.itch.io"
-	rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-	txty += txtSize + txU/4
+	rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+	txty += gs.UI.TxtSize + txU/4
 	txt = "stealthix.itch.io"
-	rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-	txty += txtSize + txU/4
+	rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+	txty += gs.UI.TxtSize + txU/4
 	txt = "rad-potato.itch.io"
-	rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-	txty += txtSize + txU/4
+	rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+	txty += gs.UI.TxtSize + txU/4
 	txt = "pixelfrog-assets.itch.io"
-	rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-	txty += txtSize + txU/4
+	rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+	txty += gs.UI.TxtSize + txU/4
 	txt = "free-game-assets.itch.io"
-	rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-	txty += txtSize + txU/4
+	rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+	txty += gs.UI.TxtSize + txU/4
 	txt = "bdragon1727.itch.io"
-	rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-	txty += txtSize + txU/4
+	rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+	txty += gs.UI.TxtSize + txU/4
 	txt = "kamioo.itch.io"
-	rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-	txty += txtSize + txU/4
+	rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+	txty += gs.UI.TxtSize + txU/4
 	txt = "luquigames.itch.io"
-	rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-	txty += txtSize + txU/4
+	rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+	txty += gs.UI.TxtSize + txU/4
 	txt = "nebelstern.itch.io"
-	rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-	txty += txtSize + txU/4
+	rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+	txty += gs.UI.TxtSize + txU/4
 	txt = "bit-by-bit-sound.itch.io"
-	rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-	txty += txtSize + txU/4
+	rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+	txty += gs.UI.TxtSize + txU/4
 	txt = "ironchestgames.itch.io"
-	rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-	txty += txtSize + txU/4
+	rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+	txty += gs.UI.TxtSize + txU/4
 	txt = "pixeljad.itch.io"
-	rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-	txty += txtSize + txU/4
+	rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+	txty += gs.UI.TxtSize + txU/4
 	txt = "magory.itch.io"
-	rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-	txty += txtSize + txU/4
+	rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+	txty += gs.UI.TxtSize + txU/4
 	txt = "opengameart.org/users/subspaceaudio"
-	rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-	txty += txtSize + txU/4
+	rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+	txty += gs.UI.TxtSize + txU/4
 	txt = "opengameart.org/users/rubberduck"
-	rl.DrawText(txt, txtx, txty, txtSize, rl.White)
+	rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
 
 	if rl.IsKeyPressed(rl.KeySpace) || rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) {
-		creditson = false
+		gs.UI.CreditsOn = false
 	}
 
 }
@@ -1279,13 +1266,13 @@ func drawresettimes() { //MARK:DRAW RESET TIMES
 	rl.DrawText("N", txtx, txty, txU3, rl.White)
 
 	if rl.IsKeyPressed(rl.KeyA) || rl.GetGamepadAxisMovement(0, 0) < 0 && rl.GetGamepadAxisMovement(0, 0) > -0.3 || rl.IsGamepadButtonDown(0, 4) {
-		if optionT == 0 {
-			optionT = gs.Core.Fps / 5
+		if gs.UI.OptionT == 0 {
+			gs.UI.OptionT = gs.Core.Fps / 5
 			exitLR = !exitLR
 		}
 	} else if rl.IsKeyPressed(rl.KeyD) || rl.GetGamepadAxisMovement(0, 0) > 0 && rl.GetGamepadAxisMovement(0, 0) < 0.3 || rl.IsGamepadButtonDown(0, 2) {
-		if optionT == 0 {
-			optionT = gs.Core.Fps / 5
+		if gs.UI.OptionT == 0 {
+			gs.UI.OptionT = gs.Core.Fps / 5
 			exitLR = !exitLR
 		}
 	}
@@ -1314,7 +1301,7 @@ func drawrestartconfirm() { //MARK:DRAW RESTART CONFIRM
 		rec.X += rec.Width
 		if rl.IsKeyPressed(rl.KeySpace) || rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) {
 			restartgame()
-			optionson = false
+			gs.UI.OptionsOn = false
 			restarton = false
 		}
 		rl.DrawRectangleRec(rec, rl.Green)
@@ -1338,20 +1325,20 @@ func drawrestartconfirm() { //MARK:DRAW RESTART CONFIRM
 	rl.DrawText("N", txtx, txty, txU3, rl.White)
 
 	if rl.IsKeyPressed(rl.KeyA) || rl.IsKeyPressed(rl.KeyLeft) || rl.GetGamepadAxisMovement(0, 0) < 0 && rl.GetGamepadAxisMovement(0, 0) > -0.3 || rl.IsGamepadButtonDown(0, 4) {
-		if optionT == 0 {
-			optionT = gs.Core.Fps / 5
+		if gs.UI.OptionT == 0 {
+			gs.UI.OptionT = gs.Core.Fps / 5
 			exitLR = !exitLR
 		}
 	} else if rl.IsKeyPressed(rl.KeyD) || rl.IsKeyPressed(rl.KeyRight) || rl.GetGamepadAxisMovement(0, 0) > 0 && rl.GetGamepadAxisMovement(0, 0) < 0.3 || rl.IsGamepadButtonDown(0, 2) {
-		if optionT == 0 {
-			optionT = gs.Core.Fps / 5
+		if gs.UI.OptionT == 0 {
+			gs.UI.OptionT = gs.Core.Fps / 5
 			exitLR = !exitLR
 		}
 	}
 
 	if rl.IsKeyPressed(rl.KeyY) {
 		restartgame()
-		optionson = false
+		gs.UI.OptionsOn = false
 		restarton = false
 	} else if rl.IsKeyPressed(rl.KeyN) {
 		restarton = false
@@ -1394,13 +1381,13 @@ func drawExit() { //MARK:DRAW EXIT
 	rl.DrawText("N", txtx, txty, txU3, rl.White)
 
 	if rl.IsKeyPressed(rl.KeyA) || rl.IsKeyPressed(rl.KeyLeft) || rl.GetGamepadAxisMovement(0, 0) < 0 && rl.GetGamepadAxisMovement(0, 0) > -0.3 || rl.IsGamepadButtonDown(0, 4) {
-		if optionT == 0 {
-			optionT = gs.Core.Fps / 5
+		if gs.UI.OptionT == 0 {
+			gs.UI.OptionT = gs.Core.Fps / 5
 			exitLR = !exitLR
 		}
 	} else if rl.IsKeyPressed(rl.KeyD) || rl.IsKeyPressed(rl.KeyRight) || rl.GetGamepadAxisMovement(0, 0) > 0 && rl.GetGamepadAxisMovement(0, 0) < 0.3 || rl.IsGamepadButtonDown(0, 2) {
-		if optionT == 0 {
-			optionT = gs.Core.Fps / 5
+		if gs.UI.OptionT == 0 {
+			gs.UI.OptionT = gs.Core.Fps / 5
 			exitLR = !exitLR
 		}
 	}
@@ -1416,11 +1403,11 @@ func drawOptions() { //MARK:DRAW OPTIONS
 	//rl.ShowCursor()
 
 	rl.DrawRectangle(0, 0, scrW32, scrH32, rl.Black)
-	if creditson {
+	if gs.UI.CreditsOn {
 		drawCredits()
 	} else if gs.Timing.TimesOn {
 		drawTimes()
-	} else if helpon {
+	} else if gs.UI.HelpOn {
 		drawHelp()
 	} else if exiton {
 		drawExit()
@@ -1438,57 +1425,57 @@ func drawOptions() { //MARK:DRAW OPTIONS
 
 		txty += txU7
 		txtx = int32(cnt.X - bsU7)
-		onoffx := txtx + int32(levRec.Width/3) - txtSize*2
+		onoffx := txtx + int32(levRec.Width/3) - gs.UI.TxtSize*2
 
 		rec := rl.NewRectangle(float32(txtx)-bsU/2, float32(txty)-bsU/4, bsU*17, bsU2-bsU/4)
-		rec.Y += float32(optionnum) * float32(txtSize+txtSize/2)
-		if optionnum == 10 || optionnum == 11 || optionnum == 12 || optionnum == 13 || optionnum == 14 || optionnum == 15 || optionnum == 16 {
-			rec.Y += float32(txtSize + txtSize/2)
+		rec.Y += float32(gs.UI.OptionNum) * float32(gs.UI.TxtSize+gs.UI.TxtSize/2)
+		if gs.UI.OptionNum == 10 || gs.UI.OptionNum == 11 || gs.UI.OptionNum == 12 || gs.UI.OptionNum == 13 || gs.UI.OptionNum == 14 || gs.UI.OptionNum == 15 || gs.UI.OptionNum == 16 {
+			rec.Y += float32(gs.UI.TxtSize + gs.UI.TxtSize/2)
 		}
 
 		//KEYS GAMEPAD INP
 		if rl.IsKeyPressed(rl.KeyW) || rl.IsKeyPressed(rl.KeyUp) || rl.GetGamepadAxisMovement(0, 1) < 0 || rl.IsGamepadButtonDown(0, 1) {
-			if optionT == 0 {
-				optionT = gs.Core.Fps / 5
-				optionnum--
-				if optionnum < 0 {
-					optionnum = 16
+			if gs.UI.OptionT == 0 {
+				gs.UI.OptionT = gs.Core.Fps / 5
+				gs.UI.OptionNum--
+				if gs.UI.OptionNum < 0 {
+					gs.UI.OptionNum = 16
 				}
 			}
 		}
 		if rl.IsKeyPressed(rl.KeyS) || rl.IsKeyPressed(rl.KeyDown) || rl.GetGamepadAxisMovement(0, 1) > 0 || rl.IsGamepadButtonDown(0, 3) {
-			if optionT == 0 {
-				optionT = gs.Core.Fps / 5
-				optionnum++
-				if optionnum > 16 {
-					optionnum = 0
+			if gs.UI.OptionT == 0 {
+				gs.UI.OptionT = gs.Core.Fps / 5
+				gs.UI.OptionNum++
+				if gs.UI.OptionNum > 16 {
+					gs.UI.OptionNum = 0
 				}
 			}
 		}
 		if rl.IsKeyPressed(rl.KeySpace) || rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) {
-			switch optionnum {
+			switch gs.UI.OptionNum {
 			case 0:
-				hpBarsOn = !hpBarsOn
+				gs.UI.HpBarsOn = !gs.UI.HpBarsOn
 			case 1:
-				scanlineson = !scanlineson
+				gs.UI.ScanLinesOn = !gs.UI.ScanLinesOn
 			case 2:
-				artifactson = !artifactson
+				gs.UI.ArtifactsOn = !gs.UI.ArtifactsOn
 			case 3:
 				shaderon = !shaderon
 			case 4:
 				platkrecon = !platkrecon
 			case 5:
-				invincible = !invincible
+				gs.UI.Invincible = !gs.UI.Invincible
 			case 6:
-				if isController && useController {
-					contolleron = false
-					useController = false
-				} else if isController && !useController {
-					contolleron = true
-					useController = true
-				} else if !isController {
-					contolleron = false
-					useController = false
+				if gs.Input.IsController && gs.Input.UseController {
+					gs.Input.ControllerOn = false
+					gs.Input.UseController = false
+				} else if gs.Input.IsController && !gs.Input.UseController {
+					gs.Input.ControllerOn = true
+					gs.Input.UseController = true
+				} else if !gs.Input.IsController {
+					gs.Input.ControllerOn = false
+					gs.Input.UseController = false
 				}
 			case 7:
 				if gs.Audio.MusicOn {
@@ -1507,15 +1494,15 @@ func drawOptions() { //MARK:DRAW OPTIONS
 			case 11:
 				gs.Timing.TimesOn = true
 			case 12:
-				helpon = true
+				gs.UI.HelpOn = true
 			case 13:
-				creditson = true
+				gs.UI.CreditsOn = true
 			case 14:
 				resettimes = true
 			case 15:
 				hardcore = !hardcore
 				restartgame()
-				optionson = false
+				gs.UI.OptionsOn = false
 			case 16:
 				exiton = true
 				exitLR = false
@@ -1527,60 +1514,60 @@ func drawOptions() { //MARK:DRAW OPTIONS
 		rl.DrawRectangleRec(rec, rl.Fade(ranCol(), fadeblink2))
 
 		txt = "hp bars"
-		rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-		hpBarsOn = onoff(onoffx, txty, float32(txtSize), hpBarsOn)
-		txty += txtSize + txtSize/2
+		rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+		gs.UI.HpBarsOn = onoff(onoffx, txty, float32(gs.UI.TxtSize), gs.UI.HpBarsOn)
+		txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 
 		txt = "scan lines"
-		rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-		scanlineson = onoff(onoffx, txty, float32(txtSize), scanlineson)
-		txty += txtSize + txtSize/2
+		rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+		gs.UI.ScanLinesOn = onoff(onoffx, txty, float32(gs.UI.TxtSize), gs.UI.ScanLinesOn)
+		txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 
 		txt = "pixel artifacts"
-		rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-		artifactson = onoff(onoffx, txty, float32(txtSize), artifactson)
-		txty += txtSize + txtSize/2
+		rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+		gs.UI.ArtifactsOn = onoff(onoffx, txty, float32(gs.UI.TxtSize), gs.UI.ArtifactsOn)
+		txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 
 		txt = "bloom 'fuzzy'"
-		rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-		shaderon = onoff(onoffx, txty, float32(txtSize), shaderon)
-		txty += txtSize + txtSize/2
+		rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+		shaderon = onoff(onoffx, txty, float32(gs.UI.TxtSize), shaderon)
+		txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 
 		txt = "player atk range"
-		rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-		platkrecon = onoff(onoffx, txty, float32(txtSize), platkrecon)
-		txty += txtSize + txtSize/2
+		rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+		platkrecon = onoff(onoffx, txty, float32(gs.UI.TxtSize), platkrecon)
+		txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 
-		txt = "invincible"
-		rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-		invincible = onoff(onoffx, txty, float32(txtSize), invincible)
-		txty += txtSize + txtSize/2
+		txt = "gs.UI.Invincible"
+		rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+		gs.UI.Invincible = onoff(onoffx, txty, float32(gs.UI.TxtSize), gs.UI.Invincible)
+		txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 
 		txt = "use controller"
-		rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-		useController = onoff(onoffx, txty, float32(txtSize), useController)
-		if !isController && optionnum == 6 {
+		rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+		gs.Input.UseController = onoff(onoffx, txty, float32(gs.UI.TxtSize), gs.Input.UseController)
+		if !gs.Input.IsController && gs.UI.OptionNum == 6 {
 			txt = "no controller detected"
-			rl.DrawText(txt, txtx, txty+(txtSize+txtSize/2)*4, txtSize, ranCol())
+			rl.DrawText(txt, txtx, txty+(gs.UI.TxtSize+gs.UI.TxtSize/2)*4, gs.UI.TxtSize, ranCol())
 		}
-		txty += txtSize + txtSize/2
+		txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 		txt = "music"
-		rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-		gs.Audio.MusicOn = onoff(onoffx, txty, float32(txtSize), gs.Audio.MusicOn)
-		txty += txtSize + txtSize/2
+		rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+		gs.Audio.MusicOn = onoff(onoffx, txty, float32(gs.UI.TxtSize), gs.Audio.MusicOn)
+		txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 
 		txt = "music track"
-		rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-		gs.Audio.BgMusicNum = int(updownswitch(onoffx, txty, float32(txtSize), float32(gs.Audio.BgMusicNum), 2))
-		txty += txtSize + txtSize/2
+		rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+		gs.Audio.BgMusicNum = int(updownswitch(onoffx, txty, float32(gs.UI.TxtSize), float32(gs.Audio.BgMusicNum), 2))
+		txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 
 		//CHANGE MUSIC TRACK
-		if optionnum == 8 {
+		if gs.UI.OptionNum == 8 {
 			txt = "use left / right to adjust"
-			rl.DrawText(txt, txtx, txty+txtSize+txtSize/2, txtSize, ranCol())
+			rl.DrawText(txt, txtx, txty+gs.UI.TxtSize+gs.UI.TxtSize/2, gs.UI.TxtSize, ranCol())
 			if rl.IsKeyPressed(rl.KeyD) || rl.IsKeyPressed(rl.KeyRight) || rl.GetGamepadAxisMovement(0, 0) > 0 || rl.IsGamepadButtonDown(0, 2) {
-				if optionT == 0 {
-					optionT = gs.Core.Fps / 5
+				if gs.UI.OptionT == 0 {
+					gs.UI.OptionT = gs.Core.Fps / 5
 					gs.Audio.BgMusicNum++
 					if gs.Audio.BgMusicNum > 2 {
 						gs.Audio.BgMusicNum = 0
@@ -1593,8 +1580,8 @@ func drawOptions() { //MARK:DRAW OPTIONS
 					optionsChange = true
 				}
 			} else if rl.IsKeyPressed(rl.KeyA) || rl.IsKeyPressed(rl.KeyLeft) || rl.GetGamepadAxisMovement(0, 0) < 0 || rl.IsGamepadButtonDown(0, 4) {
-				if optionT == 0 {
-					optionT = gs.Core.Fps / 5
+				if gs.UI.OptionT == 0 {
+					gs.UI.OptionT = gs.Core.Fps / 5
 					gs.Audio.BgMusicNum--
 					if gs.Audio.BgMusicNum < 0 {
 						gs.Audio.BgMusicNum = 2
@@ -1610,25 +1597,25 @@ func drawOptions() { //MARK:DRAW OPTIONS
 		}
 
 		txt = "volume - 0 is off"
-		rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-		gs.Audio.Volume = updownswitch(onoffx, txty, float32(txtSize), gs.Audio.Volume, 1)
-		txty += txtSize + txtSize/2
+		rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+		gs.Audio.Volume = updownswitch(onoffx, txty, float32(gs.UI.TxtSize), gs.Audio.Volume, 1)
+		txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 
 		//VOLUME LR
-		if optionnum == 9 {
+		if gs.UI.OptionNum == 9 {
 			txt = "use left / right to adjust"
-			rl.DrawText(txt, txtx, txty, txtSize, ranCol())
+			rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, ranCol())
 			if rl.IsKeyPressed(rl.KeyD) || rl.IsKeyPressed(rl.KeyRight) || rl.GetGamepadAxisMovement(0, 0) > 0 || rl.IsGamepadButtonDown(0, 2) {
-				if optionT == 0 {
-					optionT = gs.Core.Fps / 5
+				if gs.UI.OptionT == 0 {
+					gs.UI.OptionT = gs.Core.Fps / 5
 					if gs.Audio.Volume < 1 {
 						gs.Audio.Volume += 0.1
 					}
 					optionsChange = true
 				}
 			} else if rl.IsKeyPressed(rl.KeyA) || rl.IsKeyPressed(rl.KeyLeft) || rl.GetGamepadAxisMovement(0, 0) < 0 || rl.IsGamepadButtonDown(0, 4) {
-				if optionT == 0 {
-					optionT = gs.Core.Fps / 5
+				if gs.UI.OptionT == 0 {
+					gs.UI.OptionT = gs.Core.Fps / 5
 					if gs.Audio.Volume > 0 {
 						gs.Audio.Volume -= 0.1
 					}
@@ -1640,33 +1627,33 @@ func drawOptions() { //MARK:DRAW OPTIONS
 			}
 		}
 
-		txty += txtSize + txtSize/2
+		txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 		txt = "restart game"
-		rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-		txty += txtSize + txtSize/2
+		rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+		txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 		txt = "best times"
-		rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-		txty += txtSize + txtSize/2
+		rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+		txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 		txt = "help"
-		rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-		txty += txtSize + txtSize/2
+		rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+		txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 		txt = "credits"
-		rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-		txty += txtSize + txtSize/2
+		rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+		txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 		txt = "reset times"
-		rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-		txty += txtSize + txtSize/2
+		rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+		txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 		txt = "hardcore"
-		rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-		hardcore = onoff(onoffx, txty, float32(txtSize), hardcore)
-		if optionnum == 15 {
+		rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+		hardcore = onoff(onoffx, txty, float32(gs.UI.TxtSize), hardcore)
+		if gs.UI.OptionNum == 15 {
 			txt = "more enemies > game will restart"
-			rl.DrawText(txt, txtx, txty-(txtSize+txtSize/2)*6, txtSize, ranCol())
+			rl.DrawText(txt, txtx, txty-(gs.UI.TxtSize+gs.UI.TxtSize/2)*6, gs.UI.TxtSize, ranCol())
 		}
-		txty += txtSize + txtSize/2
+		txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 		txt = "exit"
-		rl.DrawText(txt, txtx, txty, txtSize, rl.White)
-		txty += txtSize + txtSize/2
+		rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
+		txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 
 	}
 
@@ -1674,64 +1661,64 @@ func drawOptions() { //MARK:DRAW OPTIONS
 func drawUpMario() { //MARK:DRAW UP MARIO
 
 	//TIMER
-	rl.DrawText(fmt.Sprint(marioT), marioScreenRec.ToInt32().X+bsUi32, marioScreenRec.ToInt32().Y+bsUi32, txtSize, rl.White)
-	marioT--
+	rl.DrawText(fmt.Sprint(gs.Mario.MarioT), gs.Mario.MarioScreenRec.ToInt32().X+bsUi32, gs.Mario.MarioScreenRec.ToInt32().Y+bsUi32, gs.UI.TxtSize, rl.White)
+	gs.Mario.MarioT--
 
 	//INP
 	if rl.IsKeyDown(rl.KeyD) || rl.GetGamepadAxisMovement(0, 0) > 0 || rl.IsGamepadButtonDown(0, 2) {
-		marioPL.X += 8
-		marioV2L.X += 8
-		marioV2R.X += 8
-		marioImg.Y = knight[0].Y
+		gs.Mario.MarioPL.X += 8
+		gs.Mario.MarioV2L.X += 8
+		gs.Mario.MarioV2R.X += 8
+		gs.Mario.MarioImg.Y = knight[0].Y
 
 	} else if rl.IsKeyDown(rl.KeyA) || rl.GetGamepadAxisMovement(0, 0) < 0 || rl.IsGamepadButtonDown(0, 4) {
-		marioPL.X -= 8
-		marioV2L.X -= 8
-		marioV2R.X -= 8
-		marioImg.Y = knight[2].Y
+		gs.Mario.MarioPL.X -= 8
+		gs.Mario.MarioV2L.X -= 8
+		gs.Mario.MarioV2R.X -= 8
+		gs.Mario.MarioImg.Y = knight[2].Y
 	}
 	if rl.IsKeyPressed(rl.KeyW) || rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) {
-		if !mariojump {
-			mariojump = true
-			mariojumpT = gs.Core.Fps / 3
+		if !gs.Mario.MarioJump {
+			gs.Mario.MarioJump = true
+			gs.Mario.MarioJumpT = gs.Core.Fps / 3
 		}
 	}
 
 	//DRAW PATTERN
-	x := marioScreenRec.X
-	y := marioScreenRec.Y
+	x := gs.Mario.MarioScreenRec.X
+	y := gs.Mario.MarioScreenRec.Y
 	siz := bsU10
 	for {
-		rl.DrawTexturePro(imgs, patternRec, rl.NewRectangle(x, y, siz, siz), ori, 0, rl.Fade(ranCol(), 0.05))
+		rl.DrawTexturePro(imgs, gs.Mario.PatternRec, rl.NewRectangle(x, y, siz, siz), ori, 0, rl.Fade(ranCol(), 0.05))
 		x += siz
-		if x >= marioScreenRec.X+marioScreenRec.Width {
-			x = marioScreenRec.X
+		if x >= gs.Mario.MarioScreenRec.X+gs.Mario.MarioScreenRec.Width {
+			x = gs.Mario.MarioScreenRec.X
 			y += siz
 		}
-		if y >= marioScreenRec.Y+marioScreenRec.Height {
+		if y >= gs.Mario.MarioScreenRec.Y+gs.Mario.MarioScreenRec.Height {
 			break
 		}
 	}
 
 	//DRAW BLOKS
-	for a := 0; a < len(mariorecs); a++ {
-		rl.DrawTexturePro(imgs, wallT, mariorecs[a], ori, 0, marioCols[a])
-		rl.DrawTexturePro(imgs, wallT, BlurRec(mariorecs[a], 2), ori, 0, rl.Fade(marioCols[a], 0.2))
+	for a := 0; a < len(gs.Mario.MarioRecs); a++ {
+		rl.DrawTexturePro(imgs, wallT, gs.Mario.MarioRecs[a], ori, 0, gs.Mario.MarioCols[a])
+		rl.DrawTexturePro(imgs, wallT, BlurRec(gs.Mario.MarioRecs[a], 2), ori, 0, rl.Fade(gs.Mario.MarioCols[a], 0.2))
 	}
 
 	//DRAW COINS
-	for i := 0; i < len(mariocoinonoff); i++ {
-		if mariocoinonoff[i] {
-			rl.DrawTexturePro(imgs, coin, mariocoins[i], ori, 0, rl.White)
-			if marioT%6 == 0 {
+	for i := 0; i < len(gs.Mario.MarioCoinOnOff); i++ {
+		if gs.Mario.MarioCoinOnOff[i] {
+			rl.DrawTexturePro(imgs, coin, gs.Mario.MarioCoins[i], ori, 0, rl.White)
+			if gs.Mario.MarioT%6 == 0 {
 				coin.X += 16
 				if coin.X >= 1200 {
 					coin.X = 1120
 				}
-				if rl.CheckCollisionRecs(marioPL, mariocoins[i]) {
-					if mariocoinonoff[i] {
+				if rl.CheckCollisionRecs(gs.Mario.MarioPL, gs.Mario.MarioCoins[i]) {
+					if gs.Mario.MarioCoinOnOff[i] {
 						pl.coins++
-						mariocoinonoff[i] = false
+						gs.Mario.MarioCoinOnOff[i] = false
 						rl.PlaySound(gs.Audio.Sfx[18])
 					}
 				}
@@ -1741,49 +1728,49 @@ func drawUpMario() { //MARK:DRAW UP MARIO
 	}
 
 	//DRAW PLAYER
-	drec := marioPL
+	drec := gs.Mario.MarioPL
 	drec.X -= drec.Width / 4
 	drec.Width += drec.Width / 2
 	drec.Y -= drec.Height / 4
 	drec.Height += drec.Height / 2
 	//ori2 := rl.NewVector2(drec.Width/2,drec.Height/2)
-	rl.DrawTexturePro(imgs, marioImg, drec, ori, 0, rl.White)
+	rl.DrawTexturePro(imgs, gs.Mario.MarioImg, drec, ori, 0, rl.White)
 	if debug {
-		rl.DrawRectangleLinesEx(marioPL, 1, rl.White)
+		rl.DrawRectangleLinesEx(gs.Mario.MarioPL, 1, rl.White)
 	}
 
 	if frames%4 == 0 {
-		marioImg.X += pl.sizImg
+		gs.Mario.MarioImg.X += pl.sizImg
 	}
-	if marioImg.X > pl.imgWalkX+(float32(pl.framesWalk-1)*pl.sizImg) {
-		marioImg.X = pl.imgWalkX
+	if gs.Mario.MarioImg.X > pl.imgWalkX+(float32(pl.framesWalk-1)*pl.sizImg) {
+		gs.Mario.MarioImg.X = pl.imgWalkX
 	}
 
 	//JUMP FALL
-	if mariojumpT > 0 {
-		mariojumpT--
-		marioPL.Y -= 12
-		marioV2L.Y -= 12
-		marioV2R.Y -= 12
+	if gs.Mario.MarioJumpT > 0 {
+		gs.Mario.MarioJumpT--
+		gs.Mario.MarioPL.Y -= 12
+		gs.Mario.MarioV2L.Y -= 12
+		gs.Mario.MarioV2R.Y -= 12
 	} else {
 		collides := false
-		for a := 0; a < len(mariorecs); a++ {
-			if rl.CheckCollisionPointRec(marioV2L, mariorecs[a]) || rl.CheckCollisionPointRec(marioV2R, mariorecs[a]) {
+		for a := 0; a < len(gs.Mario.MarioRecs); a++ {
+			if rl.CheckCollisionPointRec(gs.Mario.MarioV2L, gs.Mario.MarioRecs[a]) || rl.CheckCollisionPointRec(gs.Mario.MarioV2R, gs.Mario.MarioRecs[a]) {
 				collides = true
-				mariojump = false
+				gs.Mario.MarioJump = false
 			}
 		}
 		if !collides {
-			marioPL.Y += 8
-			marioV2L.Y += 8
-			marioV2R.Y += 8
+			gs.Mario.MarioPL.Y += 8
+			gs.Mario.MarioV2L.Y += 8
+			gs.Mario.MarioV2R.Y += 8
 		}
 
 	}
 
 	//EXIT SCREEN
-	if marioT == 0 || marioPL.X+marioPL.Width < marioScreenRec.X || marioPL.X > marioScreenRec.X+marioScreenRec.Width {
-		marioon = false
+	if gs.Mario.MarioT == 0 || gs.Mario.MarioPL.X+gs.Mario.MarioPL.Width < gs.Mario.MarioScreenRec.X || gs.Mario.MarioPL.X > gs.Mario.MarioScreenRec.X+gs.Mario.MarioScreenRec.Width {
+		gs.Mario.MarioOn = false
 		pause = false
 	}
 
@@ -2363,7 +2350,7 @@ func drawnocamBG() { //MARK:DRAW NO CAM BACKGROUND
 func drawnocam() { //MARK:DRAW NO CAM
 
 	//INTRO
-	if intro && !optionson {
+	if intro && !gs.UI.OptionsOn {
 		if introT1 > 0 {
 			shaderon = false
 			x := cnt.X - etc[56].Width/2
@@ -2581,7 +2568,7 @@ func drawnocam() { //MARK:DRAW NO CAM
 	}
 
 	//SCANLINES
-	if scanlineson {
+	if gs.UI.ScanLinesOn {
 		for a := 0; a < len(scanlinev2); a++ {
 			v2 := scanlinev2[a]
 			v2.X += scrWF32
@@ -2708,9 +2695,9 @@ func drawDebug() { //MARK:DRAW DEBUG
 	txtY += txU
 	rl.DrawText("cam2.Zoom"+" "+fmt.Sprint(cam2.Zoom), txtX, txtY, txU, rl.White)
 	txtY += txU
-	rl.DrawText("isController"+" "+fmt.Sprint(isController), txtX, txtY, txU, rl.White)
+	rl.DrawText("gs.Input.IsController"+" "+fmt.Sprint(gs.Input.IsController), txtX, txtY, txU, rl.White)
 	txtY += txU
-	rl.DrawText("useController"+" "+fmt.Sprint(useController), txtX, txtY, txU, rl.White)
+	rl.DrawText("gs.Input.UseController"+" "+fmt.Sprint(gs.Input.UseController), txtX, txtY, txU, rl.White)
 	txtY += txU
 	rl.DrawText("GamepadAxisMovement 0"+" "+fmt.Sprint(rl.GetGamepadAxisMovement(0, 0)), txtX, txtY, txU, rl.White)
 	txtY += txU
@@ -2728,7 +2715,7 @@ func drawDebug() { //MARK:DRAW DEBUG
 	txtY += txU
 	rl.DrawText("secsEND"+" "+fmt.Sprint(secsEND), txtX, txtY, txU, rl.White)
 	txtY += txU
-	rl.DrawText("len(mariocoins)"+" "+fmt.Sprint(len(mariocoins)), txtX, txtY, txU, rl.White)
+	rl.DrawText("len(gs.Mario.MarioCoins)"+" "+fmt.Sprint(len(gs.Mario.MarioCoins)), txtX, txtY, txU, rl.White)
 	txtY += txU
 	rl.DrawText("hardcore"+" "+fmt.Sprint(hardcore), txtX, txtY, txU, rl.White)
 	txtY += txU
@@ -3876,7 +3863,7 @@ func drawUpEnemies() { //MARK:DRAW UP ENEMIES
 			}
 
 			//ENEMY HP BAR
-			if hpBarsOn {
+			if gs.UI.HpBarsOn {
 				hpX := level[roomNum].enemies[a].rec.X + level[roomNum].enemies[a].rec.Width/2
 				siz := float32(4)
 				wid := float32(level[roomNum].enemies[a].hpmax) * (siz + 1)
@@ -3976,7 +3963,7 @@ func drawUpBoss() { //MARK: DRAW UP BOSS
 	}
 
 	//HP BARS
-	if hpBarsOn {
+	if gs.UI.HpBarsOn {
 		hpX := bosses[bossnum].rec.X + bosses[bossnum].rec.Width/2
 		siz := float32(4)
 		wid := float32(bosses[bossnum].hpmax) * (siz + 1)
@@ -4042,25 +4029,25 @@ func drawUpBoss() { //MARK: DRAW UP BOSS
 // MARK: CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK
 func checkcontroller() { //MARK:CHECK CONTROLLER
 
-	isController = rl.IsGamepadAvailable(0)
-	if isController && contolleron {
-		useController = true
-	} else if !isController {
-		useController = false
-		controllerDisconnect = true
+	gs.Input.IsController = rl.IsGamepadAvailable(0)
+	if gs.Input.IsController && gs.Input.ControllerOn {
+		gs.Input.UseController = true
+	} else if !gs.Input.IsController {
+		gs.Input.UseController = false
+		gs.Input.ControllerDisconnect = true
 	}
 
-	if isController {
-		contolleron = true
-		controllerDisconnect = false
-		controllerWasOn = true
+	if gs.Input.IsController {
+		gs.Input.ControllerOn = true
+		gs.Input.ControllerDisconnect = false
+		gs.Input.ControllerWasOn = true
 	}
 
-	if controllerDisconnect && controllerWasOn && !pause {
-		contolleron = false
-		controllerWasOn = false
-		optionson = true
-		optionnum = 0
+	if gs.Input.ControllerDisconnect && gs.Input.ControllerWasOn && !pause {
+		gs.Input.ControllerOn = false
+		gs.Input.ControllerWasOn = false
+		gs.UI.OptionsOn = true
+		gs.UI.OptionNum = 0
 		pause = true
 	}
 }
@@ -4973,17 +4960,17 @@ func savesettings() { //MARK:SAVE SETTINGS
 
 	settingsTXT := ""
 
-	if hpBarsOn {
+	if gs.UI.HpBarsOn {
 		settingsTXT = settingsTXT + "1,"
 	} else {
 		settingsTXT = settingsTXT + "0,"
 	}
-	if scanlineson {
+	if gs.UI.ScanLinesOn {
 		settingsTXT = settingsTXT + "1,"
 	} else {
 		settingsTXT = settingsTXT + "0,"
 	}
-	if artifactson {
+	if gs.UI.ArtifactsOn {
 		settingsTXT = settingsTXT + "1,"
 	} else {
 		settingsTXT = settingsTXT + "0,"
@@ -4998,12 +4985,12 @@ func savesettings() { //MARK:SAVE SETTINGS
 	} else {
 		settingsTXT = settingsTXT + "0,"
 	}
-	if invincible {
+	if gs.UI.Invincible {
 		settingsTXT = settingsTXT + "1,"
 	} else {
 		settingsTXT = settingsTXT + "0,"
 	}
-	if useController {
+	if gs.Input.UseController {
 		settingsTXT = settingsTXT + "1,"
 	} else {
 		settingsTXT = settingsTXT + "0,"
@@ -5386,14 +5373,14 @@ func updownswitch(x32, y32 int32, siz, value float32, numType int) float32 { //M
 	switch numType {
 	case 2:
 		txt := fmt.Sprint(value)
-		txtlen := rl.MeasureText(txt, txtSize)
+		txtlen := rl.MeasureText(txt, gs.UI.TxtSize)
 
-		rl.DrawText(txt, (rec.ToInt32().X+rec.ToInt32().Width/2)-txtlen/2, rec.ToInt32().Y+1, txtSize, rl.White)
+		rl.DrawText(txt, (rec.ToInt32().X+rec.ToInt32().Width/2)-txtlen/2, rec.ToInt32().Y+1, gs.UI.TxtSize, rl.White)
 
 	case 1:
 		txt := fmt.Sprintf("%.0f", value*10)
-		txtlen := rl.MeasureText(txt, txtSize)
-		rl.DrawText(txt, (rec.ToInt32().X+rec.ToInt32().Width/2)-txtlen/2, rec.ToInt32().Y+1, txtSize, rl.White)
+		txtlen := rl.MeasureText(txt, gs.UI.TxtSize)
+		rl.DrawText(txt, (rec.ToInt32().X+rec.ToInt32().Width/2)-txtlen/2, rec.ToInt32().Y+1, gs.UI.TxtSize, rl.White)
 		upvolume()
 	}
 
@@ -5836,7 +5823,7 @@ func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
 		case "mario":
 			makemario()
 			pause = true
-			marioon = true
+			gs.Mario.MarioOn = true
 		case "mr carrot":
 			if !mods.alien && !mods.planty {
 				mods.carrot = true
@@ -6249,12 +6236,12 @@ func hitPL(numEnProj, numType int) { //MARK:HIT PLAYER
 		} else {
 			switch numType {
 			case 2: // BURN POISON ENEMY COLLIS WATER
-				if !invincible {
+				if !gs.UI.Invincible {
 					pl.hp--
 
 				}
 			case 1: //ENEMY PROJECTILE
-				if !invincible {
+				if !gs.UI.Invincible {
 					pl.hp -= enProj[numEnProj].dmg
 
 				}
@@ -6268,7 +6255,7 @@ func hitPL(numEnProj, numType int) { //MARK:HIT PLAYER
 			zblok.onoff = true
 			zblok.name = "playerblood"
 			level[roomNum].etc = append(level[roomNum].etc, zblok)
-			if pl.hp <= 0 && !invincible {
+			if pl.hp <= 0 && !gs.UI.Invincible {
 				pl.hp = 0
 				if mods.medikit {
 					pl.hp = pl.hpmax
@@ -6383,11 +6370,11 @@ func up() { //MARK:UP
 
 	checkcontroller()
 
-	if keypressT > 0 {
-		keypressT--
+	if gs.Input.KeypressT > 0 {
+		gs.Input.KeypressT--
 	}
-	if optionT > 0 {
-		optionT--
+	if gs.UI.OptionT > 0 {
+		gs.UI.OptionT--
 	}
 	if startdmgT > 0 {
 		startdmgT--
@@ -6458,10 +6445,10 @@ func upPlayerMods() { //MARK:UP PLAYER MODS
 
 	//FLOOD
 	if mods.flood {
-		if marioon {
+		if gs.Mario.MarioOn {
 			floodRec.Y = scrHF32 + bsU
 		} else if levelnum == 6 {
-			marioon = false
+			gs.Mario.MarioOn = false
 		} else {
 			levrecV2WorldtoScreen := rl.GetWorldToScreen2D(rl.NewVector2(levRecInner.X, levRecInner.Y), cam2)
 			if floodRec.Y > levrecV2WorldtoScreen.Y+bsU12 {
@@ -6936,19 +6923,19 @@ func makesettings() { //MARK: MAKE SETTINGS
 	txtSettings := strings.Split(string(contents), ",")
 
 	if txtSettings[0] == "1" {
-		hpBarsOn = true
+		gs.UI.HpBarsOn = true
 	} else {
-		hpBarsOn = false
+		gs.UI.HpBarsOn = false
 	}
 	if txtSettings[1] == "1" {
-		scanlineson = true
+		gs.UI.ScanLinesOn = true
 	} else {
-		scanlineson = false
+		gs.UI.ScanLinesOn = false
 	}
 	if txtSettings[2] == "1" {
-		artifactson = true
+		gs.UI.ArtifactsOn = true
 	} else {
-		artifactson = false
+		gs.UI.ArtifactsOn = false
 	}
 	if txtSettings[3] == "1" {
 		shaderon = true
@@ -6961,16 +6948,16 @@ func makesettings() { //MARK: MAKE SETTINGS
 		platkrecon = false
 	}
 	if txtSettings[5] == "1" {
-		invincible = true
+		gs.UI.Invincible = true
 	} else {
-		invincible = false
+		gs.UI.Invincible = false
 	}
 	if txtSettings[6] == "1" {
-		useController = true
-		contolleron = true
+		gs.Input.UseController = true
+		gs.Input.ControllerOn = true
 	} else {
-		useController = true
-		contolleron = true
+		gs.Input.UseController = true
+		gs.Input.ControllerOn = true
 	}
 	if txtSettings[7] == "1" {
 		gs.Audio.MusicOn = true
@@ -8112,31 +8099,31 @@ func makeInnerBloks() { //MARK: MAKE INNER BLOKS
 
 func makemario() { //MARK:MAKE MARIO
 
-	mariorecs = nil
-	marioCols = nil
-	mariocoins = nil
-	mariocoinonoff = nil
-	marioT = gs.Core.Fps * 5
+	gs.Mario.MarioRecs = nil
+	gs.Mario.MarioCols = nil
+	gs.Mario.MarioCoins = nil
+	gs.Mario.MarioCoinOnOff = nil
+	gs.Mario.MarioT = gs.Core.Fps * 5
 
 	//IMG
-	marioImg = knight[0]
+	gs.Mario.MarioImg = knight[0]
 
 	//BORDER REC
-	marioScreenRec = rl.NewRectangle(cnt.X-scrWF32/(cam2.Zoom*2), cnt.Y-scrHF32/(cam2.Zoom*2), scrWF32/cam2.Zoom, scrHF32/cam2.Zoom)
+	gs.Mario.MarioScreenRec = rl.NewRectangle(cnt.X-scrWF32/(cam2.Zoom*2), cnt.Y-scrHF32/(cam2.Zoom*2), scrWF32/cam2.Zoom, scrHF32/cam2.Zoom)
 
 	//BACK PATTERN
-	patternRec = patterns[rInt(0, len(patterns))]
+	gs.Mario.PatternRec = patterns[rInt(0, len(patterns))]
 
 	//FLOOR
 	siz := bsU4
 	x := float32(0)
 	y := levRecInner.Y + levRec.Width - (siz + bsU)
 	for {
-		mariorecs = append(mariorecs, rl.NewRectangle(x, y, siz, siz))
-		marioCols = append(marioCols, ranBrown())
+		gs.Mario.MarioRecs = append(gs.Mario.MarioRecs, rl.NewRectangle(x, y, siz, siz))
+		gs.Mario.MarioCols = append(gs.Mario.MarioCols, ranBrown())
 		if roll6() > 4 {
-			mariocoins = append(mariocoins, rl.NewRectangle(x, y-siz, siz/2, siz/2))
-			mariocoinonoff = append(mariocoinonoff, true)
+			gs.Mario.MarioCoins = append(gs.Mario.MarioCoins, rl.NewRectangle(x, y-siz, siz/2, siz/2))
+			gs.Mario.MarioCoinOnOff = append(gs.Mario.MarioCoinOnOff, true)
 		}
 		x += siz
 		if x >= scrWF32 {
@@ -8145,57 +8132,57 @@ func makemario() { //MARK:MAKE MARIO
 	}
 
 	//PLAYER REC
-	marioPL = rl.NewRectangle(scrWF32/2, y-siz, siz, siz)
-	marioV2L = rl.NewVector2(marioPL.X, marioPL.Y+marioPL.Width+2)
-	marioV2R = rl.NewVector2(marioPL.X+marioPL.Width, marioPL.Y+marioPL.Width+2)
+	gs.Mario.MarioPL = rl.NewRectangle(scrWF32/2, y-siz, siz, siz)
+	gs.Mario.MarioV2L = rl.NewVector2(gs.Mario.MarioPL.X, gs.Mario.MarioPL.Y+gs.Mario.MarioPL.Width+2)
+	gs.Mario.MarioV2R = rl.NewVector2(gs.Mario.MarioPL.X+gs.Mario.MarioPL.Width, gs.Mario.MarioPL.Y+gs.Mario.MarioPL.Width+2)
 
 	//PLATFORMS
 	y -= siz * 3
 	num := float32(rInt(5, 9))
-	x = marioScreenRec.X + rF32(0, (marioScreenRec.Width/2)-(num*siz))
+	x = gs.Mario.MarioScreenRec.X + rF32(0, (gs.Mario.MarioScreenRec.Width/2)-(num*siz))
 	for num > 0 {
-		mariorecs = append(mariorecs, rl.NewRectangle(x, y, siz, siz))
-		marioCols = append(marioCols, ranGreen())
+		gs.Mario.MarioRecs = append(gs.Mario.MarioRecs, rl.NewRectangle(x, y, siz, siz))
+		gs.Mario.MarioCols = append(gs.Mario.MarioCols, ranGreen())
 		if roll6() > 4 {
-			mariocoins = append(mariocoins, rl.NewRectangle(x, y-siz, siz/2, siz/2))
-			mariocoinonoff = append(mariocoinonoff, true)
+			gs.Mario.MarioCoins = append(gs.Mario.MarioCoins, rl.NewRectangle(x, y-siz, siz/2, siz/2))
+			gs.Mario.MarioCoinOnOff = append(gs.Mario.MarioCoinOnOff, true)
 		}
 		x += siz
 		num--
 	}
 	num = float32(rInt(5, 9))
-	x = marioScreenRec.X + marioScreenRec.Width/2 + rF32(0, (marioScreenRec.Width/2)-(num*siz))
+	x = gs.Mario.MarioScreenRec.X + gs.Mario.MarioScreenRec.Width/2 + rF32(0, (gs.Mario.MarioScreenRec.Width/2)-(num*siz))
 	for num > 0 {
-		mariorecs = append(mariorecs, rl.NewRectangle(x, y, siz, siz))
-		marioCols = append(marioCols, ranOrange())
+		gs.Mario.MarioRecs = append(gs.Mario.MarioRecs, rl.NewRectangle(x, y, siz, siz))
+		gs.Mario.MarioCols = append(gs.Mario.MarioCols, ranOrange())
 		if roll6() > 4 {
-			mariocoins = append(mariocoins, rl.NewRectangle(x, y-siz, siz/2, siz/2))
-			mariocoinonoff = append(mariocoinonoff, true)
+			gs.Mario.MarioCoins = append(gs.Mario.MarioCoins, rl.NewRectangle(x, y-siz, siz/2, siz/2))
+			gs.Mario.MarioCoinOnOff = append(gs.Mario.MarioCoinOnOff, true)
 		}
 		x += siz
 		num--
 	}
 	y -= siz * 3
 	num = float32(rInt(5, 9))
-	x = marioScreenRec.X + rF32(0, (marioScreenRec.Width/2)-(num*siz))
+	x = gs.Mario.MarioScreenRec.X + rF32(0, (gs.Mario.MarioScreenRec.Width/2)-(num*siz))
 	for num > 0 {
-		mariorecs = append(mariorecs, rl.NewRectangle(x, y, siz, siz))
-		marioCols = append(marioCols, ranCyan())
+		gs.Mario.MarioRecs = append(gs.Mario.MarioRecs, rl.NewRectangle(x, y, siz, siz))
+		gs.Mario.MarioCols = append(gs.Mario.MarioCols, ranCyan())
 		if roll6() > 4 {
-			mariocoins = append(mariocoins, rl.NewRectangle(x, y-siz, siz/2, siz/2))
-			mariocoinonoff = append(mariocoinonoff, true)
+			gs.Mario.MarioCoins = append(gs.Mario.MarioCoins, rl.NewRectangle(x, y-siz, siz/2, siz/2))
+			gs.Mario.MarioCoinOnOff = append(gs.Mario.MarioCoinOnOff, true)
 		}
 		x += siz
 		num--
 	}
 	num = float32(rInt(5, 9))
-	x = marioScreenRec.X + marioScreenRec.Width/2 + rF32(0, (marioScreenRec.Width/2)-(num*siz))
+	x = gs.Mario.MarioScreenRec.X + gs.Mario.MarioScreenRec.Width/2 + rF32(0, (gs.Mario.MarioScreenRec.Width/2)-(num*siz))
 	for num > 0 {
-		mariorecs = append(mariorecs, rl.NewRectangle(x, y, siz, siz))
-		marioCols = append(marioCols, ranPink())
+		gs.Mario.MarioRecs = append(gs.Mario.MarioRecs, rl.NewRectangle(x, y, siz, siz))
+		gs.Mario.MarioCols = append(gs.Mario.MarioCols, ranPink())
 		if roll6() > 4 {
-			mariocoins = append(mariocoins, rl.NewRectangle(x, y-siz, siz/2, siz/2))
-			mariocoinonoff = append(mariocoinonoff, true)
+			gs.Mario.MarioCoins = append(gs.Mario.MarioCoins, rl.NewRectangle(x, y-siz, siz/2, siz/2))
+			gs.Mario.MarioCoinOnOff = append(gs.Mario.MarioCoinOnOff, true)
 		}
 		x += siz
 		num--
@@ -10638,96 +10625,96 @@ func inp() { //MARK:INP
 
 	//OPTIONS ON
 
-	if rl.IsKeyPressed(rl.KeyEscape) && !intro && !marioon && !died && !nextlevelscreen {
+	if rl.IsKeyPressed(rl.KeyEscape) && !intro && !gs.Mario.MarioOn && !died && !nextlevelscreen {
 
-		if optionson && !exiton && !gs.Shop.ShopOn && !levMapOn && !invenon && !creditson && !helpon && !gs.Timing.TimesOn {
+		if gs.UI.OptionsOn && !exiton && !gs.Shop.ShopOn && !levMapOn && !invenon && !gs.UI.CreditsOn && !gs.UI.HelpOn && !gs.Timing.TimesOn {
 			if optionsChange {
 				savesettings()
 			}
-			optionson = false
-			creditson = false
-			helpon = false
+			gs.UI.OptionsOn = false
+			gs.UI.CreditsOn = false
+			gs.UI.HelpOn = false
 			exiton = false
 			pause = false
-		} else if optionson && exiton {
+		} else if gs.UI.OptionsOn && exiton {
 			exiton = false
-		} else if !optionson && !gs.Shop.ShopOn && !levMapOn && !invenon && !creditson && !helpon && !gs.Timing.TimesOn {
+		} else if !gs.UI.OptionsOn && !gs.Shop.ShopOn && !levMapOn && !invenon && !gs.UI.CreditsOn && !gs.UI.HelpOn && !gs.Timing.TimesOn {
 			pause = true
-			creditson = false
-			helpon = false
+			gs.UI.CreditsOn = false
+			gs.UI.HelpOn = false
 			exiton = false
-			optionson = true
+			gs.UI.OptionsOn = true
 			optionsChange = false
-			optionnum = 0
-		} else if !optionson && gs.Shop.ShopOn && !levMapOn && !invenon && !creditson && !helpon && !gs.Timing.TimesOn {
+			gs.UI.OptionNum = 0
+		} else if !gs.UI.OptionsOn && gs.Shop.ShopOn && !levMapOn && !invenon && !gs.UI.CreditsOn && !gs.UI.HelpOn && !gs.Timing.TimesOn {
 			gs.Shop.ShopOn = false
 			pl.cnt.Y = gs.Shop.ShopExitY
 			upPlayerRec()
 			pause = false
-		} else if !optionson && !gs.Shop.ShopOn && levMapOn && !invenon && !creditson && !helpon && !gs.Timing.TimesOn {
+		} else if !gs.UI.OptionsOn && !gs.Shop.ShopOn && levMapOn && !invenon && !gs.UI.CreditsOn && !gs.UI.HelpOn && !gs.Timing.TimesOn {
 			levMapOn = false
 			pause = false
-		} else if !optionson && !gs.Shop.ShopOn && !levMapOn && invenon && !creditson && !helpon && !gs.Timing.TimesOn {
+		} else if !gs.UI.OptionsOn && !gs.Shop.ShopOn && !levMapOn && invenon && !gs.UI.CreditsOn && !gs.UI.HelpOn && !gs.Timing.TimesOn {
 			invenon = false
 			pause = false
-		} else if optionson && !gs.Shop.ShopOn && !levMapOn && !invenon && creditson && !helpon && !gs.Timing.TimesOn {
-			creditson = false
-			optionson = true
-		} else if optionson && !gs.Shop.ShopOn && !levMapOn && !invenon && !creditson && helpon && !gs.Timing.TimesOn {
-			helpon = false
-		} else if !optionson && !gs.Shop.ShopOn && !levMapOn && !invenon && !creditson && !helpon && gs.Timing.TimesOn {
+		} else if gs.UI.OptionsOn && !gs.Shop.ShopOn && !levMapOn && !invenon && gs.UI.CreditsOn && !gs.UI.HelpOn && !gs.Timing.TimesOn {
+			gs.UI.CreditsOn = false
+			gs.UI.OptionsOn = true
+		} else if gs.UI.OptionsOn && !gs.Shop.ShopOn && !levMapOn && !invenon && !gs.UI.CreditsOn && gs.UI.HelpOn && !gs.Timing.TimesOn {
+			gs.UI.HelpOn = false
+		} else if !gs.UI.OptionsOn && !gs.Shop.ShopOn && !levMapOn && !invenon && !gs.UI.CreditsOn && !gs.UI.HelpOn && gs.Timing.TimesOn {
 			gs.Timing.TimesOn = false
 			restartgame()
 		}
 
 	} else if intro {
 		if rl.IsKeyPressed(rl.KeyEscape) || rl.IsGamepadButtonPressed(0, rl.GamepadButtonMiddleRight) {
-			if optionson {
+			if gs.UI.OptionsOn {
 				if optionsChange {
 					savesettings()
 				}
-				optionson = false
+				gs.UI.OptionsOn = false
 			} else {
-				optionson = true
+				gs.UI.OptionsOn = true
 				optionsChange = false
-				optionnum = 0
+				gs.UI.OptionNum = 0
 			}
 		}
 
-		if optionson && rl.IsGamepadButtonPressed(0, 6) {
+		if gs.UI.OptionsOn && rl.IsGamepadButtonPressed(0, 6) {
 			if optionsChange {
 				savesettings()
 			}
-			optionson = false
+			gs.UI.OptionsOn = false
 		}
 	}
-	if useController {
-		if rl.IsGamepadButtonPressed(0, rl.GamepadButtonMiddleRight) && !invenon && !gs.Shop.ShopOn && !levMapOn && !intro && !marioon && !died && !nextlevelscreen {
-			if optionson {
+	if gs.Input.UseController {
+		if rl.IsGamepadButtonPressed(0, rl.GamepadButtonMiddleRight) && !invenon && !gs.Shop.ShopOn && !levMapOn && !intro && !gs.Mario.MarioOn && !died && !nextlevelscreen {
+			if gs.UI.OptionsOn {
 				if optionsChange {
 					savesettings()
 				}
-				creditson = false
-				helpon = false
+				gs.UI.CreditsOn = false
+				gs.UI.HelpOn = false
 				exiton = false
-				optionson = false
+				gs.UI.OptionsOn = false
 				pause = false
 			} else {
-				creditson = false
-				helpon = false
+				gs.UI.CreditsOn = false
+				gs.UI.HelpOn = false
 				exiton = false
 				optionsChange = false
-				optionson = true
-				optionnum = 0
+				gs.UI.OptionsOn = true
+				gs.UI.OptionNum = 0
 				pause = true
 			}
 		}
 	}
 
-	if !intro && !marioon && !died {
+	if !intro && !gs.Mario.MarioOn && !died {
 
 		//INVEN ON
-		if rl.IsKeyPressed(rl.KeyTab) && !optionson && !levMapOn && !gs.Shop.ShopOn && !nextlevelscreen {
+		if rl.IsKeyPressed(rl.KeyTab) && !gs.UI.OptionsOn && !levMapOn && !gs.Shop.ShopOn && !nextlevelscreen {
 			if invenon {
 				invenon = false
 				pause = false
@@ -10738,7 +10725,7 @@ func inp() { //MARK:INP
 		}
 
 		//MAP ON
-		if rl.IsKeyPressed(rl.KeyRightControl) && !optionson && !invenon && !gs.Shop.ShopOn && !nextlevelscreen {
+		if rl.IsKeyPressed(rl.KeyRightControl) && !gs.UI.OptionsOn && !invenon && !gs.Shop.ShopOn && !nextlevelscreen {
 
 			if levMapOn {
 				levMapOn = false
@@ -10748,8 +10735,8 @@ func inp() { //MARK:INP
 				pause = true
 			}
 		}
-		if useController {
-			if rl.IsGamepadButtonPressed(0, 6) && !optionson && !invenon && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !nextlevelscreen && !helpon && !creditson {
+		if gs.Input.UseController {
+			if rl.IsGamepadButtonPressed(0, 6) && !gs.UI.OptionsOn && !invenon && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !nextlevelscreen && !gs.UI.HelpOn && !gs.UI.CreditsOn {
 				if levMapOn {
 					levMapOn = false
 					pause = false
@@ -10757,25 +10744,25 @@ func inp() { //MARK:INP
 					levMapOn = true
 					pause = true
 				}
-			} else if rl.IsGamepadButtonPressed(0, 6) && optionson && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !nextlevelscreen && !helpon && !creditson {
+			} else if rl.IsGamepadButtonPressed(0, 6) && gs.UI.OptionsOn && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !nextlevelscreen && !gs.UI.HelpOn && !gs.UI.CreditsOn {
 				if optionsChange {
 					savesettings()
 				}
-				optionson = false
+				gs.UI.OptionsOn = false
 				pause = false
 
-			} else if rl.IsGamepadButtonPressed(0, 6) && invenon && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !nextlevelscreen && !helpon && !creditson {
+			} else if rl.IsGamepadButtonPressed(0, 6) && invenon && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !nextlevelscreen && !gs.UI.HelpOn && !gs.UI.CreditsOn {
 				invenon = false
 				pause = false
-			} else if rl.IsGamepadButtonPressed(0, 6) && optionson && !invenon && !gs.Shop.ShopOn && gs.Timing.TimesOn && !nextlevelscreen && !helpon && !creditson {
+			} else if rl.IsGamepadButtonPressed(0, 6) && gs.UI.OptionsOn && !invenon && !gs.Shop.ShopOn && gs.Timing.TimesOn && !nextlevelscreen && !gs.UI.HelpOn && !gs.UI.CreditsOn {
 				gs.Timing.TimesOn = false
-			} else if rl.IsGamepadButtonPressed(0, 6) && optionson && !invenon && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !nextlevelscreen && helpon && !creditson {
-				helpon = false
-			} else if rl.IsGamepadButtonPressed(0, 6) && optionson && !invenon && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !nextlevelscreen && !helpon && creditson {
-				creditson = false
+			} else if rl.IsGamepadButtonPressed(0, 6) && gs.UI.OptionsOn && !invenon && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !nextlevelscreen && gs.UI.HelpOn && !gs.UI.CreditsOn {
+				gs.UI.HelpOn = false
+			} else if rl.IsGamepadButtonPressed(0, 6) && gs.UI.OptionsOn && !invenon && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !nextlevelscreen && !gs.UI.HelpOn && gs.UI.CreditsOn {
+				gs.UI.CreditsOn = false
 			}
 			//INVEN ON
-			if rl.IsGamepadButtonPressed(0, 5) && !optionson && !levMapOn && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !nextlevelscreen && !helpon && !creditson {
+			if rl.IsGamepadButtonPressed(0, 5) && !gs.UI.OptionsOn && !levMapOn && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !nextlevelscreen && !gs.UI.HelpOn && !gs.UI.CreditsOn {
 				if invenon {
 					invenon = false
 					pause = false
@@ -10800,7 +10787,7 @@ func inp() { //MARK:INP
 							makeProjectile("fireball")
 						}
 					}
-					keypressT = gs.Core.Fps / 2
+					gs.Input.KeypressT = gs.Core.Fps / 2
 				}
 				pl.move = false
 
@@ -10844,7 +10831,7 @@ func inp() { //MARK:INP
 				}
 
 				//CONTROLLER
-				if useController {
+				if gs.Input.UseController {
 					if rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) {
 						if pl.atkTimer == 0 {
 							rl.PlaySound(gs.Audio.Sfx[0])
@@ -10856,7 +10843,7 @@ func inp() { //MARK:INP
 								makeProjectile("fireball")
 							}
 						}
-						keypressT = gs.Core.Fps / 2
+						gs.Input.KeypressT = gs.Core.Fps / 2
 					}
 					pl.move = false
 
@@ -10982,9 +10969,9 @@ func cams() { //MARK:CAMS
 	cam2.Offset.X = scrWF32 / 2
 	cam2.Offset.Y = scrHF32 / 2
 
-	if flipcam && !optionson {
+	if flipcam && !gs.UI.OptionsOn {
 		cam2.Rotation = 180
-	} else if flipcam && optionson {
+	} else if flipcam && gs.UI.OptionsOn {
 		cam2.Rotation = 0
 	} else {
 		cam2.Rotation = 0
@@ -11004,7 +10991,7 @@ func initialWindow() { //MARK:INITIAL WINDOW
 
 	//endgame = true
 
-	hpBarsOn = true
+	gs.UI.HpBarsOn = true
 	makesettings()
 	makeshaders()
 	makeaudio()
