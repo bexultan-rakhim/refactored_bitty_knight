@@ -15,115 +15,6 @@ import (
 
 // NOTE ALL THE MARK: NOTES ARE FOR VS CODE MARK JUMPING AND CAN BE IGNORED
 
-// MARK: VAR
-var (
-	//END LEVEL
-	bosses              []xboss
-	bossnum             int
-	endgameT, endPauseT int32
-	endgopherrec        rl.Rectangle
-
-	//STARTSCREEN
-	startscreen, intro, introcount bool
-	introT1, introT2, introT3      = fps * 2, fps * 2, fps * 3
-	introF1, introF2, introF3      = float32(0), float32(0), float32(0)
-
-	//OPTIONS CREDITS
-	txtSize   = txU2
-	optionT   int32
-
-	shaderon, hpBarsOn, artifactson, scanlineson, creditson, helpon, invincible, resettimes, restarton, optionsChange bool
-
-	//ENEMIES
-	enProj []xproj
-
-	enSpikes, enGhost, enSlime, enRock, enMushroom = xenemy{}, xenemy{}, xenemy{}, xenemy{}, xenemy{}
-
-	//INVEN
-	inven   []xblok
-	invenon bool
-
-	//FX & TEXT & MODS
-	fx                         []xfx
-	txtSoldlist                []xtxt
-	snow                       []ximg
-	scanlinev2                 []rl.Vector2
-	gametxt                    []xtxt
-	chainV2                    []rl.Vector2
-	chainLightOn               bool
-	chainLightTimer            int32
-	rain                       []rl.Rectangle
-	floodRec, floodImg         rl.Rectangle
-	fish1, fish2               rl.Rectangle
-	fishV2, fish2V2            rl.Vector2
-	fishSiz, fishSiz2          float32
-	fishLR, fish2LR            bool
-	fishRec, fishRec2          rl.Rectangle
-	waterLR, waterUP           bool
-	airstrikeT, airstrikebombT int32
-	airstrikeDir               int
-	airstrikeOn                bool
-	airstrikeV2                []rl.Vector2
-	fireworksCnt               rl.Vector2
-	fadeblinkon, fadeblinkon2  bool
-	fadeblink                  = float32(0.5)
-	fadeblink2                 = float32(0.5)
-
-	//LEVEL
-	level                        []xroom
-	levRec, levRecInner, wallT   rl.Rectangle
-	levW                         = float32(720)
-	borderWallBlokSiz            = bsU
-	levX, levY                   float32
-	roomNum, levBorderBlokNum    int
-	levMap                       []rl.Rectangle
-	levelnum                     = 1
-	exitRoomNum, shopRoomNum     int
-	exited, nextlevelscreen      bool
-	secs, mins, minsEND, secsEND int
-
-	roomChangedTimer, anchorT, runT, diedscrT, nextlevelT int32
-
-	levMapOn, roomChanged, night, flipcam, shader2on, shader3on, exiton, exitLR, endgame, hardcore bool
-
-
-	//PLAYER
-	pl                          = xplayer{}
-	mods                        = xmod{}
-	max                         = xmax{}
-	plProj                      []xproj
-	kills                       = xkills{}
-	hpHitY, reviveY, waterY     float32
-	hpHitF, reviveF, waterF     = float32(1), float32(1), float32(1)
-	plVineRec, diedRec, diedIMG rl.Rectangle
-	teleportRoomNum             int
-	teleportRadius              []float32
-	startdmgT                   int32
-
-	escaped, escapeRoomFound, teleporton, platkrecon, chainLightingSwingOnOff, died bool
-
-	//CORE
-	imgs                      rl.Texture2D
-	shader, shader2, shader3  rl.Shader
-	renderTarget              rl.RenderTexture2D
-	frames, scrW, scrH        int
-	scrW32, scrH32            int32
-	scrWF32, scrHF32          float32
-	cam2                      rl.Camera2D
-	fps                       = int32(60)
-	mouseV2, mousev2cam, cnt  rl.Vector2
-	ori                       = rl.NewVector2(0, 0)
-	debug, pause              bool
-
-	//IMGS
-	walltiles, floortiles, bats, knight, etc, shrines, plants, skulls, candles, signs, splats, statues, mushrooms, alien, patterns, gems []rl.Rectangle
-
-	coin = rl.NewRectangle(1120, 250, 16, 16)
-
-	rabbit1, fireballPlayer, burn, star, wateranim, plantBull, spikes, spring, posiongas, mushBull, blades, spear, firetrailanim, orbitalanim, floodanim, fishR, fishL, airstrikeanim, boss1anim, boss2anim = xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}, xanim{}
-
-
-)
 
 // Constants - these stay as package-level vars since they're computed constants
 var (
@@ -474,6 +365,9 @@ var gs = &GameState{
 	Input: InputState{
 		ControllerOn: true,
 	},
+	Render: RenderState{
+		Coin: rl.NewRectangle(1120, 250, 16, 16),
+	},
 	Level: LevelState{
 		LevW: 720,
 		BorderWallBlokSiz: bsU,
@@ -498,101 +392,101 @@ func drawcam() { //MARK:DRAW CAM
 		drawShop()
 	} else if gs.Mario.MarioOn {
 		drawUpMario()
-	} else if endgame {
+	} else if gs.Level.Endgame {
 		drawEndGame()
-	} else if nextlevelscreen {
+	} else if gs.Level.NextLevelScreen {
 		drawnextlevelscreen()
-	} else if died {
+	} else if gs.Player.Died {
 		drawDied()
 	}
 
 	//DRAW GAME LEVEL
-	if !pause {
+	if !gs.Core.Pause {
 
 		//FLOORS
-		dFloors := level[roomNum].floor
+		dFloors := gs.Level.Level[gs.Level.RoomNum].floor
 		for a := 0; a < len(dFloors); a++ {
 			drawBlok(dFloors[a], false, false, 0)
 		}
-		//rl.DrawRectangleRec(levRec, rl.Fade(rl.Black, 0.5))
+		//rl.DrawRectangleRec(gs.Level.LevRec, rl.Fade(rl.Black, 0.5))
 
 		//SPIKES
-		if len(level[roomNum].spikes) > 0 {
-			for a := 0; a < len(level[roomNum].spikes); a++ {
-				shadowRec := level[roomNum].spikes[a].rec
+		if len(gs.Level.Level[gs.Level.RoomNum].spikes) > 0 {
+			for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].spikes); a++ {
+				shadowRec := gs.Level.Level[gs.Level.RoomNum].spikes[a].rec
 				shadowRec.X -= 5
 				shadowRec.Y += 5
-				rl.DrawTexturePro(imgs, level[roomNum].spikes[a].img, shadowRec, ori, 0, rl.Fade(rl.Black, 0.8))
+				rl.DrawTexturePro(gs.Render.Imgs, gs.Level.Level[gs.Level.RoomNum].spikes[a].img, shadowRec, gs.Core.Ori, 0, rl.Fade(rl.Black, 0.8))
 				col := ranRed()
-				rl.DrawTexturePro(imgs, level[roomNum].spikes[a].img, level[roomNum].spikes[a].rec, ori, 0, col)
+				rl.DrawTexturePro(gs.Render.Imgs, gs.Level.Level[gs.Level.RoomNum].spikes[a].img, gs.Level.Level[gs.Level.RoomNum].spikes[a].rec, gs.Core.Ori, 0, col)
 
-				if frames%3 == 0 {
-					level[roomNum].spikes[a].img.X += 32
-					if level[roomNum].spikes[a].img.X >= spikes.xl+spikes.frames*32 {
-						level[roomNum].spikes[a].img.X = spikes.xl
+				if gs.Core.Frames%3 == 0 {
+					gs.Level.Level[gs.Level.RoomNum].spikes[a].img.X += 32
+					if gs.Level.Level[gs.Level.RoomNum].spikes[a].img.X >= gs.Render.Spikes.xl+gs.Render.Spikes.frames*32 {
+						gs.Level.Level[gs.Level.RoomNum].spikes[a].img.X = gs.Render.Spikes.xl
 					}
 				}
 
 				//CHECK PLAYER SPIKES COLLISION
-				if rl.CheckCollisionRecs(pl.crec, level[roomNum].spikes[a].rec) {
+				if rl.CheckCollisionRecs(gs.Player.Pl.crec, gs.Level.Level[gs.Level.RoomNum].spikes[a].rec) {
 					hitPL(0, 2)
 				}
 			}
 		}
 
 		//WALLS
-		dWalls := level[roomNum].walls
+		dWalls := gs.Level.Level[gs.Level.RoomNum].walls
 		for a := 0; a < len(dWalls); a++ {
 			drawBlok(dWalls[a], false, false, 0)
 			//WALL BLOCKNUMS
-			if debug {
+			if gs.Core.Debug {
 				rl.DrawText(fmt.Sprint(a), dWalls[a].rec.ToInt32().X+4, dWalls[a].rec.ToInt32().Y+4, txU, rl.White)
 			}
 		}
 
 		//INNER BLOKS
-		if len(level[roomNum].innerBloks) > 0 {
-			for a := 0; a < len(level[roomNum].innerBloks); a++ {
-				drawBlok(level[roomNum].innerBloks[a], false, true, 4)
+		if len(gs.Level.Level[gs.Level.RoomNum].innerBloks) > 0 {
+			for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].innerBloks); a++ {
+				drawBlok(gs.Level.Level[gs.Level.RoomNum].innerBloks[a], false, true, 4)
 			}
 		}
 
 		//ENEMY PROJECTILES
-		if len(enProj) > 0 {
+		if len(gs.Enemies.EnProj) > 0 {
 			drawUpEnProj()
 		}
 
 		//FX
-		if len(fx) > 0 {
+		if len(gs.FX.Fx) > 0 {
 			drawupfx()
 		}
 
 		//ETC
-		if len(level[roomNum].etc) > 0 {
+		if len(gs.Level.Level[gs.Level.RoomNum].etc) > 0 {
 			drawUpEtc()
 		}
 
 		//PLAYER PROJECTILES
-		if len(plProj) > 0 {
+		if len(gs.Player.PlProj) > 0 {
 			drawUpPlayerProj()
 		}
 
 		//CHAIN LIGHTNING
-		if chainLightOn {
+		if gs.FX.ChainLightOn {
 			drawChainLight()
 		}
 
 		//ENEMIES
-		if len(level[roomNum].enemies) > 0 {
+		if len(gs.Level.Level[gs.Level.RoomNum].enemies) > 0 {
 			drawUpEnemies()
 		}
 		//BOSS
-		if levelnum == 6 {
+		if gs.Level.Levelnum == 6 {
 			drawUpBoss()
 		}
 
 		//MOVE BLOKS
-		dMovBloks := level[roomNum].movBloks
+		dMovBloks := gs.Level.Level[gs.Level.RoomNum].movBloks
 		for a := 0; a < len(dMovBloks); a++ {
 			drawBlok(dMovBloks[a], true, false, 0)
 		}
@@ -601,92 +495,92 @@ func drawcam() { //MARK:DRAW CAM
 		drawPlayer()
 
 		//GAME TEXT
-		if len(gametxt) > 0 {
+		if len(gs.UI.GameTxt) > 0 {
 			clear := false
-			for a := 0; a < len(gametxt); a++ {
-				if gametxt[a].onoff {
-					rl.DrawText(gametxt[a].txt, gametxt[a].x, gametxt[a].y, 20, rl.Fade(gametxt[a].col, gametxt[a].fade))
+			for a := 0; a < len(gs.UI.GameTxt); a++ {
+				if gs.UI.GameTxt[a].onoff {
+					rl.DrawText(gs.UI.GameTxt[a].txt, gs.UI.GameTxt[a].x, gs.UI.GameTxt[a].y, 20, rl.Fade(gs.UI.GameTxt[a].col, gs.UI.GameTxt[a].fade))
 
-					gametxt[a].fade -= 0.02
-					gametxt[a].y--
-					if gametxt[a].fade <= 0 {
-						gametxt[a].onoff = false
+					gs.UI.GameTxt[a].fade -= 0.02
+					gs.UI.GameTxt[a].y--
+					if gs.UI.GameTxt[a].fade <= 0 {
+						gs.UI.GameTxt[a].onoff = false
 					}
 				} else {
 					clear = true
 				}
 			}
 			if clear {
-				for a := 0; a < len(gametxt); a++ {
-					if !gametxt[a].onoff {
-						gametxt = remTxt(gametxt, a)
+				for a := 0; a < len(gs.UI.GameTxt); a++ {
+					if !gs.UI.GameTxt[a].onoff {
+						gs.UI.GameTxt = remTxt(gs.UI.GameTxt, a)
 					}
 				}
 			}
 		}
 
 		//AIR STRIKE
-		if airstrikeOn {
+		if gs.FX.AirstrikeOn {
 			drawUpAirStrike()
 		}
 
 		//SNOW
-		if len(snow) > 0 {
+		if len(gs.FX.Snow) > 0 {
 			clear := false
-			for a := 0; a < len(snow); a++ {
-				if !snow[a].off {
-					rl.DrawTexturePro(imgs, snow[a].img, snow[a].rec, snow[a].ori, snow[a].ro, rl.Fade(snow[a].col, snow[a].fade))
+			for a := 0; a < len(gs.FX.Snow); a++ {
+				if !gs.FX.Snow[a].off {
+					rl.DrawTexturePro(gs.Render.Imgs, gs.FX.Snow[a].img, gs.FX.Snow[a].rec, gs.FX.Snow[a].ori, gs.FX.Snow[a].ro, rl.Fade(gs.FX.Snow[a].col, gs.FX.Snow[a].fade))
 
-					snow[a].ro += 2
-					snow[a].rec.Y += 2
+					gs.FX.Snow[a].ro += 2
+					gs.FX.Snow[a].rec.Y += 2
 
-					if snow[a].rec.Y > scrHF32 {
-						snow[a].off = true
+					if gs.FX.Snow[a].rec.Y > gs.Core.ScrHF32 {
+						gs.FX.Snow[a].off = true
 						clear = true
 					}
 				}
 			}
 			if clear {
-				for a := 0; a < len(snow); a++ {
-					if snow[a].off {
-						snow = remImg(snow, a)
+				for a := 0; a < len(gs.FX.Snow); a++ {
+					if gs.FX.Snow[a].off {
+						gs.FX.Snow = remImg(gs.FX.Snow, a)
 					}
 				}
 			}
 		}
 
 		//INVENTORY
-		if len(inven) > 0 {
+		if len(gs.Player.Inven) > 0 {
 			drawInven()
 		}
 		//PLAYER INFO
 		drawPlayerInfo()
 
-		if debug {
+		if gs.Core.Debug {
 			//NEXT ROOM DOOR NUMS
-			for a := 0; a < len(level[roomNum].doorSides); a++ {
-				if level[roomNum].doorSides[a] == 1 {
-					rl.DrawText("up  "+fmt.Sprint(level[roomNum].nextRooms[a]), levRec.ToInt32().X+levRec.ToInt32().Width/2, levRec.ToInt32().Y+bsUi32, txU2, rl.White)
+			for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].doorSides); a++ {
+				if gs.Level.Level[gs.Level.RoomNum].doorSides[a] == 1 {
+					rl.DrawText("up  "+fmt.Sprint(gs.Level.Level[gs.Level.RoomNum].nextRooms[a]), gs.Level.LevRec.ToInt32().X+gs.Level.LevRec.ToInt32().Width/2, gs.Level.LevRec.ToInt32().Y+bsUi32, txU2, rl.White)
 				}
-				if level[roomNum].doorSides[a] == 2 {
-					rl.DrawText("right"+fmt.Sprint(level[roomNum].nextRooms[a]), levRec.ToInt32().X+levRec.ToInt32().Width-bsU2i32, levRec.ToInt32().Y+levRec.ToInt32().Width/2, txU2, rl.White)
+				if gs.Level.Level[gs.Level.RoomNum].doorSides[a] == 2 {
+					rl.DrawText("right"+fmt.Sprint(gs.Level.Level[gs.Level.RoomNum].nextRooms[a]), gs.Level.LevRec.ToInt32().X+gs.Level.LevRec.ToInt32().Width-bsU2i32, gs.Level.LevRec.ToInt32().Y+gs.Level.LevRec.ToInt32().Width/2, txU2, rl.White)
 				}
-				if level[roomNum].doorSides[a] == 3 {
-					rl.DrawText("down  "+fmt.Sprint(level[roomNum].nextRooms[a]), levRec.ToInt32().X+levRec.ToInt32().Width/2, levRec.ToInt32().Y+levRec.ToInt32().Width-bsU2i32, txU2, rl.White)
+				if gs.Level.Level[gs.Level.RoomNum].doorSides[a] == 3 {
+					rl.DrawText("down  "+fmt.Sprint(gs.Level.Level[gs.Level.RoomNum].nextRooms[a]), gs.Level.LevRec.ToInt32().X+gs.Level.LevRec.ToInt32().Width/2, gs.Level.LevRec.ToInt32().Y+gs.Level.LevRec.ToInt32().Width-bsU2i32, txU2, rl.White)
 				}
-				if level[roomNum].doorSides[a] == 4 {
-					rl.DrawText("left  "+fmt.Sprint(level[roomNum].nextRooms[a]), levRec.ToInt32().X+bsU2i32, levRec.ToInt32().Y+levRec.ToInt32().Width/2, txU2, rl.White)
+				if gs.Level.Level[gs.Level.RoomNum].doorSides[a] == 4 {
+					rl.DrawText("left  "+fmt.Sprint(gs.Level.Level[gs.Level.RoomNum].nextRooms[a]), gs.Level.LevRec.ToInt32().X+bsU2i32, gs.Level.LevRec.ToInt32().Y+gs.Level.LevRec.ToInt32().Width/2, txU2, rl.White)
 				}
 			}
 			//DOOR EXIT RECS
 
-			for a := 0; a < len(level[roomNum].doorExitRecs); a++ {
-				rl.DrawRectangleLinesEx(level[roomNum].doorExitRecs[a], 0.5, rl.Magenta)
+			for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].doorExitRecs); a++ {
+				rl.DrawRectangleLinesEx(gs.Level.Level[gs.Level.RoomNum].doorExitRecs[a], 0.5, rl.Magenta)
 			}
 
 			//LEVEL BORDER RECS
-			rl.DrawRectangleLinesEx(levRec, 2, rl.Green)
-			rl.DrawRectangleLinesEx(levRecInner, 2, rl.Magenta)
+			rl.DrawRectangleLinesEx(gs.Level.LevRec, 2, rl.Green)
+			rl.DrawRectangleLinesEx(gs.Level.LevRecInner, 2, rl.Magenta)
 		}
 	}
 
@@ -695,8 +589,8 @@ func drawcam() { //MARK:DRAW CAM
 		num := 100
 
 		for {
-			x := (levX - bsU6) + rF32(0, levW+bsU12)
-			y := levY + rF32(0, levW)
+			x := (gs.Level.LevX - bsU6) + rF32(0, gs.Level.LevW+bsU12)
+			y := gs.Level.LevY + rF32(0, gs.Level.LevW)
 			siz := rF32(1, 3)
 			rec := rl.NewRectangle(x, y, siz, siz)
 			rl.DrawRectangleRec(rec, rl.Black)
@@ -711,68 +605,68 @@ func drawcam() { //MARK:DRAW CAM
 }
 func drawnextlevelscreen() { //MARK:DRAW NEXT LEVEL SCREEN
 
-	txt := "prepare for level " + fmt.Sprint(levelnum)
+	txt := "prepare for level " + fmt.Sprint(gs.Level.Levelnum)
 	txtlen := rl.MeasureText(txt, 40)
-	x := int32(cnt.X) - txtlen/2
-	y := int32(cnt.Y - 20)
+	x := int32(gs.Core.Cnt.X) - txtlen/2
+	y := int32(gs.Core.Cnt.Y - 20)
 
 	rl.DrawText(txt, x, y, 40, rl.White)
 
 	txt = "press space or button to continue"
 	txtlen = rl.MeasureText(txt, 20)
-	x = int32(cnt.X) - txtlen/2
-	y = int32(cnt.Y + 30)
+	x = int32(gs.Core.Cnt.X) - txtlen/2
+	y = int32(gs.Core.Cnt.Y + 30)
 
 	rl.DrawText(txt, x, y, 20, rl.White)
 
-	if nextlevelT > 0 {
-		nextlevelT--
+	if gs.Level.NextlevelT > 0 {
+		gs.Level.NextlevelT--
 	} else {
-		startdmgT = gs.Core.Fps * 5
+		gs.Player.StartdmgT = gs.Core.Fps * 5
 		if rl.IsKeyPressed(rl.KeySpace) {
-			nextlevelscreen = false
-			pause = false
+			gs.Level.NextLevelScreen = false
+			gs.Core.Pause = false
 		}
 		if gs.Input.UseController {
 			if rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) {
-				nextlevelscreen = false
-				pause = false
+				gs.Level.NextLevelScreen = false
+				gs.Core.Pause = false
 			}
 		}
 	}
 
 }
 func drawEndGame() { //MARK:DRAW END GAME
-	pause = true
-	rl.DrawRectangle(0, 0, scrW32, scrH32, rl.Black)
-	shaderon = false
-	if endPauseT > 0 {
-		endPauseT--
+	gs.Core.Pause = true
+	rl.DrawRectangle(0, 0, gs.Core.ScrW32, gs.Core.ScrH32, rl.Black)
+	gs.Render.ShaderOn = false
+	if gs.Level.EndPauseT > 0 {
+		gs.Level.EndPauseT--
 	}
-	if endgameT > 0 {
-		endgameT--
-		if endgopherrec.Y > levRec.Y+levRec.Height-endgopherrec.Height {
-			endgopherrec.Y -= 2
+	if gs.Level.EndgameT > 0 {
+		gs.Level.EndgameT--
+		if gs.Level.EndgopherRec.Y > gs.Level.LevRec.Y+gs.Level.LevRec.Height-gs.Level.EndgopherRec.Height {
+			gs.Level.EndgopherRec.Y -= 2
 		}
 	}
 
-	rl.DrawTexturePro(imgs, etc[55], endgopherrec, rl.Vector2Zero(), 0, rl.White)
+	rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Etc[55], gs.Level.EndgopherRec, rl.Vector2Zero(), 0, rl.White)
 	rl.PlaySound(gs.Audio.Sfx[19])
 	txt := "you"
 	txtlen := rl.MeasureText(txt, txU8)
-	rl.DrawText(txt, int32(cnt.X)-txtlen/2-3, int32(cnt.Y)-txU8+3, txU8, rl.Black)
-	rl.DrawText(txt, int32(cnt.X)-txtlen/2, int32(cnt.Y)-txU8, txU8, rl.White)
+	rl.DrawText(txt, int32(gs.Core.Cnt.X)-txtlen/2-3, int32(gs.Core.Cnt.Y)-txU8+3, txU8, rl.Black)
+	rl.DrawText(txt, int32(gs.Core.Cnt.X)-txtlen/2, int32(gs.Core.Cnt.Y)-txU8, txU8, rl.White)
 	txt = "win"
 	txtlen = rl.MeasureText(txt, txU8)
-	rl.DrawText(txt, int32(cnt.X)-txtlen/2-3, int32(cnt.Y)+txU+3, txU8, rl.Black)
-	rl.DrawText(txt, int32(cnt.X)-txtlen/2, int32(cnt.Y)+txU, txU8, rl.White)
+	rl.DrawText(txt, int32(gs.Core.Cnt.X)-txtlen/2-3, int32(gs.Core.Cnt.Y)+txU+3, txU8, rl.Black)
+	rl.DrawText(txt, int32(gs.Core.Cnt.X)-txtlen/2, int32(gs.Core.Cnt.Y)+txU, txU8, rl.White)
 
 	if gs.Input.KeypressT == 0 {
-		if endPauseT == 0 {
-			if rl.IsKeyPressed(rl.KeySpace) || rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) || endgameT == 0 {
-				endgame = false
-				endgameT = 0
-				endgopherrec = rl.NewRectangle(cnt.X-bsU4, levRec.Y+levRec.Height, bsU8, bsU8)
+		if gs.Level.EndPauseT == 0 {
+			if rl.IsKeyPressed(rl.KeySpace) || rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) || gs.Level.EndgameT == 0 {
+				gs.Level.Endgame = false
+				gs.Level.EndgameT = 0
+				gs.Level.EndgopherRec = rl.NewRectangle(gs.Core.Cnt.X-bsU4, gs.Level.LevRec.Y+gs.Level.LevRec.Height, bsU8, bsU8)
 				restartgame()
 			}
 		}
@@ -780,7 +674,7 @@ func drawEndGame() { //MARK:DRAW END GAME
 }
 func drawShop() { //MARK:DRAW SHOP
 
-	rl.DrawRectangle(0, 0, scrW32, scrH32, rl.Black)
+	rl.DrawRectangle(0, 0, gs.Core.ScrW32, gs.Core.ScrH32, rl.Black)
 
 	if rl.IsKeyPressed(rl.KeyA) || rl.GetGamepadAxisMovement(0, 0) < 0 || rl.IsGamepadButtonDown(0, 4) {
 		if gs.UI.OptionT == 0 {
@@ -840,20 +734,20 @@ func drawShop() { //MARK:DRAW SHOP
 		if gs.Shop.ShopNum == 4 {
 			gs.Shop.ShopExitT = gs.Core.Fps * 2
 			gs.Shop.ShopOn = false
-			pl.cnt.Y = gs.Shop.ShopExitY
+			gs.Player.Pl.cnt.Y = gs.Shop.ShopExitY
 			upPlayerRec()
-			pause = false
+			gs.Core.Pause = false
 		} else {
-			if mods.wallet {
-				mods.wallet = false
+			if gs.Player.Mods.wallet {
+				gs.Player.Mods.wallet = false
 				clearinven("wallet")
 				gs.Shop.ShopItems[gs.Shop.ShopNum].shopoff = true
 				addshopitem(gs.Shop.ShopNum)
 				rl.PlaySound(gs.Audio.Sfx[21])
-			} else if !gs.Shop.ShopItems[gs.Shop.ShopNum].shopoff && pl.coins >= gs.Shop.ShopItems[gs.Shop.ShopNum].shopprice {
+			} else if !gs.Shop.ShopItems[gs.Shop.ShopNum].shopoff && gs.Player.Pl.coins >= gs.Shop.ShopItems[gs.Shop.ShopNum].shopprice {
 				if !gs.Shop.ShopItems[gs.Shop.ShopNum].shopoff {
 					gs.Shop.ShopItems[gs.Shop.ShopNum].shopoff = true
-					pl.coins -= gs.Shop.ShopItems[gs.Shop.ShopNum].shopprice
+					gs.Player.Pl.coins -= gs.Shop.ShopItems[gs.Shop.ShopNum].shopprice
 				}
 				gs.Shop.ShopItems[gs.Shop.ShopNum].shopoff = true
 				addshopitem(gs.Shop.ShopNum)
@@ -866,38 +760,38 @@ func drawShop() { //MARK:DRAW SHOP
 
 	txt := "shop"
 	txtlen := rl.MeasureText(txt, txU5)
-	txtx := int32(cnt.X) - txtlen/2
-	txty := int32(levY) + txU
+	txtx := int32(gs.Core.Cnt.X) - txtlen/2
+	txty := int32(gs.Level.LevY) + txU
 	rl.DrawText(txt, txtx, txty, txU5, rl.White)
 
 	siz := bsU5
-	y := levY + bsU6
-	x := cnt.X
+	y := gs.Level.LevY + bsU6
+	x := gs.Core.Cnt.X
 	x -= siz * 2
 
 	rec := rl.NewRectangle(x, y, siz, siz)
 	if gs.Shop.ShopNum == 0 {
 		if gs.Shop.ShopItems[0].shopoff {
-			rl.DrawRectangleRec(rec, rl.Fade(rl.Red, fadeblink))
+			rl.DrawRectangleRec(rec, rl.Fade(rl.Red, gs.UI.FadeBlink))
 		} else {
-			rl.DrawRectangleRec(rec, rl.Fade(rl.Green, fadeblink))
+			rl.DrawRectangleRec(rec, rl.Fade(rl.Green, gs.UI.FadeBlink))
 		}
 	}
 	if gs.Shop.ShopItems[0].shopoff {
 		col := ranRed()
-		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[0].img, rec, rl.Vector2Zero(), 0, col)
-		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[0].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(col, 0.2))
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Shop.ShopItems[0].img, rec, rl.Vector2Zero(), 0, col)
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Shop.ShopItems[0].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(col, 0.2))
 	} else {
 
-		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[0].img, rec, rl.Vector2Zero(), 0, gs.Shop.ShopItems[0].color)
-		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[0].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(gs.Shop.ShopItems[0].color, 0.2))
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Shop.ShopItems[0].img, rec, rl.Vector2Zero(), 0, gs.Shop.ShopItems[0].color)
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Shop.ShopItems[0].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(gs.Shop.ShopItems[0].color, 0.2))
 		coinx := rec.X + rec.Width + bsU
 		coiny := rec.Y + bsU
 		txtlen = rl.MeasureText("x"+fmt.Sprint(gs.Shop.ShopItems[0].shopprice), gs.UI.TxtSize)
 		txtx = int32(coinx+siz/4) - txtlen/2
 		txty = int32(coiny+siz/2) + bsUi32/3
 		rl.DrawText("x"+fmt.Sprint(gs.Shop.ShopItems[0].shopprice), txtx, txty, gs.UI.TxtSize, rl.White)
-		rl.DrawTexturePro(imgs, coin, rl.NewRectangle(coinx, coiny, siz/2, siz/2), ori, 0, rl.White)
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Coin, rl.NewRectangle(coinx, coiny, siz/2, siz/2), gs.Core.Ori, 0, rl.White)
 	}
 	txtlen = rl.MeasureText(gs.Shop.ShopItems[0].name, gs.UI.TxtSize)
 	rl.DrawText(gs.Shop.ShopItems[0].name, rec.ToInt32().X+rec.ToInt32().Width/2-txtlen/2, rec.ToInt32().Y+rec.ToInt32().Height+bsUi32/4, gs.UI.TxtSize, rl.White)
@@ -905,26 +799,26 @@ func drawShop() { //MARK:DRAW SHOP
 	rec.X += (siz * 2) + siz/2
 	if gs.Shop.ShopNum == 1 {
 		if gs.Shop.ShopItems[1].shopoff {
-			rl.DrawRectangleRec(rec, rl.Fade(rl.Red, fadeblink))
+			rl.DrawRectangleRec(rec, rl.Fade(rl.Red, gs.UI.FadeBlink))
 		} else {
-			rl.DrawRectangleRec(rec, rl.Fade(rl.Green, fadeblink))
+			rl.DrawRectangleRec(rec, rl.Fade(rl.Green, gs.UI.FadeBlink))
 		}
 	}
 
 	if gs.Shop.ShopItems[1].shopoff {
 		col := ranRed()
-		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[1].img, rec, rl.Vector2Zero(), 0, col)
-		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[1].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(col, 0.2))
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Shop.ShopItems[1].img, rec, rl.Vector2Zero(), 0, col)
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Shop.ShopItems[1].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(col, 0.2))
 	} else {
-		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[1].img, rec, rl.Vector2Zero(), 0, gs.Shop.ShopItems[1].color)
-		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[1].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(gs.Shop.ShopItems[1].color, 0.2))
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Shop.ShopItems[1].img, rec, rl.Vector2Zero(), 0, gs.Shop.ShopItems[1].color)
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Shop.ShopItems[1].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(gs.Shop.ShopItems[1].color, 0.2))
 		coinx := rec.X + rec.Width + bsU
 		coiny := rec.Y + bsU
 		txtlen = rl.MeasureText("x"+fmt.Sprint(gs.Shop.ShopItems[1].shopprice), gs.UI.TxtSize)
 		txtx = int32(coinx+siz/4) - txtlen/2
 		txty = int32(coiny+siz/2) + bsUi32/3
 		rl.DrawText("x"+fmt.Sprint(gs.Shop.ShopItems[1].shopprice), txtx, txty, gs.UI.TxtSize, rl.White)
-		rl.DrawTexturePro(imgs, coin, rl.NewRectangle(coinx, coiny, siz/2, siz/2), ori, 0, rl.White)
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Coin, rl.NewRectangle(coinx, coiny, siz/2, siz/2), gs.Core.Ori, 0, rl.White)
 	}
 	txtlen = rl.MeasureText(gs.Shop.ShopItems[1].name, gs.UI.TxtSize)
 	rl.DrawText(gs.Shop.ShopItems[1].name, rec.ToInt32().X+rec.ToInt32().Width/2-txtlen/2, rec.ToInt32().Y+rec.ToInt32().Height+bsUi32/4, gs.UI.TxtSize, rl.White)
@@ -932,26 +826,26 @@ func drawShop() { //MARK:DRAW SHOP
 	rec.Y += siz * 2
 	if gs.Shop.ShopNum == 3 {
 		if gs.Shop.ShopItems[3].shopoff {
-			rl.DrawRectangleRec(rec, rl.Fade(rl.Red, fadeblink))
+			rl.DrawRectangleRec(rec, rl.Fade(rl.Red, gs.UI.FadeBlink))
 		} else {
-			rl.DrawRectangleRec(rec, rl.Fade(rl.Green, fadeblink))
+			rl.DrawRectangleRec(rec, rl.Fade(rl.Green, gs.UI.FadeBlink))
 		}
 	}
 
 	if gs.Shop.ShopItems[3].shopoff {
 		col := ranRed()
-		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[3].img, rec, rl.Vector2Zero(), 0, col)
-		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[3].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(col, 0.2))
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Shop.ShopItems[3].img, rec, rl.Vector2Zero(), 0, col)
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Shop.ShopItems[3].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(col, 0.2))
 	} else {
-		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[3].img, rec, rl.Vector2Zero(), 0, gs.Shop.ShopItems[3].color)
-		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[3].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(gs.Shop.ShopItems[3].color, 0.2))
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Shop.ShopItems[3].img, rec, rl.Vector2Zero(), 0, gs.Shop.ShopItems[3].color)
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Shop.ShopItems[3].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(gs.Shop.ShopItems[3].color, 0.2))
 		coinx := rec.X + rec.Width + bsU
 		coiny := rec.Y + bsU
 		txtlen = rl.MeasureText("x"+fmt.Sprint(gs.Shop.ShopItems[3].shopprice), gs.UI.TxtSize)
 		txtx = int32(coinx+siz/4) - txtlen/2
 		txty = int32(coiny+siz/2) + bsUi32/3
 		rl.DrawText("x"+fmt.Sprint(gs.Shop.ShopItems[3].shopprice), txtx, txty, gs.UI.TxtSize, rl.White)
-		rl.DrawTexturePro(imgs, coin, rl.NewRectangle(coinx, coiny, siz/2, siz/2), ori, 0, rl.White)
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Coin, rl.NewRectangle(coinx, coiny, siz/2, siz/2), gs.Core.Ori, 0, rl.White)
 	}
 	txtlen = rl.MeasureText(gs.Shop.ShopItems[3].name, gs.UI.TxtSize)
 	rl.DrawText(gs.Shop.ShopItems[3].name, rec.ToInt32().X+rec.ToInt32().Width/2-txtlen/2, rec.ToInt32().Y+rec.ToInt32().Height+bsUi32/4, gs.UI.TxtSize, rl.White)
@@ -959,61 +853,61 @@ func drawShop() { //MARK:DRAW SHOP
 	rec.X -= (siz * 2) + siz/2
 	if gs.Shop.ShopNum == 2 {
 		if gs.Shop.ShopItems[2].shopoff {
-			rl.DrawRectangleRec(rec, rl.Fade(rl.Red, fadeblink))
+			rl.DrawRectangleRec(rec, rl.Fade(rl.Red, gs.UI.FadeBlink))
 		} else {
-			rl.DrawRectangleRec(rec, rl.Fade(rl.Green, fadeblink))
+			rl.DrawRectangleRec(rec, rl.Fade(rl.Green, gs.UI.FadeBlink))
 		}
 	}
 
 	if gs.Shop.ShopItems[2].shopoff {
 		col := ranRed()
-		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[2].img, rec, rl.Vector2Zero(), 0, col)
-		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[2].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(col, 0.2))
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Shop.ShopItems[2].img, rec, rl.Vector2Zero(), 0, col)
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Shop.ShopItems[2].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(col, 0.2))
 	} else {
-		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[2].img, rec, rl.Vector2Zero(), 0, gs.Shop.ShopItems[2].color)
-		rl.DrawTexturePro(imgs, gs.Shop.ShopItems[2].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(gs.Shop.ShopItems[2].color, 0.2))
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Shop.ShopItems[2].img, rec, rl.Vector2Zero(), 0, gs.Shop.ShopItems[2].color)
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Shop.ShopItems[2].img, BlurRec(rec, 2), rl.Vector2Zero(), 0, rl.Fade(gs.Shop.ShopItems[2].color, 0.2))
 		coinx := rec.X + rec.Width + bsU
 		coiny := rec.Y + bsU
 		txtlen = rl.MeasureText("x"+fmt.Sprint(gs.Shop.ShopItems[2].shopprice), gs.UI.TxtSize)
 		txtx = int32(coinx+siz/4) - txtlen/2
 		txty = int32(coiny+siz/2) + bsUi32/3
 		rl.DrawText("x"+fmt.Sprint(gs.Shop.ShopItems[2].shopprice), txtx, txty, gs.UI.TxtSize, rl.White)
-		rl.DrawTexturePro(imgs, coin, rl.NewRectangle(coinx, coiny, siz/2, siz/2), ori, 0, rl.White)
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Coin, rl.NewRectangle(coinx, coiny, siz/2, siz/2), gs.Core.Ori, 0, rl.White)
 	}
 	txtlen = rl.MeasureText(gs.Shop.ShopItems[2].name, gs.UI.TxtSize)
 	rl.DrawText(gs.Shop.ShopItems[2].name, rec.ToInt32().X+rec.ToInt32().Width/2-txtlen/2, rec.ToInt32().Y+rec.ToInt32().Height+bsUi32/4, gs.UI.TxtSize, rl.White)
 
 	//WALLET
-	if mods.wallet {
-		walletx := cnt.X - siz*2 + siz/8
+	if gs.Player.Mods.wallet {
+		walletx := gs.Core.Cnt.X - siz*2 + siz/8
 		wallety := rec.Y + rec.Height + bsU4 + siz/8
-		rl.DrawTexturePro(imgs, etc[11], rl.NewRectangle(walletx, wallety, siz-siz/4, siz-siz/4), ori, 0, ranBrown())
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Etc[11], rl.NewRectangle(walletx, wallety, siz-siz/4, siz-siz/4), gs.Core.Ori, 0, ranBrown())
 	}
 	//PL COINS
-	coinx := cnt.X - siz
+	coinx := gs.Core.Cnt.X - siz
 	coiny := rec.Y + rec.Height + bsU4
-	rl.DrawTexturePro(imgs, coin, rl.NewRectangle(coinx, coiny, siz, siz), ori, 0, rl.White)
+	rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Coin, rl.NewRectangle(coinx, coiny, siz, siz), gs.Core.Ori, 0, rl.White)
 
 	txtx = int32(coinx + siz)
 	txty = int32(coiny + siz/4)
-	rl.DrawText("x"+fmt.Sprint(pl.coins), txtx, txty, gs.UI.TxtSize*2, rl.White)
+	rl.DrawText("x"+fmt.Sprint(gs.Player.Pl.coins), txtx, txty, gs.UI.TxtSize*2, rl.White)
 
-	if frames%6 == 0 {
-		coin.X += 16
-		if coin.X >= 1200 {
-			coin.X = 1120
+	if gs.Core.Frames%6 == 0 {
+		gs.Render.Coin.X += 16
+		if gs.Render.Coin.X >= 1200 {
+			gs.Render.Coin.X = 1120
 		}
 	}
 
 	//EXIT
 	txtlen = rl.MeasureText("exit", gs.UI.TxtSize*2)
-	txtx = int32(cnt.X) - txtlen/2
+	txtx = int32(gs.Core.Cnt.X) - txtlen/2
 	txty = int32(coiny + siz + bsU2)
 
 	wid := float32(txtlen) + bsU2
 	heig := float32(gs.UI.TxtSize*2) + bsU/2
 
-	rec = rl.NewRectangle(cnt.X-wid/2, float32(txty)-bsU/4, wid, heig)
+	rec = rl.NewRectangle(gs.Core.Cnt.X-wid/2, float32(txty)-bsU/4, wid, heig)
 
 	if gs.Shop.ShopNum == 4 {
 		rl.DrawRectangleRec(rec, ranRed())
@@ -1027,14 +921,14 @@ func drawShop() { //MARK:DRAW SHOP
 }
 func drawHelp() { //MARK:DRAW HELP
 
-	rl.DrawRectangle(0, 0, scrW32, scrH32, rl.Black)
+	rl.DrawRectangle(0, 0, gs.Core.ScrW32, gs.Core.ScrH32, rl.Black)
 	txt := "help"
 	txtlen := rl.MeasureText(txt, txU5)
-	txtx := int32(cnt.X) - txtlen/2
-	txty := int32(levY) + txU
+	txtx := int32(gs.Core.Cnt.X) - txtlen/2
+	txty := int32(gs.Level.LevY) + txU
 	rl.DrawText(txt, txtx, txty, txU5, rl.White)
 
-	txtx = int32(cnt.X - bsU9)
+	txtx = int32(gs.Core.Cnt.X - bsU9)
 	txty += txU7
 
 	txt = "five levels collect power ups"
@@ -1072,38 +966,38 @@ func drawHelp() { //MARK:DRAW HELP
 }
 func drawDied() { //MARK:DRAW DIED
 
-	rl.DrawRectangle(0, 0, scrW32, scrH32, rl.Black)
+	rl.DrawRectangle(0, 0, gs.Core.ScrW32, gs.Core.ScrH32, rl.Black)
 
-	if diedscrT > 0 {
-		diedscrT--
+	if gs.Level.DiedscrT > 0 {
+		gs.Level.DiedscrT--
 	}
 
-	rl.DrawTexturePro(imgs, diedIMG, diedRec, rl.Vector2Zero(), 0, ranRed())
-	rl.DrawTexturePro(imgs, diedIMG, BlurRec(diedRec, 10), rl.Vector2Zero(), 0, rl.Fade(ranRed(), rF32(0.1, 0.4)))
-	diedRec.X -= 2
-	diedRec.Y -= 2
-	diedRec.Width += 4
-	diedRec.Height += 4
+	rl.DrawTexturePro(gs.Render.Imgs, gs.Player.DiedIMG, gs.Player.DiedRec, rl.Vector2Zero(), 0, ranRed())
+	rl.DrawTexturePro(gs.Render.Imgs, gs.Player.DiedIMG, BlurRec(gs.Player.DiedRec, 10), rl.Vector2Zero(), 0, rl.Fade(ranRed(), rF32(0.1, 0.4)))
+	gs.Player.DiedRec.X -= 2
+	gs.Player.DiedRec.Y -= 2
+	gs.Player.DiedRec.Width += 4
+	gs.Player.DiedRec.Height += 4
 
-	if diedRec.Y <= levRecInner.Y || rl.IsKeyPressed(rl.KeySpace) || rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) && diedscrT == 0 {
-		died = false
+	if gs.Player.DiedRec.Y <= gs.Level.LevRecInner.Y || rl.IsKeyPressed(rl.KeySpace) || rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) && gs.Level.DiedscrT == 0 {
+		gs.Player.Died = false
 		gs.Timing.BestTime = false
 		gs.Timing.TimesOn = true
 		gs.Timing.BestTimesT = gs.Core.Fps
 	}
 	txt := "you"
 	txtlen := rl.MeasureText(txt, txU8)
-	rl.DrawText(txt, int32(cnt.X)-txtlen/2-3, int32(cnt.Y)-txU8+3, txU8, rl.Black)
-	rl.DrawText(txt, int32(cnt.X)-txtlen/2, int32(cnt.Y)-txU8, txU8, rl.White)
+	rl.DrawText(txt, int32(gs.Core.Cnt.X)-txtlen/2-3, int32(gs.Core.Cnt.Y)-txU8+3, txU8, rl.Black)
+	rl.DrawText(txt, int32(gs.Core.Cnt.X)-txtlen/2, int32(gs.Core.Cnt.Y)-txU8, txU8, rl.White)
 	txt = "died"
 	txtlen = rl.MeasureText(txt, txU8)
-	rl.DrawText(txt, int32(cnt.X)-txtlen/2-3, int32(cnt.Y)+txU+3, txU8, rl.Black)
-	rl.DrawText(txt, int32(cnt.X)-txtlen/2, int32(cnt.Y)+txU, txU8, rl.White)
+	rl.DrawText(txt, int32(gs.Core.Cnt.X)-txtlen/2-3, int32(gs.Core.Cnt.Y)+txU+3, txU8, rl.Black)
+	rl.DrawText(txt, int32(gs.Core.Cnt.X)-txtlen/2, int32(gs.Core.Cnt.Y)+txU, txU8, rl.White)
 
 	txt = "new best time"
 	txtlen = rl.MeasureText(txt, txU4)
-	rl.DrawText(txt, int32(cnt.X)-txtlen/2-3, scrH32-txU5+3, txU4, rl.Black)
-	rl.DrawText(txt, int32(cnt.X)-txtlen/2, scrH32-txU5, txU4, rl.White)
+	rl.DrawText(txt, int32(gs.Core.Cnt.X)-txtlen/2-3, gs.Core.ScrH32-txU5+3, txU4, rl.Black)
+	rl.DrawText(txt, int32(gs.Core.Cnt.X)-txtlen/2, gs.Core.ScrH32-txU5, txU4, rl.White)
 
 }
 func drawTimes() { //MARK:DRAW TIMES
@@ -1112,11 +1006,11 @@ func drawTimes() { //MARK:DRAW TIMES
 		gs.Timing.BestTimesT--
 	}
 
-	rl.DrawRectangle(0, 0, scrW32, scrH32, rl.Black)
+	rl.DrawRectangle(0, 0, gs.Core.ScrW32, gs.Core.ScrH32, rl.Black)
 	txt := "best times"
 	txtlen := rl.MeasureText(txt, txU5)
-	txtx := int32(cnt.X) - txtlen/2
-	txty := int32(levY) + txU
+	txtx := int32(gs.Core.Cnt.X) - txtlen/2
+	txty := int32(gs.Level.LevY) + txU
 	rl.DrawText(txt, txtx, txty, txU5, rl.White)
 
 	txty += txU7
@@ -1141,7 +1035,7 @@ func drawTimes() { //MARK:DRAW TIMES
 		}
 		timesTXT := minTXT + ":" + secsTXT
 		txtlen := rl.MeasureText(timesTXT, gs.UI.TxtSize*2)
-		rl.DrawText(timesTXT, int32(cnt.X)-txtlen/2, txty, gs.UI.TxtSize*2, rl.White)
+		rl.DrawText(timesTXT, int32(gs.Core.Cnt.X)-txtlen/2, txty, gs.UI.TxtSize*2, rl.White)
 		txty += gs.UI.TxtSize*2 + txU/2
 	}
 
@@ -1158,14 +1052,14 @@ func drawTimes() { //MARK:DRAW TIMES
 
 func drawCredits() { //MARK:DRAW CREDITS
 
-	rl.DrawRectangle(0, 0, scrW32, scrH32, rl.Black)
+	rl.DrawRectangle(0, 0, gs.Core.ScrW32, gs.Core.ScrH32, rl.Black)
 	txt := "credits"
 	txtlen := rl.MeasureText(txt, txU5)
-	txtx := int32(cnt.X) - txtlen/2
-	txty := int32(levY) + txU
+	txtx := int32(gs.Core.Cnt.X) - txtlen/2
+	txty := int32(gs.Level.LevY) + txU
 	rl.DrawText(txt, txtx, txty, txU5, rl.White)
 
-	txtx = int32(cnt.X - bsU9)
+	txtx = int32(gs.Core.Cnt.X - bsU9)
 	txty += txU7
 
 	txt = "kenney.nl"
@@ -1230,26 +1124,26 @@ func drawCredits() { //MARK:DRAW CREDITS
 func drawresettimes() { //MARK:DRAW RESET TIMES
 	txt := "reset times"
 	txtlen := rl.MeasureText(txt, txU5)
-	txtx := int32(cnt.X) - txtlen/2
-	txty := int32(cnt.Y) - txU8
+	txtx := int32(gs.Core.Cnt.X) - txtlen/2
+	txty := int32(gs.Core.Cnt.Y) - txU8
 	rl.DrawText(txt, txtx, txty, txU5, rl.White)
 	txty += txU6
-	rec := rl.NewRectangle(cnt.X-bsU3, float32(txty), bsU3, bsU2)
+	rec := rl.NewRectangle(gs.Core.Cnt.X-bsU3, float32(txty), bsU3, bsU2)
 	recX := rec.ToInt32().X
-	if exitLR {
+	if gs.Level.ExitLR {
 		rec.X += rec.Width
 		if rl.IsKeyPressed(rl.KeySpace) || rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) {
 			for i := 0; i < len(gs.Timing.Times); i++ {
 				gs.Timing.Times[i] = 600
 			}
 			savetimes()
-			resettimes = false
+			gs.UI.Resettimes = false
 		}
 		rl.DrawRectangleRec(rec, rl.Green)
 	} else {
 		rl.DrawRectangleRec(rec, rl.Red)
 		if rl.IsKeyPressed(rl.KeySpace) || rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) {
-			resettimes = false
+			gs.UI.Resettimes = false
 		}
 	}
 
@@ -1268,12 +1162,12 @@ func drawresettimes() { //MARK:DRAW RESET TIMES
 	if rl.IsKeyPressed(rl.KeyA) || rl.GetGamepadAxisMovement(0, 0) < 0 && rl.GetGamepadAxisMovement(0, 0) > -0.3 || rl.IsGamepadButtonDown(0, 4) {
 		if gs.UI.OptionT == 0 {
 			gs.UI.OptionT = gs.Core.Fps / 5
-			exitLR = !exitLR
+			gs.Level.ExitLR = !gs.Level.ExitLR
 		}
 	} else if rl.IsKeyPressed(rl.KeyD) || rl.GetGamepadAxisMovement(0, 0) > 0 && rl.GetGamepadAxisMovement(0, 0) < 0.3 || rl.IsGamepadButtonDown(0, 2) {
 		if gs.UI.OptionT == 0 {
 			gs.UI.OptionT = gs.Core.Fps / 5
-			exitLR = !exitLR
+			gs.Level.ExitLR = !gs.Level.ExitLR
 		}
 	}
 
@@ -1282,33 +1176,33 @@ func drawresettimes() { //MARK:DRAW RESET TIMES
 			gs.Timing.Times[i] = 600
 		}
 		savetimes()
-		resettimes = false
+		gs.UI.Resettimes = false
 	} else if rl.IsKeyPressed(rl.KeyN) {
-		resettimes = false
+		gs.UI.Resettimes = false
 	}
 
 }
 func drawrestartconfirm() { //MARK:DRAW RESTART CONFIRM
 	txt := "restart"
 	txtlen := rl.MeasureText(txt, txU5)
-	txtx := int32(cnt.X) - txtlen/2
-	txty := int32(cnt.Y) - txU8
+	txtx := int32(gs.Core.Cnt.X) - txtlen/2
+	txty := int32(gs.Core.Cnt.Y) - txU8
 	rl.DrawText(txt, txtx, txty, txU5, rl.White)
 	txty += txU6
-	rec := rl.NewRectangle(cnt.X-bsU3, float32(txty), bsU3, bsU2)
+	rec := rl.NewRectangle(gs.Core.Cnt.X-bsU3, float32(txty), bsU3, bsU2)
 	recX := rec.ToInt32().X
-	if exitLR {
+	if gs.Level.ExitLR {
 		rec.X += rec.Width
 		if rl.IsKeyPressed(rl.KeySpace) || rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) {
 			restartgame()
 			gs.UI.OptionsOn = false
-			restarton = false
+			gs.UI.RestartOn = false
 		}
 		rl.DrawRectangleRec(rec, rl.Green)
 	} else {
 		rl.DrawRectangleRec(rec, rl.Red)
 		if rl.IsKeyPressed(rl.KeySpace) || rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) {
-			restarton = false
+			gs.UI.RestartOn = false
 		}
 	}
 
@@ -1327,21 +1221,21 @@ func drawrestartconfirm() { //MARK:DRAW RESTART CONFIRM
 	if rl.IsKeyPressed(rl.KeyA) || rl.IsKeyPressed(rl.KeyLeft) || rl.GetGamepadAxisMovement(0, 0) < 0 && rl.GetGamepadAxisMovement(0, 0) > -0.3 || rl.IsGamepadButtonDown(0, 4) {
 		if gs.UI.OptionT == 0 {
 			gs.UI.OptionT = gs.Core.Fps / 5
-			exitLR = !exitLR
+			gs.Level.ExitLR = !gs.Level.ExitLR
 		}
 	} else if rl.IsKeyPressed(rl.KeyD) || rl.IsKeyPressed(rl.KeyRight) || rl.GetGamepadAxisMovement(0, 0) > 0 && rl.GetGamepadAxisMovement(0, 0) < 0.3 || rl.IsGamepadButtonDown(0, 2) {
 		if gs.UI.OptionT == 0 {
 			gs.UI.OptionT = gs.Core.Fps / 5
-			exitLR = !exitLR
+			gs.Level.ExitLR = !gs.Level.ExitLR
 		}
 	}
 
 	if rl.IsKeyPressed(rl.KeyY) {
 		restartgame()
 		gs.UI.OptionsOn = false
-		restarton = false
+		gs.UI.RestartOn = false
 	} else if rl.IsKeyPressed(rl.KeyN) {
-		restarton = false
+		gs.UI.RestartOn = false
 	}
 
 }
@@ -1349,13 +1243,13 @@ func drawExit() { //MARK:DRAW EXIT
 
 	txt := "exit"
 	txtlen := rl.MeasureText(txt, txU5)
-	txtx := int32(cnt.X) - txtlen/2
-	txty := int32(cnt.Y) - txU8
+	txtx := int32(gs.Core.Cnt.X) - txtlen/2
+	txty := int32(gs.Core.Cnt.Y) - txU8
 	rl.DrawText(txt, txtx, txty, txU5, rl.White)
 	txty += txU6
 	rec := rl.NewRectangle(float32(txtx), float32(txty), bsU3, bsU2)
 	recX := rec.ToInt32().X
-	if exitLR {
+	if gs.Level.ExitLR {
 		rec.X += rec.Width
 		if rl.IsKeyPressed(rl.KeySpace) || rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) {
 			exitgame()
@@ -1364,7 +1258,7 @@ func drawExit() { //MARK:DRAW EXIT
 	} else {
 		rl.DrawRectangleRec(rec, rl.Red)
 		if rl.IsKeyPressed(rl.KeySpace) || rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) {
-			exiton = false
+			gs.Level.Exiton = false
 		}
 	}
 
@@ -1383,49 +1277,49 @@ func drawExit() { //MARK:DRAW EXIT
 	if rl.IsKeyPressed(rl.KeyA) || rl.IsKeyPressed(rl.KeyLeft) || rl.GetGamepadAxisMovement(0, 0) < 0 && rl.GetGamepadAxisMovement(0, 0) > -0.3 || rl.IsGamepadButtonDown(0, 4) {
 		if gs.UI.OptionT == 0 {
 			gs.UI.OptionT = gs.Core.Fps / 5
-			exitLR = !exitLR
+			gs.Level.ExitLR = !gs.Level.ExitLR
 		}
 	} else if rl.IsKeyPressed(rl.KeyD) || rl.IsKeyPressed(rl.KeyRight) || rl.GetGamepadAxisMovement(0, 0) > 0 && rl.GetGamepadAxisMovement(0, 0) < 0.3 || rl.IsGamepadButtonDown(0, 2) {
 		if gs.UI.OptionT == 0 {
 			gs.UI.OptionT = gs.Core.Fps / 5
-			exitLR = !exitLR
+			gs.Level.ExitLR = !gs.Level.ExitLR
 		}
 	}
 
 	if rl.IsKeyPressed(rl.KeyY) {
 		exitgame()
 	} else if rl.IsKeyPressed(rl.KeyN) {
-		exiton = false
+		gs.Level.Exiton = false
 	}
 
 }
 func drawOptions() { //MARK:DRAW OPTIONS
 	//rl.ShowCursor()
 
-	rl.DrawRectangle(0, 0, scrW32, scrH32, rl.Black)
+	rl.DrawRectangle(0, 0, gs.Core.ScrW32, gs.Core.ScrH32, rl.Black)
 	if gs.UI.CreditsOn {
 		drawCredits()
 	} else if gs.Timing.TimesOn {
 		drawTimes()
 	} else if gs.UI.HelpOn {
 		drawHelp()
-	} else if exiton {
+	} else if gs.Level.Exiton {
 		drawExit()
-	} else if resettimes {
+	} else if gs.UI.Resettimes {
 		drawresettimes()
-	} else if restarton {
+	} else if gs.UI.RestartOn {
 		drawrestartconfirm()
 	} else {
 
 		txt := "options"
 		txtlen := rl.MeasureText(txt, txU5)
-		txtx := int32(cnt.X) - txtlen/2
-		txty := int32(levY) + txU
+		txtx := int32(gs.Core.Cnt.X) - txtlen/2
+		txty := int32(gs.Level.LevY) + txU
 		rl.DrawText(txt, txtx, txty, txU5, rl.White)
 
 		txty += txU7
-		txtx = int32(cnt.X - bsU7)
-		onoffx := txtx + int32(levRec.Width/3) - gs.UI.TxtSize*2
+		txtx = int32(gs.Core.Cnt.X - bsU7)
+		onoffx := txtx + int32(gs.Level.LevRec.Width/3) - gs.UI.TxtSize*2
 
 		rec := rl.NewRectangle(float32(txtx)-bsU/2, float32(txty)-bsU/4, bsU*17, bsU2-bsU/4)
 		rec.Y += float32(gs.UI.OptionNum) * float32(gs.UI.TxtSize+gs.UI.TxtSize/2)
@@ -1461,9 +1355,9 @@ func drawOptions() { //MARK:DRAW OPTIONS
 			case 2:
 				gs.UI.ArtifactsOn = !gs.UI.ArtifactsOn
 			case 3:
-				shaderon = !shaderon
+				gs.Render.ShaderOn = !gs.Render.ShaderOn
 			case 4:
-				platkrecon = !platkrecon
+				gs.Player.PlatkrecOn = !gs.Player.PlatkrecOn
 			case 5:
 				gs.UI.Invincible = !gs.UI.Invincible
 			case 6:
@@ -1490,7 +1384,7 @@ func drawOptions() { //MARK:DRAW OPTIONS
 				}
 
 			case 10:
-				restarton = true
+				gs.UI.RestartOn = true
 			case 11:
 				gs.Timing.TimesOn = true
 			case 12:
@@ -1498,20 +1392,20 @@ func drawOptions() { //MARK:DRAW OPTIONS
 			case 13:
 				gs.UI.CreditsOn = true
 			case 14:
-				resettimes = true
+				gs.UI.Resettimes = true
 			case 15:
-				hardcore = !hardcore
+				gs.Level.Hardcore = !gs.Level.Hardcore
 				restartgame()
 				gs.UI.OptionsOn = false
 			case 16:
-				exiton = true
-				exitLR = false
+				gs.Level.Exiton = true
+				gs.Level.ExitLR = false
 			}
-			optionsChange = true
+			gs.UI.OptionsChange = true
 		}
 
 		//OPTIONS LIST
-		rl.DrawRectangleRec(rec, rl.Fade(ranCol(), fadeblink2))
+		rl.DrawRectangleRec(rec, rl.Fade(ranCol(), gs.UI.FadeBlink2))
 
 		txt = "hp bars"
 		rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
@@ -1530,12 +1424,12 @@ func drawOptions() { //MARK:DRAW OPTIONS
 
 		txt = "bloom 'fuzzy'"
 		rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
-		shaderon = onoff(onoffx, txty, float32(gs.UI.TxtSize), shaderon)
+		gs.Render.ShaderOn = onoff(onoffx, txty, float32(gs.UI.TxtSize), gs.Render.ShaderOn)
 		txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 
 		txt = "player atk range"
 		rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
-		platkrecon = onoff(onoffx, txty, float32(gs.UI.TxtSize), platkrecon)
+		gs.Player.PlatkrecOn = onoff(onoffx, txty, float32(gs.UI.TxtSize), gs.Player.PlatkrecOn)
 		txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 
 		txt = "gs.UI.Invincible"
@@ -1577,7 +1471,7 @@ func drawOptions() { //MARK:DRAW OPTIONS
 					gs.Audio.Music.Looping = true
 					gs.Audio.MusicOn = true
 					rl.PlayMusicStream(gs.Audio.Music)
-					optionsChange = true
+					gs.UI.OptionsChange = true
 				}
 			} else if rl.IsKeyPressed(rl.KeyA) || rl.IsKeyPressed(rl.KeyLeft) || rl.GetGamepadAxisMovement(0, 0) < 0 || rl.IsGamepadButtonDown(0, 4) {
 				if gs.UI.OptionT == 0 {
@@ -1591,7 +1485,7 @@ func drawOptions() { //MARK:DRAW OPTIONS
 					gs.Audio.Music.Looping = true
 					gs.Audio.MusicOn = true
 					rl.PlayMusicStream(gs.Audio.Music)
-					optionsChange = true
+					gs.UI.OptionsChange = true
 				}
 			}
 		}
@@ -1611,7 +1505,7 @@ func drawOptions() { //MARK:DRAW OPTIONS
 					if gs.Audio.Volume < 1 {
 						gs.Audio.Volume += 0.1
 					}
-					optionsChange = true
+					gs.UI.OptionsChange = true
 				}
 			} else if rl.IsKeyPressed(rl.KeyA) || rl.IsKeyPressed(rl.KeyLeft) || rl.GetGamepadAxisMovement(0, 0) < 0 || rl.IsGamepadButtonDown(0, 4) {
 				if gs.UI.OptionT == 0 {
@@ -1622,7 +1516,7 @@ func drawOptions() { //MARK:DRAW OPTIONS
 					if gs.Audio.Volume < 0 {
 						gs.Audio.Volume = 0
 					}
-					optionsChange = true
+					gs.UI.OptionsChange = true
 				}
 			}
 		}
@@ -1645,7 +1539,7 @@ func drawOptions() { //MARK:DRAW OPTIONS
 		txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 		txt = "hardcore"
 		rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
-		hardcore = onoff(onoffx, txty, float32(gs.UI.TxtSize), hardcore)
+		gs.Level.Hardcore = onoff(onoffx, txty, float32(gs.UI.TxtSize), gs.Level.Hardcore)
 		if gs.UI.OptionNum == 15 {
 			txt = "more enemies > game will restart"
 			rl.DrawText(txt, txtx, txty-(gs.UI.TxtSize+gs.UI.TxtSize/2)*6, gs.UI.TxtSize, ranCol())
@@ -1669,13 +1563,13 @@ func drawUpMario() { //MARK:DRAW UP MARIO
 		gs.Mario.MarioPL.X += 8
 		gs.Mario.MarioV2L.X += 8
 		gs.Mario.MarioV2R.X += 8
-		gs.Mario.MarioImg.Y = knight[0].Y
+		gs.Mario.MarioImg.Y = gs.Render.Knight[0].Y
 
 	} else if rl.IsKeyDown(rl.KeyA) || rl.GetGamepadAxisMovement(0, 0) < 0 || rl.IsGamepadButtonDown(0, 4) {
 		gs.Mario.MarioPL.X -= 8
 		gs.Mario.MarioV2L.X -= 8
 		gs.Mario.MarioV2R.X -= 8
-		gs.Mario.MarioImg.Y = knight[2].Y
+		gs.Mario.MarioImg.Y = gs.Render.Knight[2].Y
 	}
 	if rl.IsKeyPressed(rl.KeyW) || rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) {
 		if !gs.Mario.MarioJump {
@@ -1689,7 +1583,7 @@ func drawUpMario() { //MARK:DRAW UP MARIO
 	y := gs.Mario.MarioScreenRec.Y
 	siz := bsU10
 	for {
-		rl.DrawTexturePro(imgs, gs.Mario.PatternRec, rl.NewRectangle(x, y, siz, siz), ori, 0, rl.Fade(ranCol(), 0.05))
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Mario.PatternRec, rl.NewRectangle(x, y, siz, siz), gs.Core.Ori, 0, rl.Fade(ranCol(), 0.05))
 		x += siz
 		if x >= gs.Mario.MarioScreenRec.X+gs.Mario.MarioScreenRec.Width {
 			x = gs.Mario.MarioScreenRec.X
@@ -1702,22 +1596,22 @@ func drawUpMario() { //MARK:DRAW UP MARIO
 
 	//DRAW BLOKS
 	for a := 0; a < len(gs.Mario.MarioRecs); a++ {
-		rl.DrawTexturePro(imgs, wallT, gs.Mario.MarioRecs[a], ori, 0, gs.Mario.MarioCols[a])
-		rl.DrawTexturePro(imgs, wallT, BlurRec(gs.Mario.MarioRecs[a], 2), ori, 0, rl.Fade(gs.Mario.MarioCols[a], 0.2))
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Level.WallT, gs.Mario.MarioRecs[a], gs.Core.Ori, 0, gs.Mario.MarioCols[a])
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Level.WallT, BlurRec(gs.Mario.MarioRecs[a], 2), gs.Core.Ori, 0, rl.Fade(gs.Mario.MarioCols[a], 0.2))
 	}
 
 	//DRAW COINS
 	for i := 0; i < len(gs.Mario.MarioCoinOnOff); i++ {
 		if gs.Mario.MarioCoinOnOff[i] {
-			rl.DrawTexturePro(imgs, coin, gs.Mario.MarioCoins[i], ori, 0, rl.White)
+			rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Coin, gs.Mario.MarioCoins[i], gs.Core.Ori, 0, rl.White)
 			if gs.Mario.MarioT%6 == 0 {
-				coin.X += 16
-				if coin.X >= 1200 {
-					coin.X = 1120
+				gs.Render.Coin.X += 16
+				if gs.Render.Coin.X >= 1200 {
+					gs.Render.Coin.X = 1120
 				}
 				if rl.CheckCollisionRecs(gs.Mario.MarioPL, gs.Mario.MarioCoins[i]) {
 					if gs.Mario.MarioCoinOnOff[i] {
-						pl.coins++
+						gs.Player.Pl.coins++
 						gs.Mario.MarioCoinOnOff[i] = false
 						rl.PlaySound(gs.Audio.Sfx[18])
 					}
@@ -1734,16 +1628,16 @@ func drawUpMario() { //MARK:DRAW UP MARIO
 	drec.Y -= drec.Height / 4
 	drec.Height += drec.Height / 2
 	//ori2 := rl.NewVector2(drec.Width/2,drec.Height/2)
-	rl.DrawTexturePro(imgs, gs.Mario.MarioImg, drec, ori, 0, rl.White)
-	if debug {
+	rl.DrawTexturePro(gs.Render.Imgs, gs.Mario.MarioImg, drec, gs.Core.Ori, 0, rl.White)
+	if gs.Core.Debug {
 		rl.DrawRectangleLinesEx(gs.Mario.MarioPL, 1, rl.White)
 	}
 
-	if frames%4 == 0 {
-		gs.Mario.MarioImg.X += pl.sizImg
+	if gs.Core.Frames%4 == 0 {
+		gs.Mario.MarioImg.X += gs.Player.Pl.sizImg
 	}
-	if gs.Mario.MarioImg.X > pl.imgWalkX+(float32(pl.framesWalk-1)*pl.sizImg) {
-		gs.Mario.MarioImg.X = pl.imgWalkX
+	if gs.Mario.MarioImg.X > gs.Player.Pl.imgWalkX+(float32(gs.Player.Pl.framesWalk-1)*gs.Player.Pl.sizImg) {
+		gs.Mario.MarioImg.X = gs.Player.Pl.imgWalkX
 	}
 
 	//JUMP FALL
@@ -1771,27 +1665,27 @@ func drawUpMario() { //MARK:DRAW UP MARIO
 	//EXIT SCREEN
 	if gs.Mario.MarioT == 0 || gs.Mario.MarioPL.X+gs.Mario.MarioPL.Width < gs.Mario.MarioScreenRec.X || gs.Mario.MarioPL.X > gs.Mario.MarioScreenRec.X+gs.Mario.MarioScreenRec.Width {
 		gs.Mario.MarioOn = false
-		pause = false
+		gs.Core.Pause = false
 	}
 
 }
 func drawInven() { //MARK:DRAW INVENTORY
 
-	x := levX - bsU2
-	y := levY + bsU/2
+	x := gs.Level.LevX - bsU2
+	y := gs.Level.LevY + bsU/2
 	siz := bsU + bsU/2
 
-	for a := 0; a < len(inven); a++ {
+	for a := 0; a < len(gs.Player.Inven); a++ {
 		rec := rl.NewRectangle(x, y, siz, siz)
-		rl.DrawTexturePro(imgs, inven[a].img, rec, ori, 0, inven[a].color)
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Player.Inven[a].img, rec, gs.Core.Ori, 0, gs.Player.Inven[a].color)
 
-		rl.DrawTexturePro(imgs, inven[a].img, BlurRec(rec, 1), ori, 0, rl.Fade(inven[a].color, rF32(0.1, 0.2)))
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Player.Inven[a].img, BlurRec(rec, 1), gs.Core.Ori, 0, rl.Fade(gs.Player.Inven[a].color, rF32(0.1, 0.2)))
 
-		if inven[a].numof > 1 {
+		if gs.Player.Inven[a].numof > 1 {
 			txtx := int32(x+siz) - txU/2
 			txty := int32(y+siz) - txU/2
-			rl.DrawText(fmt.Sprint(inven[a].numof), txtx-2, txty-2, txU, rl.Black)
-			rl.DrawText(fmt.Sprint(inven[a].numof), txtx, txty, txU, rl.White)
+			rl.DrawText(fmt.Sprint(gs.Player.Inven[a].numof), txtx-2, txty-2, txU, rl.Black)
+			rl.DrawText(fmt.Sprint(gs.Player.Inven[a].numof), txtx, txty, txU, rl.White)
 		}
 
 		y += siz + bsU/4
@@ -1800,18 +1694,18 @@ func drawInven() { //MARK:DRAW INVENTORY
 }
 func drawInvenDetail() { //MARK:DRAW INVENTORY DETAIL
 
-	if len(inven) > 0 {
+	if len(gs.Player.Inven) > 0 {
 
-		x := levX
-		y := levY + bsU/4
+		x := gs.Level.LevX
+		y := gs.Level.LevY + bsU/4
 		siz := bsU
 
-		txtcntr := int32(cnt.X)
+		txtcntr := int32(gs.Core.Cnt.X)
 		txty := int32(y) + txU/4
 
-		for a := 0; a < len(inven); a++ {
+		for a := 0; a < len(gs.Player.Inven); a++ {
 
-			txt := inven[a].name + " - " + inven[a].desc
+			txt := gs.Player.Inven[a].name + " - " + gs.Player.Inven[a].desc
 			txtlen := rl.MeasureText(txt, txU)
 
 			txtx := txtcntr - txtlen/2
@@ -1820,13 +1714,13 @@ func drawInvenDetail() { //MARK:DRAW INVENTORY DETAIL
 			rl.DrawText(txt, txtx-1, txty+1, txU, rl.Black)
 			rl.DrawText(txt, txtx, txty, txU, rl.White)
 
-			rl.DrawTexturePro(imgs, inven[a].img, rl.NewRectangle(x, y, siz, siz), ori, 0, inven[a].color)
+			rl.DrawTexturePro(gs.Render.Imgs, gs.Player.Inven[a].img, rl.NewRectangle(x, y, siz, siz), gs.Core.Ori, 0, gs.Player.Inven[a].color)
 
-			if inven[a].numof > 1 {
+			if gs.Player.Inven[a].numof > 1 {
 				txtx2 := int32(x+siz) - txU/2
 				txty2 := int32(y+siz) - txU/2
-				rl.DrawText(fmt.Sprint(inven[a].numof), txtx2-2, txty2-2, txU, rl.Black)
-				rl.DrawText(fmt.Sprint(inven[a].numof), txtx2, txty2, txU, rl.White)
+				rl.DrawText(fmt.Sprint(gs.Player.Inven[a].numof), txtx2-2, txty2-2, txU, rl.Black)
+				rl.DrawText(fmt.Sprint(gs.Player.Inven[a].numof), txtx2, txty2, txU, rl.White)
 			}
 
 			y += siz + bsU/4
@@ -1838,88 +1732,88 @@ func drawInvenDetail() { //MARK:DRAW INVENTORY DETAIL
 
 		txt := "you have nothing..."
 		txtlen := rl.MeasureText(txt, txU8)
-		rl.DrawText(txt, int32(cnt.X)-txtlen/2, int32(cnt.Y)-txU8, txU8, rl.White)
+		rl.DrawText(txt, int32(gs.Core.Cnt.X)-txtlen/2, int32(gs.Core.Cnt.Y)-txU8, txU8, rl.White)
 		txt = "find something"
 		txtlen = rl.MeasureText(txt, txU8)
-		rl.DrawText(txt, int32(cnt.X)-txtlen/2, int32(cnt.Y)+txU, txU8, rl.White)
+		rl.DrawText(txt, int32(gs.Core.Cnt.X)-txtlen/2, int32(gs.Core.Cnt.Y)+txU, txU8, rl.White)
 	}
 
 }
 func drawPlayerInfo() { //MARK:DRAW PLAYER INFO
 
 	//TIMER
-	y := levY + bsU/4
-	txtx := int32(levRec.X + levRec.Width + bsU/2)
+	y := gs.Level.LevY + bsU/4
+	txtx := int32(gs.Level.LevRec.X + gs.Level.LevRec.Width + bsU/2)
 	txty := int32(y)
 
 	minT := "0"
-	if mins == 0 {
+	if gs.Level.Mins == 0 {
 		minT = "00"
-	} else if mins < 10 {
-		minT = "0" + fmt.Sprint(mins)
+	} else if gs.Level.Mins < 10 {
+		minT = "0" + fmt.Sprint(gs.Level.Mins)
 	} else {
-		minT = fmt.Sprint(mins)
+		minT = fmt.Sprint(gs.Level.Mins)
 	}
 	secsT := "00"
-	if secs > 0 && secs < 10 {
-		secsT = "0" + fmt.Sprint(secs)
-	} else if secs > 9 {
-		secsT = fmt.Sprint(secs)
+	if gs.Level.Secs > 0 && gs.Level.Secs < 10 {
+		secsT = "0" + fmt.Sprint(gs.Level.Secs)
+	} else if gs.Level.Secs > 9 {
+		secsT = fmt.Sprint(gs.Level.Secs)
 	}
 	txt := minT + ":" + secsT
 	rl.DrawText(txt, txtx, txty, txU3, rl.White)
 
 	//HP ARMOR
-	x := levX + levW + bsU/2
-	y = levY + bsU2 + bsU/2
+	x := gs.Level.LevX + gs.Level.LevW + bsU/2
+	y = gs.Level.LevY + bsU2 + bsU/2
 	siz := bsU + bsU/2
 
-	for a := 0; a < pl.hpmax; a++ {
-		rl.DrawTexturePro(imgs, etc[2], rl.NewRectangle(x, y, siz, siz), ori, 0, rl.DarkGray)
+	for a := 0; a < gs.Player.Pl.hpmax; a++ {
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Etc[2], rl.NewRectangle(x, y, siz, siz), gs.Core.Ori, 0, rl.DarkGray)
 		y += siz
 	}
 	yorig := y
 
-	y = levY + bsU2 + bsU/2
-	for a := 0; a < pl.hp; a++ {
+	y = gs.Level.LevY + bsU2 + bsU/2
+	for a := 0; a < gs.Player.Pl.hp; a++ {
 		rec := rl.NewRectangle(x, y, siz, siz)
-		if pl.poison {
-			rl.DrawTexturePro(imgs, etc[2], rec, ori, 0, rl.Green)
-			rl.DrawTexturePro(imgs, etc[2], BlurRec(rec, 2), ori, 0, rl.Fade(rl.Green, rF32(0.1, 0.3)))
+		if gs.Player.Pl.poison {
+			rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Etc[2], rec, gs.Core.Ori, 0, rl.Green)
+			rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Etc[2], BlurRec(rec, 2), gs.Core.Ori, 0, rl.Fade(rl.Green, rF32(0.1, 0.3)))
 		} else {
-			rl.DrawTexturePro(imgs, etc[2], rec, ori, 0, rl.Red)
-			rl.DrawTexturePro(imgs, etc[2], BlurRec(rec, 2), ori, 0, rl.Fade(rl.Red, rF32(0.1, 0.3)))
+			rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Etc[2], rec, gs.Core.Ori, 0, rl.Red)
+			rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Etc[2], BlurRec(rec, 2), gs.Core.Ori, 0, rl.Fade(rl.Red, rF32(0.1, 0.3)))
 		}
 		y += siz
 	}
 
 	y = yorig + bsU/2
 
-	for a := 0; a < pl.armorMax; a++ {
+	for a := 0; a < gs.Player.Pl.armorMax; a++ {
 		rec := rl.NewRectangle(x, y, siz, siz)
-		rl.DrawTexturePro(imgs, etc[38], rec, ori, 0, rl.DarkGray)
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Etc[38], rec, gs.Core.Ori, 0, rl.DarkGray)
 		y += siz
 	}
 
 	y = yorig + bsU/2
 
-	for a := 0; a < pl.armor; a++ {
+	for a := 0; a < gs.Player.Pl.armor; a++ {
 		rec := rl.NewRectangle(x, y, siz, siz)
 		col := ranCyan()
-		rl.DrawTexturePro(imgs, etc[38], rec, ori, 0, col)
-		rl.DrawTexturePro(imgs, etc[38], BlurRec(rec, 2), ori, 0, rl.Fade(col, rF32(0.1, 0.3)))
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Etc[38], rec, gs.Core.Ori, 0, col)
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Etc[38], BlurRec(rec, 2), gs.Core.Ori, 0, rl.Fade(col, rF32(0.1, 0.3)))
 		y += siz
 
 	}
 
 	//COINS
-	y = levY + levW - (bsU2 + bsU/2)
+	y = gs.Level.LevY + gs.Level.LevW - (bsU2 + bsU/2)
 	siz = bsU2
-	rl.DrawTexturePro(imgs, coin, rl.NewRectangle(x, y, siz, siz), ori, 0, rl.White)
-	if frames%6 == 0 {
-		coin.X += 16
-		if coin.X >= 1200 {
-			coin.X = 1120
+	rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Coin, rl.NewRectangle(x, y, siz, siz), gs.Core.Ori, 0, rl.White)
+	if gs.Core.Frames%6 == 0 {
+		gs.Render.Coin.X += 16
+		if gs.Render.Coin.X >= 1200 {
+			gs.Render.Coin.X = 1120
 		}
 	}
 
@@ -1930,22 +1824,22 @@ func drawPlayerInfo() { //MARK:DRAW PLAYER INFO
 	txtlen := rl.MeasureText(txt, txU3)
 	txtx += txtlen
 	txty += 2
-	txt = fmt.Sprint(pl.coins)
+	txt = fmt.Sprint(gs.Player.Pl.coins)
 	rl.DrawText(txt, txtx, txty, txU3, rl.White)
 
 	//TXT SOLD
-	if len(txtSoldlist) > 0 {
+	if len(gs.UI.TxtSoldList) > 0 {
 		clear := false
-		for a := 0; a < len(txtSoldlist); a++ {
-			if txtSoldlist[a].onoff {
-				rl.DrawText(txtSoldlist[a].txt, txtSoldlist[a].x, txtSoldlist[a].y, txU2, rl.Fade(txtSoldlist[a].col, txtSoldlist[a].fade))
+		for a := 0; a < len(gs.UI.TxtSoldList); a++ {
+			if gs.UI.TxtSoldList[a].onoff {
+				rl.DrawText(gs.UI.TxtSoldList[a].txt, gs.UI.TxtSoldList[a].x, gs.UI.TxtSoldList[a].y, txU2, rl.Fade(gs.UI.TxtSoldList[a].col, gs.UI.TxtSoldList[a].fade))
 
-				rl.DrawText(txtSoldlist[a].txt2, txtSoldlist[a].x, txtSoldlist[a].y+txU2, txU2, rl.Fade(txtSoldlist[a].col, txtSoldlist[a].fade))
+				rl.DrawText(gs.UI.TxtSoldList[a].txt2, gs.UI.TxtSoldList[a].x, gs.UI.TxtSoldList[a].y+txU2, txU2, rl.Fade(gs.UI.TxtSoldList[a].col, gs.UI.TxtSoldList[a].fade))
 
-				txtSoldlist[a].y--
-				txtSoldlist[a].fade -= 0.01
-				if txtSoldlist[a].fade <= 0 {
-					txtSoldlist[a].onoff = false
+				gs.UI.TxtSoldList[a].y--
+				gs.UI.TxtSoldList[a].fade -= 0.01
+				if gs.UI.TxtSoldList[a].fade <= 0 {
+					gs.UI.TxtSoldList[a].onoff = false
 				}
 			} else {
 				clear = true
@@ -1953,9 +1847,9 @@ func drawPlayerInfo() { //MARK:DRAW PLAYER INFO
 		}
 
 		if clear {
-			for a := 0; a < len(txtSoldlist); a++ {
-				if !txtSoldlist[a].onoff {
-					txtSoldlist = remTxt(txtSoldlist, a)
+			for a := 0; a < len(gs.UI.TxtSoldList); a++ {
+				if !gs.UI.TxtSoldList[a].onoff {
+					gs.UI.TxtSoldList = remTxt(gs.UI.TxtSoldList, a)
 				}
 			}
 		}
@@ -1964,45 +1858,45 @@ func drawPlayerInfo() { //MARK:DRAW PLAYER INFO
 }
 func drawChainLight() { //MARK:DRAW CHAIN LIGHTNING
 
-	for a := 1; a < len(chainV2); a++ {
-		rl.DrawLineEx(chainV2[a], chainV2[a-1], rF32(2, 12), rl.Fade(ranCyan(), rF32(0.2, 0.5)))
+	for a := 1; a < len(gs.FX.ChainV2); a++ {
+		rl.DrawLineEx(gs.FX.ChainV2[a], gs.FX.ChainV2[a-1], rF32(2, 12), rl.Fade(ranCyan(), rF32(0.2, 0.5)))
 	}
-	chainV2 = nil
-	for a := 0; a < len(level[roomNum].enemies); a++ {
-		if level[roomNum].enemies[a].cnt.X > levRecInner.X && level[roomNum].enemies[a].cnt.Y > levRecInner.Y {
-			chainV2 = append(chainV2, level[roomNum].enemies[a].cnt)
+	gs.FX.ChainV2 = nil
+	for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].enemies); a++ {
+		if gs.Level.Level[gs.Level.RoomNum].enemies[a].cnt.X > gs.Level.LevRecInner.X && gs.Level.Level[gs.Level.RoomNum].enemies[a].cnt.Y > gs.Level.LevRecInner.Y {
+			gs.FX.ChainV2 = append(gs.FX.ChainV2, gs.Level.Level[gs.Level.RoomNum].enemies[a].cnt)
 		}
 	}
-	chainLightTimer--
+	gs.FX.ChainLightTimer--
 
-	if chainLightTimer <= 0 {
-		for a := 0; a < len(level[roomNum].enemies); a++ {
-			level[roomNum].enemies[a].hppause = gs.Core.Fps / 2
-			level[roomNum].enemies[a].hp -= 1
-			if level[roomNum].enemies[a].hp <= 0 {
-				cntr := level[roomNum].enemies[a].cnt
+	if gs.FX.ChainLightTimer <= 0 {
+		for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].enemies); a++ {
+			gs.Level.Level[gs.Level.RoomNum].enemies[a].hppause = gs.Core.Fps / 2
+			gs.Level.Level[gs.Level.RoomNum].enemies[a].hp -= 1
+			if gs.Level.Level[gs.Level.RoomNum].enemies[a].hp <= 0 {
+				cntr := gs.Level.Level[gs.Level.RoomNum].enemies[a].cnt
 				addkill(a)
-				level[roomNum].enemies[a].off = true
+				gs.Level.Level[gs.Level.RoomNum].enemies[a].off = true
 				makeFX(2, cntr)
 			} else {
 				playenemyhit()
 			}
 		}
-		chainLightOn = false
+		gs.FX.ChainLightOn = false
 	}
 
 }
 func drawPlayer() { //MARK:DRAW PLAYER
 
-	drawRec := pl.rec
-	drawRec.X += pl.rec.Width / 2
-	drawRec.Y += pl.rec.Height / 2
+	drawRec := gs.Player.Pl.rec
+	drawRec.X += gs.Player.Pl.rec.Width / 2
+	drawRec.Y += gs.Player.Pl.rec.Height / 2
 	shadowRec := drawRec
 	shadowRec.X -= 7
 	shadowRec.Y += 7
 
 	//NOT MOVING BOUNCE
-	if !pl.move && !pl.atk {
+	if !gs.Player.Pl.move && !gs.Player.Pl.atk {
 		if roll18() == 18 {
 			drawRec.Y -= 2
 			shadowRec.Y -= 2
@@ -2010,58 +1904,58 @@ func drawPlayer() { //MARK:DRAW PLAYER
 	}
 
 	//ATK REC
-	if platkrecon && pl.atkTimer > 0 {
-		rl.DrawRectangleRec(pl.atkrec, rl.Fade(darkRed(), 0.3))
+	if gs.Player.PlatkrecOn && gs.Player.Pl.atkTimer > 0 {
+		rl.DrawRectangleRec(gs.Player.Pl.atkrec, rl.Fade(darkRed(), 0.3))
 	}
 
 	//ESCAPE VINE
-	if pl.escape {
+	if gs.Player.Pl.escape {
 		siz := bsU2
-		plVineRec = rl.NewRectangle(pl.cnt.X-siz/2, levRec.Y, siz, pl.rec.Y-levRec.Y)
-		if debug {
-			rl.DrawRectangleLinesEx(plVineRec, 0.5, rl.Red)
+		gs.Player.PlVineRec = rl.NewRectangle(gs.Player.Pl.cnt.X-siz/2, gs.Level.LevRec.Y, siz, gs.Player.Pl.rec.Y-gs.Level.LevRec.Y)
+		if gs.Core.Debug {
+			rl.DrawRectangleLinesEx(gs.Player.PlVineRec, 0.5, rl.Red)
 		}
-		y := plVineRec.Y
-		x := plVineRec.X
+		y := gs.Player.PlVineRec.Y
+		x := gs.Player.PlVineRec.X
 		for {
-			rl.DrawTexturePro(imgs, etc[6], rl.NewRectangle(x, y, siz, siz), ori, 0, rl.DarkGreen)
+			rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Etc[6], rl.NewRectangle(x, y, siz, siz), gs.Core.Ori, 0, rl.DarkGreen)
 			y += siz
-			if y > plVineRec.Y+plVineRec.Height {
+			if y > gs.Player.PlVineRec.Y+gs.Player.PlVineRec.Height {
 				break
 			}
 		}
 	}
 	//DRAW BUBBLES
-	if mods.flood && pl.underWater {
-		waterRec := rl.NewRectangle((pl.crec.X+pl.crec.Width/2)-bsU/2, pl.crec.Y-waterY, bsU, bsU)
-		rl.DrawTexturePro(imgs, plantBull.recTL, waterRec, ori, 0, rl.Fade(ranCyan(), waterF))
+	if gs.Player.Mods.flood && gs.Player.Pl.underWater {
+		waterRec := rl.NewRectangle((gs.Player.Pl.crec.X+gs.Player.Pl.crec.Width/2)-bsU/2, gs.Player.Pl.crec.Y-gs.Player.WaterY, bsU, bsU)
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Render.PlantBull.recTL, waterRec, gs.Core.Ori, 0, rl.Fade(ranCyan(), gs.Player.WaterF))
 		//rl.DrawRectangleRec(waterRec,ranCol())
 		waterRec2 := waterRec
 		change := rF32(2, bsU/2)
 		waterRec2.Width -= change
 		waterRec2.Height -= change
 
-		if waterLR {
+		if gs.FX.WaterLR {
 			waterRec2.X += bsU
 		} else {
 			waterRec2.X -= bsU
 		}
-		if waterUP {
+		if gs.FX.WaterUP {
 			waterRec2.Y += bsU
 		} else {
 			waterRec2.Y -= bsU
 		}
 
-		rl.DrawTexturePro(imgs, plantBull.recTL, waterRec2, ori, 0, rl.Fade(ranCyan(), waterF))
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Render.PlantBull.recTL, waterRec2, gs.Core.Ori, 0, rl.Fade(ranCyan(), gs.Player.WaterF))
 
 		waterRec.X += rF32(-2, 2)
-		waterY += rF32(2, 5)
-		waterF -= 0.02
-		if waterY > bsU10 {
-			waterY = 0
-			waterF = 1
-			waterLR = flipcoin()
-			waterUP = flipcoin()
+		gs.Player.WaterY += rF32(2, 5)
+		gs.Player.WaterF -= 0.02
+		if gs.Player.WaterY > bsU10 {
+			gs.Player.WaterY = 0
+			gs.Player.WaterF = 1
+			gs.FX.WaterLR = flipcoin()
+			gs.FX.WaterUP = flipcoin()
 		}
 
 		if roll18() == 18 {
@@ -2070,109 +1964,109 @@ func drawPlayer() { //MARK:DRAW PLAYER
 
 	}
 	//DRAW HP HIT
-	if pl.hppause != 0 && !pl.revived && pl.armorHit { //ARMOR
-		hpRec := rl.NewRectangle((pl.crec.X+pl.crec.Width/2)-bsU/2, pl.crec.Y-hpHitY, bsU, bsU)
-		rl.DrawTexturePro(imgs, etc[38], hpRec, ori, 0, rl.Fade(ranCyan(), hpHitF))
-		hpHitY += 2
-		hpHitF -= 0.05
-	} else if pl.hppause != 0 && !pl.revived && !pl.armorHit { //HP
-		hpRec := rl.NewRectangle((pl.crec.X+pl.crec.Width/2)-bsU/2, pl.crec.Y-hpHitY, bsU, bsU)
-		rl.DrawTexturePro(imgs, etc[2], hpRec, ori, 0, rl.Fade(rl.Red, hpHitF))
-		hpHitY += 2
-		hpHitF -= 0.05
-	} else if pl.hppause != 0 && pl.revived { //REVIVED
-		txty := int32(pl.rec.Y-reviveY) - txU2
+	if gs.Player.Pl.hppause != 0 && !gs.Player.Pl.revived && gs.Player.Pl.armorHit { //ARMOR
+		hpRec := rl.NewRectangle((gs.Player.Pl.crec.X+gs.Player.Pl.crec.Width/2)-bsU/2, gs.Player.Pl.crec.Y-gs.Player.HpHitY, bsU, bsU)
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Etc[38], hpRec, gs.Core.Ori, 0, rl.Fade(ranCyan(), gs.Player.HpHitF))
+		gs.Player.HpHitY += 2
+		gs.Player.HpHitF -= 0.05
+	} else if gs.Player.Pl.hppause != 0 && !gs.Player.Pl.revived && !gs.Player.Pl.armorHit { //HP
+		hpRec := rl.NewRectangle((gs.Player.Pl.crec.X+gs.Player.Pl.crec.Width/2)-bsU/2, gs.Player.Pl.crec.Y-gs.Player.HpHitY, bsU, bsU)
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Etc[2], hpRec, gs.Core.Ori, 0, rl.Fade(rl.Red, gs.Player.HpHitF))
+		gs.Player.HpHitY += 2
+		gs.Player.HpHitF -= 0.05
+	} else if gs.Player.Pl.hppause != 0 && gs.Player.Pl.revived { //REVIVED
+		txty := int32(gs.Player.Pl.rec.Y-gs.Player.ReviveY) - txU2
 		txt := "revived"
 		txtlen := rl.MeasureText(txt, txU2)
-		txtx := int32(pl.rec.X+pl.rec.Width/2) - txtlen/2
-		rl.DrawText(txt, txtx, txty, txU2, rl.Fade(rl.White, reviveF))
-		reviveY += 2
-		reviveF -= 0.05
+		txtx := int32(gs.Player.Pl.rec.X+gs.Player.Pl.rec.Width/2) - txtlen/2
+		rl.DrawText(txt, txtx, txty, txU2, rl.Fade(rl.White, gs.Player.ReviveF))
+		gs.Player.ReviveY += 2
+		gs.Player.ReviveF -= 0.05
 	}
-	if pl.peaceT > 0 {
-		peceRec := rl.NewRectangle((pl.crec.X+pl.crec.Width/2)-bsU/2, pl.crec.Y-(bsU), bsU, bsU)
-		rl.DrawTexturePro(imgs, etc[46], peceRec, ori, 0, rl.White)
+	if gs.Player.Pl.peaceT > 0 {
+		peceRec := rl.NewRectangle((gs.Player.Pl.crec.X+gs.Player.Pl.crec.Width/2)-bsU/2, gs.Player.Pl.crec.Y-(bsU), bsU, bsU)
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Etc[46], peceRec, gs.Core.Ori, 0, rl.White)
 	}
 	//DRAW PLAYER IMG
-	rl.DrawTexturePro(imgs, pl.img, shadowRec, pl.ori, pl.ro, rl.Fade(rl.Black, 0.7))
-	if pl.hppause > 0 {
-		rl.DrawTexturePro(imgs, pl.img, drawRec, pl.ori, pl.ro, ranCol())
+	rl.DrawTexturePro(gs.Render.Imgs, gs.Player.Pl.img, shadowRec, gs.Player.Pl.ori, gs.Player.Pl.ro, rl.Fade(rl.Black, 0.7))
+	if gs.Player.Pl.hppause > 0 {
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Player.Pl.img, drawRec, gs.Player.Pl.ori, gs.Player.Pl.ro, ranCol())
 	} else {
-		rl.DrawTexturePro(imgs, pl.img, drawRec, pl.ori, pl.ro, rl.White)
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Player.Pl.img, drawRec, gs.Player.Pl.ori, gs.Player.Pl.ro, rl.White)
 	}
 	//ORBITAL
-	if mods.orbital {
-		if mods.orbitalN >= 1 {
-			if roomChanged {
-				pl.orbital1 = rl.NewVector2(pl.cnt.X+bsU4, pl.cnt.Y+bsU4)
+	if gs.Player.Mods.orbital {
+		if gs.Player.Mods.orbitalN >= 1 {
+			if gs.Level.RoomChanged {
+				gs.Player.Pl.orbital1 = rl.NewVector2(gs.Player.Pl.cnt.X+bsU4, gs.Player.Pl.cnt.Y+bsU4)
 			} else {
-				pl.angle = pl.angle * (math.Pi / 180)
-				newx := float32(math.Cos(float64(pl.angle)))*(pl.orbital1.X-pl.cnt.X) - float32(math.Sin(float64(pl.angle)))*(pl.orbital1.Y-pl.cnt.Y) + pl.cnt.X
-				newy := float32(math.Sin(float64(pl.angle)))*(pl.orbital1.X-pl.cnt.X) + float32(math.Cos(float64(pl.angle)))*(pl.orbital1.Y-pl.cnt.Y) + pl.cnt.Y
-				pl.orbital1 = rl.NewVector2(newx, newy)
-				pl.angle += 4
-				if getabs(pl.orbital1.X-pl.cnt.X) > bsU4 {
-					if pl.orbital1.X > pl.cnt.X {
-						pl.orbital1.X -= bsU / 8
+				gs.Player.Pl.angle = gs.Player.Pl.angle * (math.Pi / 180)
+				newx := float32(math.Cos(float64(gs.Player.Pl.angle)))*(gs.Player.Pl.orbital1.X-gs.Player.Pl.cnt.X) - float32(math.Sin(float64(gs.Player.Pl.angle)))*(gs.Player.Pl.orbital1.Y-gs.Player.Pl.cnt.Y) + gs.Player.Pl.cnt.X
+				newy := float32(math.Sin(float64(gs.Player.Pl.angle)))*(gs.Player.Pl.orbital1.X-gs.Player.Pl.cnt.X) + float32(math.Cos(float64(gs.Player.Pl.angle)))*(gs.Player.Pl.orbital1.Y-gs.Player.Pl.cnt.Y) + gs.Player.Pl.cnt.Y
+				gs.Player.Pl.orbital1 = rl.NewVector2(newx, newy)
+				gs.Player.Pl.angle += 4
+				if getabs(gs.Player.Pl.orbital1.X-gs.Player.Pl.cnt.X) > bsU4 {
+					if gs.Player.Pl.orbital1.X > gs.Player.Pl.cnt.X {
+						gs.Player.Pl.orbital1.X -= bsU / 8
 					} else {
-						pl.orbital1.X += bsU / 8
+						gs.Player.Pl.orbital1.X += bsU / 8
 					}
 				}
-				if getabs(pl.orbital1.Y-pl.cnt.Y) > bsU4 {
-					if pl.orbital1.Y > pl.cnt.Y {
-						pl.orbital1.Y -= bsU / 8
+				if getabs(gs.Player.Pl.orbital1.Y-gs.Player.Pl.cnt.Y) > bsU4 {
+					if gs.Player.Pl.orbital1.Y > gs.Player.Pl.cnt.Y {
+						gs.Player.Pl.orbital1.Y -= bsU / 8
 					} else {
-						pl.orbital1.Y += bsU / 8
+						gs.Player.Pl.orbital1.Y += bsU / 8
 					}
 				}
 			}
 
 			siz := bsU + bsU/2
-			pl.orbrec1 = rl.NewRectangle(pl.orbital1.X-siz/2, pl.orbital1.Y-siz/2, siz, siz)
-			rl.DrawTexturePro(imgs, pl.orbimg1, pl.orbrec1, ori, 0, rl.White)
+			gs.Player.Pl.orbrec1 = rl.NewRectangle(gs.Player.Pl.orbital1.X-siz/2, gs.Player.Pl.orbital1.Y-siz/2, siz, siz)
+			rl.DrawTexturePro(gs.Render.Imgs, gs.Player.Pl.orbimg1, gs.Player.Pl.orbrec1, gs.Core.Ori, 0, rl.White)
 
-			if frames%3 == 0 {
-				pl.orbimg1.X += orbitalanim.W
-				if pl.orbimg1.X > orbitalanim.xl+orbitalanim.frames*orbitalanim.W {
-					pl.orbimg1.X = orbitalanim.xl
+			if gs.Core.Frames%3 == 0 {
+				gs.Player.Pl.orbimg1.X += gs.Render.Orbitalanim.W
+				if gs.Player.Pl.orbimg1.X > gs.Render.Orbitalanim.xl+gs.Render.Orbitalanim.frames*gs.Render.Orbitalanim.W {
+					gs.Player.Pl.orbimg1.X = gs.Render.Orbitalanim.xl
 				}
 			}
 
 		}
-		if mods.orbitalN == 2 {
-			if roomChanged {
-				pl.orbital2 = rl.NewVector2(pl.cnt.X-bsU7, pl.cnt.Y-bsU7)
+		if gs.Player.Mods.orbitalN == 2 {
+			if gs.Level.RoomChanged {
+				gs.Player.Pl.orbital2 = rl.NewVector2(gs.Player.Pl.cnt.X-bsU7, gs.Player.Pl.cnt.Y-bsU7)
 			} else {
-				pl.angle = pl.angle * (math.Pi / 180)
-				newx := float32(math.Cos(float64(pl.angle)))*(pl.orbital2.X-pl.cnt.X) - float32(math.Sin(float64(pl.angle)))*(pl.orbital2.Y-pl.cnt.Y) + pl.cnt.X
-				newy := float32(math.Sin(float64(pl.angle)))*(pl.orbital2.X-pl.cnt.X) + float32(math.Cos(float64(pl.angle)))*(pl.orbital2.Y-pl.cnt.Y) + pl.cnt.Y
-				pl.orbital2 = rl.NewVector2(newx, newy)
-				pl.angle += 6
+				gs.Player.Pl.angle = gs.Player.Pl.angle * (math.Pi / 180)
+				newx := float32(math.Cos(float64(gs.Player.Pl.angle)))*(gs.Player.Pl.orbital2.X-gs.Player.Pl.cnt.X) - float32(math.Sin(float64(gs.Player.Pl.angle)))*(gs.Player.Pl.orbital2.Y-gs.Player.Pl.cnt.Y) + gs.Player.Pl.cnt.X
+				newy := float32(math.Sin(float64(gs.Player.Pl.angle)))*(gs.Player.Pl.orbital2.X-gs.Player.Pl.cnt.X) + float32(math.Cos(float64(gs.Player.Pl.angle)))*(gs.Player.Pl.orbital2.Y-gs.Player.Pl.cnt.Y) + gs.Player.Pl.cnt.Y
+				gs.Player.Pl.orbital2 = rl.NewVector2(newx, newy)
+				gs.Player.Pl.angle += 6
 
-				if getabs(pl.orbital2.X-pl.cnt.X) > bsU7 {
-					if pl.orbital2.X > pl.cnt.X {
-						pl.orbital2.X -= bsU / 8
+				if getabs(gs.Player.Pl.orbital2.X-gs.Player.Pl.cnt.X) > bsU7 {
+					if gs.Player.Pl.orbital2.X > gs.Player.Pl.cnt.X {
+						gs.Player.Pl.orbital2.X -= bsU / 8
 					} else {
-						pl.orbital2.X += bsU / 8
+						gs.Player.Pl.orbital2.X += bsU / 8
 					}
 				}
-				if getabs(pl.orbital2.Y-pl.cnt.Y) > bsU7 {
-					if pl.orbital2.Y > pl.cnt.Y {
-						pl.orbital2.Y -= bsU / 8
+				if getabs(gs.Player.Pl.orbital2.Y-gs.Player.Pl.cnt.Y) > bsU7 {
+					if gs.Player.Pl.orbital2.Y > gs.Player.Pl.cnt.Y {
+						gs.Player.Pl.orbital2.Y -= bsU / 8
 					} else {
-						pl.orbital2.Y += bsU / 8
+						gs.Player.Pl.orbital2.Y += bsU / 8
 					}
 				}
 			}
 
 			siz := bsU + bsU/2
-			pl.orbrec2 = rl.NewRectangle(pl.orbital2.X-siz/2, pl.orbital2.Y-siz/2, siz, siz)
-			rl.DrawTexturePro(imgs, pl.orbimg2, pl.orbrec2, ori, 0, rl.White)
+			gs.Player.Pl.orbrec2 = rl.NewRectangle(gs.Player.Pl.orbital2.X-siz/2, gs.Player.Pl.orbital2.Y-siz/2, siz, siz)
+			rl.DrawTexturePro(gs.Render.Imgs, gs.Player.Pl.orbimg2, gs.Player.Pl.orbrec2, gs.Core.Ori, 0, rl.White)
 
-			if frames%3 == 0 {
-				pl.orbimg2.X += orbitalanim.W
-				if pl.orbimg2.X > orbitalanim.xl+orbitalanim.frames*orbitalanim.W {
-					pl.orbimg2.X = orbitalanim.xl
+			if gs.Core.Frames%3 == 0 {
+				gs.Player.Pl.orbimg2.X += gs.Render.Orbitalanim.W
+				if gs.Player.Pl.orbimg2.X > gs.Render.Orbitalanim.xl+gs.Render.Orbitalanim.frames*gs.Render.Orbitalanim.W {
+					gs.Player.Pl.orbimg2.X = gs.Render.Orbitalanim.xl
 				}
 			}
 		}
@@ -2180,19 +2074,19 @@ func drawPlayer() { //MARK:DRAW PLAYER
 	}
 
 	//COMPANIONS
-	if mods.planty || mods.alien || mods.carrot {
+	if gs.Player.Mods.planty || gs.Player.Mods.alien || gs.Player.Mods.carrot {
 		drawUpCompanions()
 	}
 
 	//NIGHT REC
-	if night {
-		rec := rl.NewRectangle(pl.cnt.X-etc[25].Width/2, pl.cnt.Y-etc[25].Height/2, etc[25].Width, etc[25].Height)
-		rl.DrawTexturePro(imgs, etc[25], rec, ori, 0, rl.White)
+	if gs.Level.Night {
+		rec := rl.NewRectangle(gs.Player.Pl.cnt.X-gs.Render.Etc[25].Width/2, gs.Player.Pl.cnt.Y-gs.Render.Etc[25].Height/2, gs.Render.Etc[25].Width, gs.Render.Etc[25].Height)
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Etc[25], rec, gs.Core.Ori, 0, rl.White)
 
-		recT := rl.NewRectangle(levRec.X, levRec.Y, levRec.Width, rec.Y-levRec.Y)
-		recB := rl.NewRectangle(levRec.X, rec.Y+rec.Height, levRec.Width, (levRec.Y+levRec.Height)-(rec.Y+rec.Height))
-		recL := rl.NewRectangle(levRec.X, rec.Y, rec.X-levRec.X, rec.Height)
-		recR := rl.NewRectangle(rec.X+rec.Width, rec.Y, (levRec.X+levRec.Width)-(rec.X+rec.Width), rec.Height)
+		recT := rl.NewRectangle(gs.Level.LevRec.X, gs.Level.LevRec.Y, gs.Level.LevRec.Width, rec.Y-gs.Level.LevRec.Y)
+		recB := rl.NewRectangle(gs.Level.LevRec.X, rec.Y+rec.Height, gs.Level.LevRec.Width, (gs.Level.LevRec.Y+gs.Level.LevRec.Height)-(rec.Y+rec.Height))
+		recL := rl.NewRectangle(gs.Level.LevRec.X, rec.Y, rec.X-gs.Level.LevRec.X, rec.Height)
+		recR := rl.NewRectangle(rec.X+rec.Width, rec.Y, (gs.Level.LevRec.X+gs.Level.LevRec.Width)-(rec.X+rec.Width), rec.Height)
 
 		rl.DrawRectangleRec(recT, rl.Fade(rl.Black, 0.6))
 		rl.DrawRectangleRec(recB, rl.Fade(rl.Black, 0.6))
@@ -2202,18 +2096,18 @@ func drawPlayer() { //MARK:DRAW PLAYER
 	}
 
 	//DEBUG
-	if debug {
-		rl.DrawRectangleLinesEx(pl.arec, 1, rl.Red)
-		rl.DrawRectangleLinesEx(pl.crec, 1, rl.Blue)
-		rl.DrawRectangleLinesEx(pl.atkrec, 1, rl.White)
-		rl.DrawPixelV(pl.cnt, rl.Red)
+	if gs.Core.Debug {
+		rl.DrawRectangleLinesEx(gs.Player.Pl.arec, 1, rl.Red)
+		rl.DrawRectangleLinesEx(gs.Player.Pl.crec, 1, rl.Blue)
+		rl.DrawRectangleLinesEx(gs.Player.Pl.atkrec, 1, rl.White)
+		rl.DrawPixelV(gs.Player.Pl.cnt, rl.Red)
 	}
 
 }
 
 func drawUpCompanions() { //MARK:DRAW UP COMPANIONS
 
-	if mods.carrot {
+	if gs.Player.Mods.carrot {
 
 		gs.Companions.MrCarrot.timer--
 		if gs.Companions.MrCarrot.timer == 0 {
@@ -2235,15 +2129,15 @@ func drawUpCompanions() { //MARK:DRAW UP COMPANIONS
 		shadowRec.X -= 5
 		shadowRec.Y += 5
 		if gs.Companions.MrCarrot.velx > 0 {
-			rl.DrawTexturePro(imgs, gs.Companions.MrCarrot.imgr, shadowRec, ori, 0, rl.Fade(rl.Black, 0.8))
-			rl.DrawTexturePro(imgs, gs.Companions.MrCarrot.imgr, gs.Companions.MrCarrot.rec, ori, 0, rl.White)
+			rl.DrawTexturePro(gs.Render.Imgs, gs.Companions.MrCarrot.imgr, shadowRec, gs.Core.Ori, 0, rl.Fade(rl.Black, 0.8))
+			rl.DrawTexturePro(gs.Render.Imgs, gs.Companions.MrCarrot.imgr, gs.Companions.MrCarrot.rec, gs.Core.Ori, 0, rl.White)
 		} else {
-			rl.DrawTexturePro(imgs, gs.Companions.MrCarrot.imgl, shadowRec, ori, 0, rl.Fade(rl.Black, 0.8))
-			rl.DrawTexturePro(imgs, gs.Companions.MrCarrot.imgl, gs.Companions.MrCarrot.rec, ori, 0, rl.White)
+			rl.DrawTexturePro(gs.Render.Imgs, gs.Companions.MrCarrot.imgl, shadowRec, gs.Core.Ori, 0, rl.Fade(rl.Black, 0.8))
+			rl.DrawTexturePro(gs.Render.Imgs, gs.Companions.MrCarrot.imgl, gs.Companions.MrCarrot.rec, gs.Core.Ori, 0, rl.White)
 		}
 
 		//ANIM
-		if frames%6 == 0 {
+		if gs.Core.Frames%6 == 0 {
 			gs.Companions.MrCarrot.imgl.X += gs.Companions.MrCarrot.imgl.Width
 			if gs.Companions.MrCarrot.imgl.X > gs.Companions.MrCarrot.imgl.Width*float32(gs.Companions.MrCarrot.frames) {
 				gs.Companions.MrCarrot.imgl.X = 0
@@ -2255,7 +2149,7 @@ func drawUpCompanions() { //MARK:DRAW UP COMPANIONS
 		}
 	}
 
-	if mods.alien {
+	if gs.Player.Mods.alien {
 		gs.Companions.MrAlien.timer--
 		if gs.Companions.MrAlien.timer == 0 {
 			gs.Companions.MrAlien.timer = gs.Core.Fps * rI32(3, 8)
@@ -2274,8 +2168,8 @@ func drawUpCompanions() { //MARK:DRAW UP COMPANIONS
 		shadowRec := gs.Companions.MrAlien.rec
 		shadowRec.X -= 5
 		shadowRec.Y += 5
-		rl.DrawTexturePro(imgs, gs.Companions.MrAlien.img, shadowRec, ori, 0, rl.Fade(rl.Black, 0.8))
-		rl.DrawTexturePro(imgs, gs.Companions.MrAlien.img, gs.Companions.MrAlien.rec, ori, 0, rl.White)
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Companions.MrAlien.img, shadowRec, gs.Core.Ori, 0, rl.Fade(rl.Black, 0.8))
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Companions.MrAlien.img, gs.Companions.MrAlien.rec, gs.Core.Ori, 0, rl.White)
 
 		if getabs(gs.Companions.MrAlien.velx) > getabs(gs.Companions.MrAlien.vely) {
 			if gs.Companions.MrAlien.velx > 0 {
@@ -2291,7 +2185,7 @@ func drawUpCompanions() { //MARK:DRAW UP COMPANIONS
 			}
 		}
 
-		if frames%3 == 0 {
+		if gs.Core.Frames%3 == 0 {
 			gs.Companions.MrAlien.img.X += gs.Companions.MrAlien.img.Width
 			if gs.Companions.MrAlien.img.X >= 1200 {
 				gs.Companions.MrAlien.img.X = 1008
@@ -2299,7 +2193,7 @@ func drawUpCompanions() { //MARK:DRAW UP COMPANIONS
 		}
 	}
 
-	if mods.planty {
+	if gs.Player.Mods.planty {
 		//MOVE
 		if checkNextMove(gs.Companions.MrPlanty.rec, gs.Companions.MrPlanty.velx, gs.Companions.MrPlanty.vely, false) {
 			gs.Companions.MrPlanty.rec.X += gs.Companions.MrPlanty.velx
@@ -2315,15 +2209,15 @@ func drawUpCompanions() { //MARK:DRAW UP COMPANIONS
 		shadowRec.X -= 5
 		shadowRec.Y += 5
 		if gs.Companions.MrPlanty.velx > 0 {
-			rl.DrawTexturePro(imgs, gs.Companions.MrPlanty.imgr, shadowRec, ori, 0, rl.Fade(rl.Black, 0.8))
-			rl.DrawTexturePro(imgs, gs.Companions.MrPlanty.imgr, gs.Companions.MrPlanty.rec, ori, 0, rl.White)
+			rl.DrawTexturePro(gs.Render.Imgs, gs.Companions.MrPlanty.imgr, shadowRec, gs.Core.Ori, 0, rl.Fade(rl.Black, 0.8))
+			rl.DrawTexturePro(gs.Render.Imgs, gs.Companions.MrPlanty.imgr, gs.Companions.MrPlanty.rec, gs.Core.Ori, 0, rl.White)
 		} else {
-			rl.DrawTexturePro(imgs, gs.Companions.MrPlanty.imgl, shadowRec, ori, 0, rl.Fade(rl.Black, 0.8))
-			rl.DrawTexturePro(imgs, gs.Companions.MrPlanty.imgl, gs.Companions.MrPlanty.rec, ori, 0, rl.White)
+			rl.DrawTexturePro(gs.Render.Imgs, gs.Companions.MrPlanty.imgl, shadowRec, gs.Core.Ori, 0, rl.Fade(rl.Black, 0.8))
+			rl.DrawTexturePro(gs.Render.Imgs, gs.Companions.MrPlanty.imgl, gs.Companions.MrPlanty.rec, gs.Core.Ori, 0, rl.White)
 		}
 
 		//ANIM
-		if frames%6 == 0 {
+		if gs.Core.Frames%6 == 0 {
 			gs.Companions.MrPlanty.imgl.X += gs.Companions.MrPlanty.imgl.Width
 			if gs.Companions.MrPlanty.imgl.X > gs.Companions.MrPlanty.imgl.Width*float32(gs.Companions.MrPlanty.frames) {
 				gs.Companions.MrPlanty.imgl.X = 0
@@ -2335,7 +2229,7 @@ func drawUpCompanions() { //MARK:DRAW UP COMPANIONS
 		}
 
 		//BULLETS
-		if frames%30 == 0 {
+		if gs.Core.Frames%30 == 0 {
 			makeProjectile("plantbull")
 		}
 
@@ -2350,112 +2244,112 @@ func drawnocamBG() { //MARK:DRAW NO CAM BACKGROUND
 func drawnocam() { //MARK:DRAW NO CAM
 
 	//INTRO
-	if intro && !gs.UI.OptionsOn {
-		if introT1 > 0 {
-			shaderon = false
-			x := cnt.X - etc[56].Width/2
-			y := cnt.Y - etc[56].Height/2
-			rl.DrawTexturePro(imgs, etc[56], rl.NewRectangle(x, y, etc[56].Width, etc[56].Height), ori, 0, rl.Fade(rl.White, introF1))
-			if introF1 < 1 {
-				introF1 += 0.01
+	if gs.UI.Intro && !gs.UI.OptionsOn {
+		if gs.UI.IntroT1 > 0 {
+			gs.Render.ShaderOn = false
+			x := gs.Core.Cnt.X - gs.Render.Etc[56].Width/2
+			y := gs.Core.Cnt.Y - gs.Render.Etc[56].Height/2
+			rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Etc[56], rl.NewRectangle(x, y, gs.Render.Etc[56].Width, gs.Render.Etc[56].Height), gs.Core.Ori, 0, rl.Fade(rl.White, gs.UI.IntroF1))
+			if gs.UI.IntroF1 < 1 {
+				gs.UI.IntroF1 += 0.01
 			}
 
-			if introF1 > 0.5 {
+			if gs.UI.IntroF1 > 0.5 {
 				txt := "raylib.com"
 				txtlen := rl.MeasureText(txt, 20)
-				txtx := int32(cnt.X) - txtlen/2
-				txty := int32(cnt.Y + (etc[56].Height / 2) + bsU/2)
+				txtx := int32(gs.Core.Cnt.X) - txtlen/2
+				txty := int32(gs.Core.Cnt.Y + (gs.Render.Etc[56].Height / 2) + bsU/2)
 				rl.DrawText(txt, txtx, txty, 20, rl.White)
 			}
-			introT1--
+			gs.UI.IntroT1--
 			if rl.IsKeyPressed(rl.KeySpace) || rl.IsGamepadButtonPressed(0, 7) {
-				introT1 = 0
+				gs.UI.IntroT1 = 0
 			}
-		} else if introT2 > 0 {
-			shaderon = false
-			x := cnt.X - etc[55].Width/2
-			y := cnt.Y - etc[55].Height/2
-			rl.DrawTexturePro(imgs, etc[55], rl.NewRectangle(x, y, etc[55].Width, etc[55].Height), ori, 0, rl.Fade(rl.White, introF2))
-			if introF2 < 1 {
-				introF2 += 0.01
+		} else if gs.UI.IntroT2 > 0 {
+			gs.Render.ShaderOn = false
+			x := gs.Core.Cnt.X - gs.Render.Etc[55].Width/2
+			y := gs.Core.Cnt.Y - gs.Render.Etc[55].Height/2
+			rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Etc[55], rl.NewRectangle(x, y, gs.Render.Etc[55].Width, gs.Render.Etc[55].Height), gs.Core.Ori, 0, rl.Fade(rl.White, gs.UI.IntroF2))
+			if gs.UI.IntroF2 < 1 {
+				gs.UI.IntroF2 += 0.01
 			}
-			if introF2 > 0.5 {
+			if gs.UI.IntroF2 > 0.5 {
 				txt := "go.dev"
 				txtlen := rl.MeasureText(txt, 20)
-				txtx := int32(cnt.X) - txtlen/2
-				txty := int32(cnt.Y + (etc[55].Height / 2) + bsU/2)
+				txtx := int32(gs.Core.Cnt.X) - txtlen/2
+				txty := int32(gs.Core.Cnt.Y + (gs.Render.Etc[55].Height / 2) + bsU/2)
 				rl.DrawText(txt, txtx, txty, 20, rl.White)
 			}
-			introT2--
+			gs.UI.IntroT2--
 			if rl.IsKeyPressed(rl.KeySpace) || rl.IsGamepadButtonPressed(0, 7) {
-				introT2 = 0
+				gs.UI.IntroT2 = 0
 
 			}
 		} else {
-			shaderon = true
+			gs.Render.ShaderOn = true
 
-			if introcount {
+			if gs.UI.IntroCount {
 
-				introT3--
-				if introT3 > gs.Core.Fps*2 {
+				gs.UI.IntroT3--
+				if gs.UI.IntroT3 > gs.Core.Fps*2 {
 					txt := "3"
 					txtlen := rl.MeasureText(txt, 200)
-					txty := int32(cnt.Y) - 100
-					txtx := int32(cnt.X) - txtlen/2
+					txty := int32(gs.Core.Cnt.Y) - 100
+					txtx := int32(gs.Core.Cnt.X) - txtlen/2
 					rl.DrawText(txt, txtx, txty, 200, rl.Green)
-				} else if introT3 > gs.Core.Fps {
+				} else if gs.UI.IntroT3 > gs.Core.Fps {
 					txt := "2"
 					txtlen := rl.MeasureText(txt, 200)
-					txty := int32(cnt.Y) - 100
-					txtx := int32(cnt.X) - txtlen/2
+					txty := int32(gs.Core.Cnt.Y) - 100
+					txtx := int32(gs.Core.Cnt.X) - txtlen/2
 					rl.DrawText(txt, txtx, txty, 200, rl.Green)
-				} else if introT3 > 0 {
+				} else if gs.UI.IntroT3 > 0 {
 					txt := "1"
 					txtlen := rl.MeasureText(txt, 200)
-					txty := int32(cnt.Y) - 100
-					txtx := int32(cnt.X) - txtlen/2
+					txty := int32(gs.Core.Cnt.Y) - 100
+					txtx := int32(gs.Core.Cnt.X) - txtlen/2
 					rl.DrawText(txt, txtx, txty, 200, rl.Green)
 				} else {
-					intro = false
-					pause = false
-					runT = 0
-					mins = 0
-					secs = 0
+					gs.UI.Intro = false
+					gs.Core.Pause = false
+					gs.Level.RunT = 0
+					gs.Level.Mins = 0
+					gs.Level.Secs = 0
 					if gs.Audio.MusicOn {
 						rl.PlayMusicStream(gs.Audio.Music)
 					}
 				}
 
 			} else {
-				x := cnt.X - etc[54].Width/2
-				y := cnt.Y - etc[54].Height/2
-				rl.DrawTexturePro(imgs, etc[54], rl.NewRectangle(x, y, etc[54].Width, etc[54].Height), ori, 0, rl.Fade(rl.White, introF3))
-				if introF3 < 1 {
-					introF3 += 0.01
+				x := gs.Core.Cnt.X - gs.Render.Etc[54].Width/2
+				y := gs.Core.Cnt.Y - gs.Render.Etc[54].Height/2
+				rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Etc[54], rl.NewRectangle(x, y, gs.Render.Etc[54].Width, gs.Render.Etc[54].Height), gs.Core.Ori, 0, rl.Fade(rl.White, gs.UI.IntroF3))
+				if gs.UI.IntroF3 < 1 {
+					gs.UI.IntroF3 += 0.01
 				} else {
 					txt := "press space or a button to start"
 					txtlen := rl.MeasureText(txt, 20)
-					txty := int32(y+etc[54].Height) + bsU2i32
-					txtx := int32(cnt.X) - txtlen/2
+					txty := int32(y+gs.Render.Etc[54].Height) + bsU2i32
+					txtx := int32(gs.Core.Cnt.X) - txtlen/2
 					rl.DrawText(txt, txtx, txty, 20, rl.Green)
 
 					txt = "press esc or menu button for options"
 					txtlen = rl.MeasureText(txt, 20)
 					txty += 30
-					txtx = int32(cnt.X) - txtlen/2
+					txtx = int32(gs.Core.Cnt.X) - txtlen/2
 					rl.DrawText(txt, txtx, txty, 20, rl.Green)
 				}
 				if rl.IsKeyPressed(rl.KeySpace) || rl.IsGamepadButtonPressed(0, 7) {
-					introcount = true
-					startdmgT = gs.Core.Fps * 7
+					gs.UI.IntroCount = true
+					gs.Player.StartdmgT = gs.Core.Fps * 7
 					rl.PlaySound(gs.Audio.Sfx[13])
 				}
 
-				if introF3 > 0.5 {
+				if gs.UI.IntroF3 > 0.5 {
 					txt := "unklnik.com"
 					txtlen := rl.MeasureText(txt, 40)
-					txtx := int32(cnt.X) - txtlen/2
-					txty := int32(scrH) - 50
+					txtx := int32(gs.Core.Cnt.X) - txtlen/2
+					txty := int32(gs.Core.ScrH) - 50
 					rl.DrawText(txt, txtx, txty, 40, rl.Green)
 				}
 			}
@@ -2465,55 +2359,55 @@ func drawnocam() { //MARK:DRAW NO CAM
 	}
 
 	//FLOOD
-	if mods.flood {
-		rl.DrawRectangleRec(floodRec, rl.Fade(rl.SkyBlue, rF32(0.07, 0.12)))
+	if gs.Player.Mods.flood {
+		rl.DrawRectangleRec(gs.FX.FloodRec, rl.Fade(rl.SkyBlue, rF32(0.07, 0.12)))
 
 		//WATER ANIM
 		siz := bsU2
-		x := floodRec.X
-		y := floodRec.Y - siz/2
+		x := gs.FX.FloodRec.X
+		y := gs.FX.FloodRec.Y - siz/2
 		for {
 			rec := rl.NewRectangle(x, y, siz, siz)
-			rl.DrawTexturePro(imgs, floodImg, rec, ori, 0, rl.SkyBlue)
+			rl.DrawTexturePro(gs.Render.Imgs, gs.FX.FloodImg, rec, gs.Core.Ori, 0, rl.SkyBlue)
 			x += siz
-			if x >= scrWF32 {
+			if x >= gs.Core.ScrWF32 {
 				break
 			}
 		}
-		if frames%3 == 0 {
-			floodImg.X += floodanim.W
-			if floodImg.X > floodanim.xl+floodanim.frames*floodanim.W {
-				floodImg.X = floodanim.xl
+		if gs.Core.Frames%3 == 0 {
+			gs.FX.FloodImg.X += gs.Render.Floodanim.W
+			if gs.FX.FloodImg.X > gs.Render.Floodanim.xl+gs.Render.Floodanim.frames*gs.Render.Floodanim.W {
+				gs.FX.FloodImg.X = gs.Render.Floodanim.xl
 			}
 		}
 
 		//FISH
-		rec := rl.NewRectangle(fishV2.X-fishSiz/2, fishV2.Y-fishSiz/2, fishSiz, fishSiz)
-		rl.DrawTexturePro(imgs, fish1, rec, ori, 0, rl.SkyBlue)
-		rec = rl.NewRectangle(fish2V2.X-fishSiz2/2, fish2V2.Y-fishSiz2/2, fishSiz2, fishSiz2)
-		rl.DrawTexturePro(imgs, fish2, rec, ori, 0, rl.SkyBlue)
+		rec := rl.NewRectangle(gs.FX.FishV2.X-gs.FX.FishSiz/2, gs.FX.FishV2.Y-gs.FX.FishSiz/2, gs.FX.FishSiz, gs.FX.FishSiz)
+		rl.DrawTexturePro(gs.Render.Imgs, gs.FX.Fish1, rec, gs.Core.Ori, 0, rl.SkyBlue)
+		rec = rl.NewRectangle(gs.FX.Fish2V2.X-gs.FX.FishSiz2/2, gs.FX.Fish2V2.Y-gs.FX.FishSiz2/2, gs.FX.FishSiz2, gs.FX.FishSiz2)
+		rl.DrawTexturePro(gs.Render.Imgs, gs.FX.Fish2, rec, gs.Core.Ori, 0, rl.SkyBlue)
 
-		if frames%10 == 0 {
-			if fishLR {
-				fish1.X += fishL.W
-				if fish1.X > fishL.xl+fishL.frames*fishL.W {
-					fish1.X = fishL.xl
+		if gs.Core.Frames%10 == 0 {
+			if gs.FX.FishLR {
+				gs.FX.Fish1.X += gs.Render.FishL.W
+				if gs.FX.Fish1.X > gs.Render.FishL.xl+gs.Render.FishL.frames*gs.Render.FishL.W {
+					gs.FX.Fish1.X = gs.Render.FishL.xl
 				}
 			} else {
-				fish1.X += fishR.W
-				if fish1.X > fishR.xl+fishR.frames*fishR.W {
-					fish1.X = fishR.xl
+				gs.FX.Fish1.X += gs.Render.FishR.W
+				if gs.FX.Fish1.X > gs.Render.FishR.xl+gs.Render.FishR.frames*gs.Render.FishR.W {
+					gs.FX.Fish1.X = gs.Render.FishR.xl
 				}
 			}
-			if fish2LR {
-				fish2.X += fishR.W
-				if fish2.X > fishR.xl+fishR.frames*fishR.W {
-					fish2.X = fishR.xl
+			if gs.FX.Fish2LR {
+				gs.FX.Fish2.X += gs.Render.FishR.W
+				if gs.FX.Fish2.X > gs.Render.FishR.xl+gs.Render.FishR.frames*gs.Render.FishR.W {
+					gs.FX.Fish2.X = gs.Render.FishR.xl
 				}
 			} else {
-				fish2.X += fishL.W
-				if fish2.X > fishL.xl+fishL.frames*fishL.W {
-					fish2.X = fishL.xl
+				gs.FX.Fish2.X += gs.Render.FishL.W
+				if gs.FX.Fish2.X > gs.Render.FishL.xl+gs.Render.FishL.frames*gs.Render.FishL.W {
+					gs.FX.Fish2.X = gs.Render.FishL.xl
 				}
 			}
 
@@ -2522,46 +2416,46 @@ func drawnocam() { //MARK:DRAW NO CAM
 	}
 
 	//RAIN
-	if mods.umbrella {
-		for a := 0; a < len(rain); a++ {
-			rl.DrawRectangleRec(rain[a], rl.Fade(ranCyan(), rF32(0.4, 0.7)))
-			rain[a].Y += 8
-			if rain[a].Y > scrHF32 {
-				rain[a].Y = rF32(-scrHF32, -bsU)
+	if gs.Player.Mods.umbrella {
+		for a := 0; a < len(gs.FX.Rain); a++ {
+			rl.DrawRectangleRec(gs.FX.Rain[a], rl.Fade(ranCyan(), rF32(0.4, 0.7)))
+			gs.FX.Rain[a].Y += 8
+			if gs.FX.Rain[a].Y > gs.Core.ScrHF32 {
+				gs.FX.Rain[a].Y = rF32(-gs.Core.ScrHF32, -bsU)
 			}
 		}
 
 	}
 
 	//TELEPORT
-	if teleporton {
-		for a := 0; a < len(teleportRadius); a++ {
-			rl.DrawCircleLines(int32(cnt.X), int32(cnt.Y), teleportRadius[a], ranCol())
-			teleportRadius[a] -= bsU
-			if teleportRadius[a] <= 0 {
-				teleporton = false
-				pl.cnt = rl.NewVector2(levRecInner.X+levRecInner.Width/2, levRecInner.Y+bsU3)
+	if gs.Player.TeleportOn {
+		for a := 0; a < len(gs.Player.TeleportRadius); a++ {
+			rl.DrawCircleLines(int32(gs.Core.Cnt.X), int32(gs.Core.Cnt.Y), gs.Player.TeleportRadius[a], ranCol())
+			gs.Player.TeleportRadius[a] -= bsU
+			if gs.Player.TeleportRadius[a] <= 0 {
+				gs.Player.TeleportOn = false
+				gs.Player.Pl.cnt = rl.NewVector2(gs.Level.LevRecInner.X+gs.Level.LevRecInner.Width/2, gs.Level.LevRecInner.Y+bsU3)
 				upPlayerRec()
-				for i := 0; i < len(level[teleportRoomNum].innerBloks); i++ {
-					if rl.CheckCollisionRecs(pl.crec, level[teleportRoomNum].innerBloks[i].rec) {
-						pl.rec.X = level[teleportRoomNum].innerBloks[i].rec.X + level[teleportRoomNum].innerBloks[i].rec.Width + bsU/4
+				for i := 0; i < len(gs.Level.Level[gs.Player.TeleportRoomNum].innerBloks); i++ {
+					if rl.CheckCollisionRecs(gs.Player.Pl.crec, gs.Level.Level[gs.Player.TeleportRoomNum].innerBloks[i].rec) {
+						gs.Player.Pl.rec.X = gs.Level.Level[gs.Player.TeleportRoomNum].innerBloks[i].rec.X + gs.Level.Level[gs.Player.TeleportRoomNum].innerBloks[i].rec.Width + bsU/4
 						upPlayerRec()
 						break
 					}
 				}
 
-				cntCompanion := pl.cnt
-				if mods.carrot {
+				cntCompanion := gs.Player.Pl.cnt
+				if gs.Player.Mods.carrot {
 					gs.Companions.MrCarrot.rec = rl.NewRectangle(cntCompanion.X-gs.Companions.MrCarrot.rec.Width/2, cntCompanion.Y-gs.Companions.MrCarrot.rec.Width/2, gs.Companions.MrCarrot.rec.Width, gs.Companions.MrCarrot.rec.Width)
 				}
-				if mods.alien {
+				if gs.Player.Mods.alien {
 					gs.Companions.MrAlien.rec = rl.NewRectangle(cntCompanion.X-gs.Companions.MrAlien.rec.Width/2, cntCompanion.Y-gs.Companions.MrAlien.rec.Width/2, gs.Companions.MrAlien.rec.Width, gs.Companions.MrAlien.rec.Width)
 				}
-				if mods.planty {
+				if gs.Player.Mods.planty {
 					gs.Companions.MrPlanty.rec = rl.NewRectangle(cntCompanion.X-gs.Companions.MrPlanty.rec.Width/2, cntCompanion.Y-gs.Companions.MrPlanty.rec.Width/2, gs.Companions.MrPlanty.rec.Width, gs.Companions.MrPlanty.rec.Width)
 				}
 
-				roomNum = teleportRoomNum
+				gs.Level.RoomNum = gs.Player.TeleportRoomNum
 				break
 			}
 		}
@@ -2569,62 +2463,62 @@ func drawnocam() { //MARK:DRAW NO CAM
 
 	//SCANLINES
 	if gs.UI.ScanLinesOn {
-		for a := 0; a < len(scanlinev2); a++ {
-			v2 := scanlinev2[a]
-			v2.X += scrWF32
-			rl.DrawLineEx(scanlinev2[a], v2, 1, rl.Fade(rl.Black, 0.5))
-			scanlinev2[a].Y++
-			if scanlinev2[a].Y > scrHF32+2 {
-				scanlinev2[a].Y = 0
+		for a := 0; a < len(gs.FX.ScanlineV2); a++ {
+			v2 := gs.FX.ScanlineV2[a]
+			v2.X += gs.Core.ScrWF32
+			rl.DrawLineEx(gs.FX.ScanlineV2[a], v2, 1, rl.Fade(rl.Black, 0.5))
+			gs.FX.ScanlineV2[a].Y++
+			if gs.FX.ScanlineV2[a].Y > gs.Core.ScrHF32+2 {
+				gs.FX.ScanlineV2[a].Y = 0
 			}
 		}
 	}
 
 	//MARK: DRAW MAP
-	if levMapOn {
-		txt := "level " + fmt.Sprint(levelnum)
+	if gs.Level.LevMapOn {
+		txt := "level " + fmt.Sprint(gs.Level.Levelnum)
 		txtlen := rl.MeasureText(txt, txU4)
-		txtx := int32(cnt.X) - txtlen/2
+		txtx := int32(gs.Core.Cnt.X) - txtlen/2
 		txty := txU
 		rl.DrawText(txt, txtx, txty, txU4, rl.White)
 
-		for a := 0; a < len(levMap); a++ {
-			if debug {
-				rl.DrawText(fmt.Sprint(a), levMap[a].ToInt32().X+4, levMap[a].ToInt32().Y+4, txU, rl.White)
+		for a := 0; a < len(gs.Level.LevMap); a++ {
+			if gs.Core.Debug {
+				rl.DrawText(fmt.Sprint(a), gs.Level.LevMap[a].ToInt32().X+4, gs.Level.LevMap[a].ToInt32().Y+4, txU, rl.White)
 			}
 
-			if shopRoomNum == a && roomNum == a {
-				rec := levMap[a]
+			if gs.Level.ShopRoomNum == a && gs.Level.RoomNum == a {
+				rec := gs.Level.LevMap[a]
 				rec.Width = rec.Width / 2
 				rl.DrawRectangleRec(rec, rl.Fade(rl.Green, 0.2))
 				rec.X += rec.Width
 				rl.DrawRectangleRec(rec, rl.Fade(rl.Magenta, 0.2))
-			} else if exitRoomNum == a && roomNum == a {
-				rec := levMap[a]
+			} else if gs.Level.ExitRoomNum == a && gs.Level.RoomNum == a {
+				rec := gs.Level.LevMap[a]
 				rec.Width = rec.Width / 2
 				rl.DrawRectangleRec(rec, rl.Fade(rl.Green, 0.2))
 				rec.X += rec.Width
 				rl.DrawRectangleRec(rec, rl.Fade(rl.Yellow, 0.2))
-			} else if exitRoomNum == a && mods.exitmap || exitRoomNum == a && level[a].visited {
-				rl.DrawRectangleRec(levMap[a], rl.Fade(rl.Yellow, 0.2))
-			} else if shopRoomNum == a {
-				rl.DrawRectangleRec(levMap[a], rl.Fade(rl.Magenta, 0.2))
-			} else if roomNum == a {
-				rl.DrawRectangleRec(levMap[a], rl.Fade(rl.Green, 0.2))
+			} else if gs.Level.ExitRoomNum == a && gs.Player.Mods.exitmap || gs.Level.ExitRoomNum == a && gs.Level.Level[a].visited {
+				rl.DrawRectangleRec(gs.Level.LevMap[a], rl.Fade(rl.Yellow, 0.2))
+			} else if gs.Level.ShopRoomNum == a {
+				rl.DrawRectangleRec(gs.Level.LevMap[a], rl.Fade(rl.Magenta, 0.2))
+			} else if gs.Level.RoomNum == a {
+				rl.DrawRectangleRec(gs.Level.LevMap[a], rl.Fade(rl.Green, 0.2))
 			} else {
-				if level[a].visited {
-					rl.DrawRectangleRec(levMap[a], rl.Fade(rl.Blue, 0.2))
+				if gs.Level.Level[a].visited {
+					rl.DrawRectangleRec(gs.Level.LevMap[a], rl.Fade(rl.Blue, 0.2))
 				} else {
-					rl.DrawRectangleRec(levMap[a], rl.Fade(rl.Red, 0.2))
+					rl.DrawRectangleRec(gs.Level.LevMap[a], rl.Fade(rl.Red, 0.2))
 				}
 			}
-			rl.DrawRectangleLinesEx(levMap[a], 1, rl.Black)
+			rl.DrawRectangleLinesEx(gs.Level.LevMap[a], 1, rl.Black)
 		}
 
 		txt = "player visited shop exit"
 		txtlen = rl.MeasureText(txt, txU4)
-		txtx = int32(cnt.X) - txtlen/2
-		txty = scrH32 - txU5
+		txtx = int32(gs.Core.Cnt.X) - txtlen/2
+		txty = gs.Core.ScrH32 - txU5
 		txtlen = rl.MeasureText("player ", txU4)
 		rl.DrawText("player ", txtx, txty, txU4, rl.Green)
 		txtx += txtlen
@@ -2642,8 +2536,8 @@ func drawnocam() { //MARK:DRAW NO CAM
 }
 func drawnoRender() { //MARK:DRAW NO RENDER
 
-	if invenon {
-		rl.BeginMode2D(cam2)
+	if gs.Player.InvenOn {
+		rl.BeginMode2D(gs.Render.Cam2)
 
 		drawInvenDetail()
 
@@ -2651,49 +2545,49 @@ func drawnoRender() { //MARK:DRAW NO RENDER
 
 	}
 
-	if debug {
+	if gs.Core.Debug {
 		drawDebug()
 	}
 
 }
 func drawDebug() { //MARK:DRAW DEBUG
 
-	siderec := rl.NewRectangle(0, 0, 300, scrHF32)
+	siderec := rl.NewRectangle(0, 0, 300, gs.Core.ScrHF32)
 	rl.DrawRectangleRec(siderec, rl.Fade(darkRed(), 0.3))
 
 	txtX, txtY := txU, txU
 
-	rl.DrawText("pl.cnt.X"+" "+fmt.Sprint(pl.cnt.X), txtX, txtY, txU, rl.White)
+	rl.DrawText("pl.cnt.X"+" "+fmt.Sprint(gs.Player.Pl.cnt.X), txtX, txtY, txU, rl.White)
 	txtY += txU
-	rl.DrawText("pl.cnt.Y"+" "+fmt.Sprint(pl.cnt.Y), txtX, txtY, txU, rl.White)
+	rl.DrawText("pl.cnt.Y"+" "+fmt.Sprint(gs.Player.Pl.cnt.Y), txtX, txtY, txU, rl.White)
 	txtY += txU
-	rl.DrawText("levBorderBlokNum"+" "+fmt.Sprint(levBorderBlokNum), txtX, txtY, txU, rl.White)
+	rl.DrawText("levBorderBlokNum"+" "+fmt.Sprint(gs.Level.LevBorderBlokNum), txtX, txtY, txU, rl.White)
 	txtY += txU
-	rl.DrawText("len FX"+" "+fmt.Sprint(len(fx)), txtX, txtY, txU, rl.White)
+	rl.DrawText("len FX"+" "+fmt.Sprint(len(gs.FX.Fx)), txtX, txtY, txU, rl.White)
 	txtY += txU
-	rl.DrawText("axeT2"+" "+fmt.Sprint(mods.axeT2), txtX, txtY, txU, rl.White)
+	rl.DrawText("axeT2"+" "+fmt.Sprint(gs.Player.Mods.axeT2), txtX, txtY, txU, rl.White)
 	txtY += txU
-	rl.DrawText("santaT"+" "+fmt.Sprint(mods.santaT), txtX, txtY, txU, rl.White)
+	rl.DrawText("santaT"+" "+fmt.Sprint(gs.Player.Mods.santaT), txtX, txtY, txU, rl.White)
 	txtY += txU
-	rl.DrawText("snowOn"+" "+fmt.Sprint(mods.snowon), txtX, txtY, txU, rl.White)
+	rl.DrawText("snowOn"+" "+fmt.Sprint(gs.Player.Mods.snowon), txtX, txtY, txU, rl.White)
 	txtY += txU
-	rl.DrawText("len(enProj)"+" "+fmt.Sprint(len(enProj)), txtX, txtY, txU, rl.White)
+	rl.DrawText("len(enProj)"+" "+fmt.Sprint(len(gs.Enemies.EnProj)), txtX, txtY, txU, rl.White)
 	txtY += txU
-	rl.DrawText("len(plProj)"+" "+fmt.Sprint(len(plProj)), txtX, txtY, txU, rl.White)
+	rl.DrawText("len(plProj)"+" "+fmt.Sprint(len(gs.Player.PlProj)), txtX, txtY, txU, rl.White)
 	txtY += txU
-	rl.DrawText("mods.fireballN"+" "+fmt.Sprint(mods.fireballN), txtX, txtY, txU, rl.White)
+	rl.DrawText("mods.fireballN"+" "+fmt.Sprint(gs.Player.Mods.fireballN), txtX, txtY, txU, rl.White)
 	txtY += txU
-	rl.DrawText("mods.bounceN"+" "+fmt.Sprint(mods.bounceN), txtX, txtY, txU, rl.White)
+	rl.DrawText("mods.bounceN"+" "+fmt.Sprint(gs.Player.Mods.bounceN), txtX, txtY, txU, rl.White)
 	txtY += txU
-	rl.DrawText("pl.atkDMG"+" "+fmt.Sprint(pl.atkDMG), txtX, txtY, txU, rl.White)
+	rl.DrawText("pl.atkDMG"+" "+fmt.Sprint(gs.Player.Pl.atkDMG), txtX, txtY, txU, rl.White)
 	txtY += txU
-	rl.DrawText("mods.orbitalN"+" "+fmt.Sprint(mods.orbitalN), txtX, txtY, txU, rl.White)
+	rl.DrawText("mods.orbitalN"+" "+fmt.Sprint(gs.Player.Mods.orbitalN), txtX, txtY, txU, rl.White)
 	txtY += txU
-	rl.DrawText("mods.alien"+" "+fmt.Sprint(mods.alien), txtX, txtY, txU, rl.White)
+	rl.DrawText("mods.alien"+" "+fmt.Sprint(gs.Player.Mods.alien), txtX, txtY, txU, rl.White)
 	txtY += txU
-	rl.DrawText("mods.carrot"+" "+fmt.Sprint(mods.carrot), txtX, txtY, txU, rl.White)
+	rl.DrawText("mods.carrot"+" "+fmt.Sprint(gs.Player.Mods.carrot), txtX, txtY, txU, rl.White)
 	txtY += txU
-	rl.DrawText("cam2.Zoom"+" "+fmt.Sprint(cam2.Zoom), txtX, txtY, txU, rl.White)
+	rl.DrawText("cam2.Zoom"+" "+fmt.Sprint(gs.Render.Cam2.Zoom), txtX, txtY, txU, rl.White)
 	txtY += txU
 	rl.DrawText("gs.Input.IsController"+" "+fmt.Sprint(gs.Input.IsController), txtX, txtY, txU, rl.White)
 	txtY += txU
@@ -2703,21 +2597,21 @@ func drawDebug() { //MARK:DRAW DEBUG
 	txtY += txU
 	rl.DrawText("GamepadAxisMovement 1"+" "+fmt.Sprint(rl.GetGamepadAxisMovement(0, 1)), txtX, txtY, txU, rl.White)
 	txtY += txU
-	rl.DrawText("bosses[bossnum].timer"+" "+fmt.Sprint(bosses[bossnum].timer), txtX, txtY, txU, rl.White)
+	rl.DrawText("bosses[bossnum].timer"+" "+fmt.Sprint(gs.Level.Bosses[gs.Level.Bossnum].timer), txtX, txtY, txU, rl.White)
 	txtY += txU
 	rl.DrawText("gs.Shop.ShopItems[0].shopoff"+" "+fmt.Sprint(gs.Shop.ShopItems[0].shopoff), txtX, txtY, txU, rl.White)
 	txtY += txU
-	rl.DrawText("floodRec.Y"+" "+fmt.Sprint(floodRec.Y), txtX, txtY, txU, rl.White)
+	rl.DrawText("floodRec.Y"+" "+fmt.Sprint(gs.FX.FloodRec.Y), txtX, txtY, txU, rl.White)
 	txtY += txU
-	rl.DrawText("pl.crec.Y"+" "+fmt.Sprint(pl.crec.Y), txtX, txtY, txU, rl.White)
+	rl.DrawText("pl.crec.Y"+" "+fmt.Sprint(gs.Player.Pl.crec.Y), txtX, txtY, txU, rl.White)
 	txtY += txU
-	rl.DrawText("minsEND"+" "+fmt.Sprint(minsEND), txtX, txtY, txU, rl.White)
+	rl.DrawText("minsEND"+" "+fmt.Sprint(gs.Level.MinsEND), txtX, txtY, txU, rl.White)
 	txtY += txU
-	rl.DrawText("secsEND"+" "+fmt.Sprint(secsEND), txtX, txtY, txU, rl.White)
+	rl.DrawText("secsEND"+" "+fmt.Sprint(gs.Level.SecsEND), txtX, txtY, txU, rl.White)
 	txtY += txU
 	rl.DrawText("len(gs.Mario.MarioCoins)"+" "+fmt.Sprint(len(gs.Mario.MarioCoins)), txtX, txtY, txU, rl.White)
 	txtY += txU
-	rl.DrawText("hardcore"+" "+fmt.Sprint(hardcore), txtX, txtY, txU, rl.White)
+	rl.DrawText("hardcore"+" "+fmt.Sprint(gs.Level.Hardcore), txtX, txtY, txU, rl.White)
 	txtY += txU
 
 }
@@ -2727,18 +2621,18 @@ func drawBlokDrec(blok xblok, shadow, blur bool, blurDist float32) { //MARK:DRAW
 		shadowRec := blok.drec
 		shadowRec.X -= 5
 		shadowRec.Y += 5
-		rl.DrawTexturePro(imgs, blok.img, shadowRec, rl.NewVector2(blok.drec.Width/2, blok.drec.Height/2), blok.ro, rl.Fade(rl.Black, 0.8))
+		rl.DrawTexturePro(gs.Render.Imgs, blok.img, shadowRec, rl.NewVector2(blok.drec.Width/2, blok.drec.Height/2), blok.ro, rl.Fade(rl.Black, 0.8))
 	}
 
-	rl.DrawTexturePro(imgs, blok.img, blok.drec, rl.NewVector2(blok.drec.Width/2, blok.drec.Height/2), blok.ro, rl.Fade(blok.color, blok.fade))
+	rl.DrawTexturePro(gs.Render.Imgs, blok.img, blok.drec, rl.NewVector2(blok.drec.Width/2, blok.drec.Height/2), blok.ro, rl.Fade(blok.color, blok.fade))
 	if blur {
 		blurRec := blok.drec
 		blurRec.X -= rF32(-blurDist, blurDist)
 		blurRec.Y -= rF32(-blurDist, blurDist)
-		rl.DrawTexturePro(imgs, blok.img, blurRec, rl.NewVector2(blok.drec.Width/2, blok.drec.Height/2), blok.ro, rl.Fade(blok.color, rF32(0.05, 0.2)))
+		rl.DrawTexturePro(gs.Render.Imgs, blok.img, blurRec, rl.NewVector2(blok.drec.Width/2, blok.drec.Height/2), blok.ro, rl.Fade(blok.color, rF32(0.05, 0.2)))
 	}
 
-	if debug {
+	if gs.Core.Debug {
 		rl.DrawRectangleLinesEx(blok.rec, 0.5, rl.Green)
 		rl.DrawRectangleLinesEx(blok.crec, 1, rl.Blue)
 		rl.DrawRectangleLinesEx(blok.crec2, 2, rl.Red)
@@ -2754,7 +2648,7 @@ func drawBlok(blok xblok, shadow, blur bool, blurDist float32) { //MARK:DRAW BLO
 		shadowRec := blok.rec
 		shadowRec.X -= 5
 		shadowRec.Y += 5
-		rl.DrawTexturePro(imgs, blok.img, shadowRec, rl.NewVector2(0, 0), blok.ro, rl.Fade(rl.Black, 0.8))
+		rl.DrawTexturePro(gs.Render.Imgs, blok.img, shadowRec, rl.NewVector2(0, 0), blok.ro, rl.Fade(rl.Black, 0.8))
 	}
 
 	//CANDLE LIGHT
@@ -2764,22 +2658,22 @@ func drawBlok(blok xblok, shadow, blur bool, blurDist float32) { //MARK:DRAW BLO
 	}
 
 	//DRAW BLOK IMG
-	rl.DrawTexturePro(imgs, blok.img, blok.rec, rl.NewVector2(0, 0), blok.ro, rl.Fade(blok.color, blok.fade))
+	rl.DrawTexturePro(gs.Render.Imgs, blok.img, blok.rec, rl.NewVector2(0, 0), blok.ro, rl.Fade(blok.color, blok.fade))
 	if blur {
 		if blok.name == "skull" || blok.name == "candle" { //HALF BLUR
 			blurRec := blok.rec
 			blurRec.X -= rF32(-blurDist/2, blurDist/2)
 			blurRec.Y -= rF32(-blurDist/2, blurDist/2)
-			rl.DrawTexturePro(imgs, blok.img, blurRec, rl.NewVector2(0, 0), blok.ro, rl.Fade(blok.color, rF32(0.05, 0.2)))
+			rl.DrawTexturePro(gs.Render.Imgs, blok.img, blurRec, rl.NewVector2(0, 0), blok.ro, rl.Fade(blok.color, rF32(0.05, 0.2)))
 		} else { //FULL BLUR
 			blurRec := blok.rec
 			blurRec.X -= rF32(-blurDist, blurDist)
 			blurRec.Y -= rF32(-blurDist, blurDist)
-			rl.DrawTexturePro(imgs, blok.img, blurRec, rl.NewVector2(0, 0), blok.ro, rl.Fade(blok.color, rF32(0.05, 0.2)))
+			rl.DrawTexturePro(gs.Render.Imgs, blok.img, blurRec, rl.NewVector2(0, 0), blok.ro, rl.Fade(blok.color, rF32(0.05, 0.2)))
 		}
 	}
 
-	if debug {
+	if gs.Core.Debug {
 		rl.DrawRectangleLinesEx(blok.rec, 0.5, rl.Green)
 		rl.DrawRectangleLinesEx(blok.crec, 2, rl.Blue)
 		rl.DrawRectangleLinesEx(blok.crec2, 2, rl.Red)
@@ -2790,114 +2684,114 @@ func drawBlok(blok xblok, shadow, blur bool, blurDist float32) { //MARK:DRAW BLO
 func drawUpEnProj() { //MARK:DRAW UP ENEMY PROJECTILES
 
 	clear := false
-	for a := 0; a < len(enProj); a++ {
+	for a := 0; a < len(gs.Enemies.EnProj); a++ {
 
-		if enProj[a].onoff {
-			//	rl.DrawRectangleRec(enProj[a].rec, enProj[a].col)
+		if gs.Enemies.EnProj[a].onoff {
+			//	rl.DrawRectangleRec(gs.Enemies.EnProj[a].rec, gs.Enemies.EnProj[a].col)
 
-			if enProj[a].name == "mushbull" {
-				shadowrec := makeDrec(enProj[a].rec)
+			if gs.Enemies.EnProj[a].name == "mushbull" {
+				shadowrec := makeDrec(gs.Enemies.EnProj[a].rec)
 				shadowrec.X -= 5
 				shadowrec.Y += 5
-				rl.DrawTexturePro(imgs, enProj[a].img, shadowrec, origin(enProj[a].rec), enProj[a].ro, rl.Fade(rl.Black, 0.7))
+				rl.DrawTexturePro(gs.Render.Imgs, gs.Enemies.EnProj[a].img, shadowrec, origin(gs.Enemies.EnProj[a].rec), gs.Enemies.EnProj[a].ro, rl.Fade(rl.Black, 0.7))
 				if flipcoin() {
-					rl.DrawTexturePro(imgs, enProj[a].img, makeDrec(enProj[a].rec), origin(enProj[a].rec), enProj[a].ro, ranCyan())
+					rl.DrawTexturePro(gs.Render.Imgs, gs.Enemies.EnProj[a].img, makeDrec(gs.Enemies.EnProj[a].rec), origin(gs.Enemies.EnProj[a].rec), gs.Enemies.EnProj[a].ro, ranCyan())
 				} else {
-					rl.DrawTexturePro(imgs, enProj[a].img, makeDrec(enProj[a].rec), origin(enProj[a].rec), enProj[a].ro, ranRed())
+					rl.DrawTexturePro(gs.Render.Imgs, gs.Enemies.EnProj[a].img, makeDrec(gs.Enemies.EnProj[a].rec), origin(gs.Enemies.EnProj[a].rec), gs.Enemies.EnProj[a].ro, ranRed())
 				}
-			} else if enProj[a].name == "boss3" {
-				rl.DrawTexturePro(imgs, enProj[a].img, makeDrec(enProj[a].rec), enProj[a].ori, enProj[a].ro, enProj[a].col)
+			} else if gs.Enemies.EnProj[a].name == "boss3" {
+				rl.DrawTexturePro(gs.Render.Imgs, gs.Enemies.EnProj[a].img, makeDrec(gs.Enemies.EnProj[a].rec), gs.Enemies.EnProj[a].ori, gs.Enemies.EnProj[a].ro, gs.Enemies.EnProj[a].col)
 
-			} else if enProj[a].name == "ninja" {
+			} else if gs.Enemies.EnProj[a].name == "ninja" {
 
-				rl.DrawTexturePro(imgs, enProj[a].img, makeDrec(enProj[a].rec), rl.NewVector2(enProj[a].rec.Width/2, enProj[a].rec.Height/2), enProj[a].ro, enProj[a].col)
+				rl.DrawTexturePro(gs.Render.Imgs, gs.Enemies.EnProj[a].img, makeDrec(gs.Enemies.EnProj[a].rec), rl.NewVector2(gs.Enemies.EnProj[a].rec.Width/2, gs.Enemies.EnProj[a].rec.Height/2), gs.Enemies.EnProj[a].ro, gs.Enemies.EnProj[a].col)
 
 			} else {
-				rl.DrawTexturePro(imgs, enProj[a].img, enProj[a].rec, ori, enProj[a].ro, enProj[a].col)
-				if enProj[a].name == "boss2" {
-					rl.DrawTexturePro(imgs, enProj[a].img, BlurRec(enProj[a].rec, 7), ori, enProj[a].ro, rl.Fade(enProj[a].col, 0.5))
+				rl.DrawTexturePro(gs.Render.Imgs, gs.Enemies.EnProj[a].img, gs.Enemies.EnProj[a].rec, gs.Core.Ori, gs.Enemies.EnProj[a].ro, gs.Enemies.EnProj[a].col)
+				if gs.Enemies.EnProj[a].name == "boss2" {
+					rl.DrawTexturePro(gs.Render.Imgs, gs.Enemies.EnProj[a].img, BlurRec(gs.Enemies.EnProj[a].rec, 7), gs.Core.Ori, gs.Enemies.EnProj[a].ro, rl.Fade(gs.Enemies.EnProj[a].col, 0.5))
 				}
 			}
 
-			switch enProj[a].name {
+			switch gs.Enemies.EnProj[a].name {
 			case "boss3":
-				enProj[a].ro += 12
-				if frames%4 == 0 {
-					if enProj[a].rec.Width < bsU8 {
-						enProj[a].rec.X -= 4
-						enProj[a].rec.Y -= 4
-						enProj[a].rec.Width += 8
-						enProj[a].rec.Height += 8
-						enProj[a].ori = rl.NewVector2(enProj[a].rec.Width/2, enProj[a].rec.Height/2)
+				gs.Enemies.EnProj[a].ro += 12
+				if gs.Core.Frames%4 == 0 {
+					if gs.Enemies.EnProj[a].rec.Width < bsU8 {
+						gs.Enemies.EnProj[a].rec.X -= 4
+						gs.Enemies.EnProj[a].rec.Y -= 4
+						gs.Enemies.EnProj[a].rec.Width += 8
+						gs.Enemies.EnProj[a].rec.Height += 8
+						gs.Enemies.EnProj[a].ori = rl.NewVector2(gs.Enemies.EnProj[a].rec.Width/2, gs.Enemies.EnProj[a].rec.Height/2)
 					}
 				}
 				if roll18() == 18 {
-					enProj[a].velx, enProj[a].vely = moveFollow(enProj[a].cnt, pl.cnt, enProj[a].vel)
+					gs.Enemies.EnProj[a].velx, gs.Enemies.EnProj[a].vely = moveFollow(gs.Enemies.EnProj[a].cnt, gs.Player.Pl.cnt, gs.Enemies.EnProj[a].vel)
 				}
 			case "boss2":
-				if frames%4 == 0 {
-					enProj[a].img.X += enProj[a].img.Width
-					if enProj[a].img.X > boss2anim.xl+(float32(boss2anim.frames)*enProj[a].img.Width) {
-						enProj[a].img.X = boss2anim.xl
+				if gs.Core.Frames%4 == 0 {
+					gs.Enemies.EnProj[a].img.X += gs.Enemies.EnProj[a].img.Width
+					if gs.Enemies.EnProj[a].img.X > gs.Render.Boss2anim.xl+(float32(gs.Render.Boss2anim.frames)*gs.Enemies.EnProj[a].img.Width) {
+						gs.Enemies.EnProj[a].img.X = gs.Render.Boss2anim.xl
 					}
 				}
 			case "boss1":
 				if roll12() == 12 {
-					enProj[a].velx, enProj[a].vely = moveFollow(enProj[a].cnt, pl.cnt, enProj[a].vel)
+					gs.Enemies.EnProj[a].velx, gs.Enemies.EnProj[a].vely = moveFollow(gs.Enemies.EnProj[a].cnt, gs.Player.Pl.cnt, gs.Enemies.EnProj[a].vel)
 				}
 
-				if frames%3 == 0 {
-					enProj[a].img.X += enProj[a].img.Width
-					if enProj[a].img.X > boss1anim.xl+(float32(boss1anim.frames)*enProj[a].img.Width) {
-						enProj[a].img.X = boss1anim.xl
+				if gs.Core.Frames%3 == 0 {
+					gs.Enemies.EnProj[a].img.X += gs.Enemies.EnProj[a].img.Width
+					if gs.Enemies.EnProj[a].img.X > gs.Render.Boss1anim.xl+(float32(gs.Render.Boss1anim.frames)*gs.Enemies.EnProj[a].img.Width) {
+						gs.Enemies.EnProj[a].img.X = gs.Render.Boss1anim.xl
 					}
 				}
 			case "mushbull":
-				if frames%2 == 0 {
-					enProj[a].img.X += enProj[a].img.Width
-					if enProj[a].img.X > mushBull.xl+(float32(mushBull.frames)*enProj[a].img.Width) {
-						enProj[a].img.X = mushBull.xl
+				if gs.Core.Frames%2 == 0 {
+					gs.Enemies.EnProj[a].img.X += gs.Enemies.EnProj[a].img.Width
+					if gs.Enemies.EnProj[a].img.X > gs.Render.MushBull.xl+(float32(gs.Render.MushBull.frames)*gs.Enemies.EnProj[a].img.Width) {
+						gs.Enemies.EnProj[a].img.X = gs.Render.MushBull.xl
 					}
 				}
 
 				if roll18() == 18 {
-					enProj[a].velx, enProj[a].vely = moveFollow(enProj[a].cnt, pl.cnt, enProj[a].vel)
+					gs.Enemies.EnProj[a].velx, gs.Enemies.EnProj[a].vely = moveFollow(gs.Enemies.EnProj[a].cnt, gs.Player.Pl.cnt, gs.Enemies.EnProj[a].vel)
 				}
 			case "ninja":
-				enProj[a].ro += bsU / 2
+				gs.Enemies.EnProj[a].ro += bsU / 2
 			}
 
-			if debug {
-				rl.DrawRectangleLinesEx(enProj[a].rec, 0.5, rl.Red)
-				rl.DrawRectangleLinesEx(enProj[a].crec, 0.5, rl.White)
+			if gs.Core.Debug {
+				rl.DrawRectangleLinesEx(gs.Enemies.EnProj[a].rec, 0.5, rl.Red)
+				rl.DrawRectangleLinesEx(gs.Enemies.EnProj[a].crec, 0.5, rl.White)
 			}
 
-			if checkNextMove(enProj[a].rec, enProj[a].velx, enProj[a].vely, true) {
-				enProj[a].cnt.X += enProj[a].velx
-				enProj[a].cnt.Y += enProj[a].vely
-				enProj[a].rec = rl.NewRectangle(enProj[a].cnt.X-enProj[a].rec.Width/2, enProj[a].cnt.Y-enProj[a].rec.Height/2, enProj[a].rec.Width, enProj[a].rec.Height)
-				switch enProj[a].name {
+			if checkNextMove(gs.Enemies.EnProj[a].rec, gs.Enemies.EnProj[a].velx, gs.Enemies.EnProj[a].vely, true) {
+				gs.Enemies.EnProj[a].cnt.X += gs.Enemies.EnProj[a].velx
+				gs.Enemies.EnProj[a].cnt.Y += gs.Enemies.EnProj[a].vely
+				gs.Enemies.EnProj[a].rec = rl.NewRectangle(gs.Enemies.EnProj[a].cnt.X-gs.Enemies.EnProj[a].rec.Width/2, gs.Enemies.EnProj[a].cnt.Y-gs.Enemies.EnProj[a].rec.Height/2, gs.Enemies.EnProj[a].rec.Width, gs.Enemies.EnProj[a].rec.Height)
+				switch gs.Enemies.EnProj[a].name {
 				case "boss1":
-					enProj[a].crec = enProj[a].rec
-					enProj[a].crec.X += enProj[a].rec.Width / 4
-					enProj[a].crec.Y += enProj[a].rec.Height / 4
-					enProj[a].crec.Width = enProj[a].rec.Width / 2
-					enProj[a].crec.Height = enProj[a].rec.Height / 2
+					gs.Enemies.EnProj[a].crec = gs.Enemies.EnProj[a].rec
+					gs.Enemies.EnProj[a].crec.X += gs.Enemies.EnProj[a].rec.Width / 4
+					gs.Enemies.EnProj[a].crec.Y += gs.Enemies.EnProj[a].rec.Height / 4
+					gs.Enemies.EnProj[a].crec.Width = gs.Enemies.EnProj[a].rec.Width / 2
+					gs.Enemies.EnProj[a].crec.Height = gs.Enemies.EnProj[a].rec.Height / 2
 				}
 			} else {
-				enProj[a].onoff = false
+				gs.Enemies.EnProj[a].onoff = false
 			}
 
-			if !rl.CheckCollisionPointRec(enProj[a].cnt, levRecInner) {
-				enProj[a].onoff = false
+			if !rl.CheckCollisionPointRec(gs.Enemies.EnProj[a].cnt, gs.Level.LevRecInner) {
+				gs.Enemies.EnProj[a].onoff = false
 			}
 
-			if enProj[a].name == "boss1" {
-				if rl.CheckCollisionRecs(enProj[a].crec, pl.crec) {
+			if gs.Enemies.EnProj[a].name == "boss1" {
+				if rl.CheckCollisionRecs(gs.Enemies.EnProj[a].crec, gs.Player.Pl.crec) {
 					hitPL(a, 1)
 				}
 			} else {
-				if rl.CheckCollisionRecs(enProj[a].rec, pl.crec) {
+				if rl.CheckCollisionRecs(gs.Enemies.EnProj[a].rec, gs.Player.Pl.crec) {
 					hitPL(a, 1)
 				}
 			}
@@ -2908,9 +2802,9 @@ func drawUpEnProj() { //MARK:DRAW UP ENEMY PROJECTILES
 	}
 
 	if clear {
-		for a := 0; a < len(enProj); a++ {
-			if !enProj[a].onoff {
-				enProj = remProj(enProj, a)
+		for a := 0; a < len(gs.Enemies.EnProj); a++ {
+			if !gs.Enemies.EnProj[a].onoff {
+				gs.Enemies.EnProj = remProj(gs.Enemies.EnProj, a)
 			}
 		}
 	}
@@ -2918,65 +2812,65 @@ func drawUpEnProj() { //MARK:DRAW UP ENEMY PROJECTILES
 }
 func drawUpAirStrike() { //MARK:DRAW UP AIR STRIKE
 
-	for a := 0; a < len(airstrikeV2); a++ {
+	for a := 0; a < len(gs.FX.AirstrikeV2); a++ {
 		siz := bsU2
-		rec := rl.NewRectangle(airstrikeV2[a].X-siz/2, airstrikeV2[a].Y-siz/2, siz, siz)
-		switch airstrikeDir {
+		rec := rl.NewRectangle(gs.FX.AirstrikeV2[a].X-siz/2, gs.FX.AirstrikeV2[a].Y-siz/2, siz, siz)
+		switch gs.FX.AirstrikeDir {
 		case 1:
-			rl.DrawTexturePro(imgs, etc[48], makeDrec(rec), origin(rec), 180, rl.White)
-			airstrikeV2[a].Y += 7
+			rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Etc[48], makeDrec(rec), origin(rec), 180, rl.White)
+			gs.FX.AirstrikeV2[a].Y += 7
 			if a == 1 {
-				if airstrikeV2[a].Y > levRec.Y+levRec.Width {
-					airstrikeOn = false
+				if gs.FX.AirstrikeV2[a].Y > gs.Level.LevRec.Y+gs.Level.LevRec.Width {
+					gs.FX.AirstrikeOn = false
 				}
 			}
 		case 2:
-			rl.DrawTexturePro(imgs, etc[48], makeDrec(rec), origin(rec), 270, rl.White)
-			airstrikeV2[a].X -= 7
+			rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Etc[48], makeDrec(rec), origin(rec), 270, rl.White)
+			gs.FX.AirstrikeV2[a].X -= 7
 			if a == 1 {
-				if airstrikeV2[a].X < levRec.X-rec.Width {
-					airstrikeOn = false
+				if gs.FX.AirstrikeV2[a].X < gs.Level.LevRec.X-rec.Width {
+					gs.FX.AirstrikeOn = false
 				}
 			}
 		case 3:
-			rl.DrawTexturePro(imgs, etc[48], makeDrec(rec), origin(rec), 0, rl.White)
-			airstrikeV2[a].Y -= 7
+			rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Etc[48], makeDrec(rec), origin(rec), 0, rl.White)
+			gs.FX.AirstrikeV2[a].Y -= 7
 			if a == 1 {
-				if airstrikeV2[a].Y < levRec.Y-rec.Width {
-					airstrikeOn = false
+				if gs.FX.AirstrikeV2[a].Y < gs.Level.LevRec.Y-rec.Width {
+					gs.FX.AirstrikeOn = false
 				}
 			}
 		case 4:
-			rl.DrawTexturePro(imgs, etc[48], makeDrec(rec), origin(rec), 90, rl.White)
-			airstrikeV2[a].X += 7
+			rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Etc[48], makeDrec(rec), origin(rec), 90, rl.White)
+			gs.FX.AirstrikeV2[a].X += 7
 			if a == 1 {
-				if airstrikeV2[a].X > levRec.X+levRec.Width {
-					airstrikeOn = false
+				if gs.FX.AirstrikeV2[a].X > gs.Level.LevRec.X+gs.Level.LevRec.Width {
+					gs.FX.AirstrikeOn = false
 				}
 			}
 		}
 	}
 
-	airstrikebombT--
-	if airstrikebombT <= 0 && rl.CheckCollisionPointRec(airstrikeV2[0], levRecInner) {
+	gs.FX.AirstrikebombT--
+	if gs.FX.AirstrikebombT <= 0 && rl.CheckCollisionPointRec(gs.FX.AirstrikeV2[0], gs.Level.LevRecInner) {
 
 		siz := bsU8
 
-		switch airstrikeDir {
+		switch gs.FX.AirstrikeDir {
 		case 1:
 			zblok := makeBlokGenNoRecNoCntr()
-			zblok.cnt = airstrikeV2[0]
+			zblok.cnt = gs.FX.AirstrikeV2[0]
 			zblok.cnt.X += rF32(-bsU4, bsU4)
 			zblok.rec = rl.NewRectangle(zblok.cnt.X-siz/2, zblok.cnt.Y-siz/2, siz, siz)
 			zblok.name = "airbomb"
-			zblok.img = airstrikeanim.recTL
+			zblok.img = gs.Render.Airstrikeanim.recTL
 			zblok.crec = zblok.rec
 			zblok.crec.Width = zblok.crec.Width / 2
 			zblok.crec.Height = zblok.crec.Width
 			zblok.crec.X += zblok.crec.Width / 2
 			zblok.crec.Y += zblok.crec.Width / 2
-			level[roomNum].etc = append(level[roomNum].etc, zblok)
-			zblok.cnt = airstrikeV2[1]
+			gs.Level.Level[gs.Level.RoomNum].etc = append(gs.Level.Level[gs.Level.RoomNum].etc, zblok)
+			zblok.cnt = gs.FX.AirstrikeV2[1]
 			zblok.cnt.X += rF32(-bsU4, bsU4)
 			zblok.rec = rl.NewRectangle(zblok.cnt.X-siz/2, zblok.cnt.Y-siz/2, siz, siz)
 			zblok.crec = zblok.rec
@@ -2984,8 +2878,8 @@ func drawUpAirStrike() { //MARK:DRAW UP AIR STRIKE
 			zblok.crec.Height = zblok.crec.Width
 			zblok.crec.X += zblok.crec.Width / 2
 			zblok.crec.Y += zblok.crec.Width / 2
-			level[roomNum].etc = append(level[roomNum].etc, zblok)
-			zblok.cnt = airstrikeV2[2]
+			gs.Level.Level[gs.Level.RoomNum].etc = append(gs.Level.Level[gs.Level.RoomNum].etc, zblok)
+			zblok.cnt = gs.FX.AirstrikeV2[2]
 			zblok.cnt.X += rF32(-bsU4, bsU4)
 			zblok.rec = rl.NewRectangle(zblok.cnt.X-siz/2, zblok.cnt.Y-siz/2, siz, siz)
 			zblok.crec = zblok.rec
@@ -2993,21 +2887,21 @@ func drawUpAirStrike() { //MARK:DRAW UP AIR STRIKE
 			zblok.crec.Height = zblok.crec.Width
 			zblok.crec.X += zblok.crec.Width / 2
 			zblok.crec.Y += zblok.crec.Width / 2
-			level[roomNum].etc = append(level[roomNum].etc, zblok)
+			gs.Level.Level[gs.Level.RoomNum].etc = append(gs.Level.Level[gs.Level.RoomNum].etc, zblok)
 		case 2:
 			zblok := makeBlokGenNoRecNoCntr()
-			zblok.cnt = airstrikeV2[0]
+			zblok.cnt = gs.FX.AirstrikeV2[0]
 			zblok.cnt.Y += rF32(-bsU4, bsU4)
 			zblok.rec = rl.NewRectangle(zblok.cnt.X-siz/2, zblok.cnt.Y-siz/2, siz, siz)
 			zblok.name = "airbomb"
-			zblok.img = airstrikeanim.recTL
+			zblok.img = gs.Render.Airstrikeanim.recTL
 			zblok.crec = zblok.rec
 			zblok.crec.Width = zblok.crec.Width / 2
 			zblok.crec.Height = zblok.crec.Width
 			zblok.crec.X += zblok.crec.Width / 2
 			zblok.crec.Y += zblok.crec.Width / 2
-			level[roomNum].etc = append(level[roomNum].etc, zblok)
-			zblok.cnt = airstrikeV2[1]
+			gs.Level.Level[gs.Level.RoomNum].etc = append(gs.Level.Level[gs.Level.RoomNum].etc, zblok)
+			zblok.cnt = gs.FX.AirstrikeV2[1]
 			zblok.cnt.Y += rF32(-bsU4, bsU4)
 			zblok.rec = rl.NewRectangle(zblok.cnt.X-siz/2, zblok.cnt.Y-siz/2, siz, siz)
 			zblok.crec = zblok.rec
@@ -3015,8 +2909,8 @@ func drawUpAirStrike() { //MARK:DRAW UP AIR STRIKE
 			zblok.crec.Height = zblok.crec.Width
 			zblok.crec.X += zblok.crec.Width / 2
 			zblok.crec.Y += zblok.crec.Width / 2
-			level[roomNum].etc = append(level[roomNum].etc, zblok)
-			zblok.cnt = airstrikeV2[2]
+			gs.Level.Level[gs.Level.RoomNum].etc = append(gs.Level.Level[gs.Level.RoomNum].etc, zblok)
+			zblok.cnt = gs.FX.AirstrikeV2[2]
 			zblok.cnt.Y += rF32(-bsU4, bsU4)
 			zblok.rec = rl.NewRectangle(zblok.cnt.X-siz/2, zblok.cnt.Y-siz/2, siz, siz)
 			zblok.crec = zblok.rec
@@ -3024,21 +2918,21 @@ func drawUpAirStrike() { //MARK:DRAW UP AIR STRIKE
 			zblok.crec.Height = zblok.crec.Width
 			zblok.crec.X += zblok.crec.Width / 2
 			zblok.crec.Y += zblok.crec.Width / 2
-			level[roomNum].etc = append(level[roomNum].etc, zblok)
+			gs.Level.Level[gs.Level.RoomNum].etc = append(gs.Level.Level[gs.Level.RoomNum].etc, zblok)
 		case 3:
 			zblok := makeBlokGenNoRecNoCntr()
-			zblok.cnt = airstrikeV2[0]
+			zblok.cnt = gs.FX.AirstrikeV2[0]
 			zblok.cnt.X += rF32(-bsU4, bsU4)
 			zblok.rec = rl.NewRectangle(zblok.cnt.X-siz/2, zblok.cnt.Y-siz/2, siz, siz)
 			zblok.name = "airbomb"
-			zblok.img = airstrikeanim.recTL
+			zblok.img = gs.Render.Airstrikeanim.recTL
 			zblok.crec = zblok.rec
 			zblok.crec.Width = zblok.crec.Width / 2
 			zblok.crec.Height = zblok.crec.Width
 			zblok.crec.X += zblok.crec.Width / 2
 			zblok.crec.Y += zblok.crec.Width / 2
-			level[roomNum].etc = append(level[roomNum].etc, zblok)
-			zblok.cnt = airstrikeV2[1]
+			gs.Level.Level[gs.Level.RoomNum].etc = append(gs.Level.Level[gs.Level.RoomNum].etc, zblok)
+			zblok.cnt = gs.FX.AirstrikeV2[1]
 			zblok.cnt.X += rF32(-bsU4, bsU4)
 			zblok.rec = rl.NewRectangle(zblok.cnt.X-siz/2, zblok.cnt.Y-siz/2, siz, siz)
 			zblok.crec = zblok.rec
@@ -3046,8 +2940,8 @@ func drawUpAirStrike() { //MARK:DRAW UP AIR STRIKE
 			zblok.crec.Height = zblok.crec.Width
 			zblok.crec.X += zblok.crec.Width / 2
 			zblok.crec.Y += zblok.crec.Width / 2
-			level[roomNum].etc = append(level[roomNum].etc, zblok)
-			zblok.cnt = airstrikeV2[2]
+			gs.Level.Level[gs.Level.RoomNum].etc = append(gs.Level.Level[gs.Level.RoomNum].etc, zblok)
+			zblok.cnt = gs.FX.AirstrikeV2[2]
 			zblok.cnt.X += rF32(-bsU4, bsU4)
 			zblok.rec = rl.NewRectangle(zblok.cnt.X-siz/2, zblok.cnt.Y-siz/2, siz, siz)
 			zblok.crec = zblok.rec
@@ -3055,21 +2949,21 @@ func drawUpAirStrike() { //MARK:DRAW UP AIR STRIKE
 			zblok.crec.Height = zblok.crec.Width
 			zblok.crec.X += zblok.crec.Width / 2
 			zblok.crec.Y += zblok.crec.Width / 2
-			level[roomNum].etc = append(level[roomNum].etc, zblok)
+			gs.Level.Level[gs.Level.RoomNum].etc = append(gs.Level.Level[gs.Level.RoomNum].etc, zblok)
 		case 4:
 			zblok := makeBlokGenNoRecNoCntr()
-			zblok.cnt = airstrikeV2[0]
+			zblok.cnt = gs.FX.AirstrikeV2[0]
 			zblok.cnt.Y += rF32(-bsU4, bsU4)
 			zblok.rec = rl.NewRectangle(zblok.cnt.X-siz/2, zblok.cnt.Y-siz/2, siz, siz)
 			zblok.name = "airbomb"
-			zblok.img = airstrikeanim.recTL
+			zblok.img = gs.Render.Airstrikeanim.recTL
 			zblok.crec = zblok.rec
 			zblok.crec.Width = zblok.crec.Width / 2
 			zblok.crec.Height = zblok.crec.Width
 			zblok.crec.X += zblok.crec.Width / 2
 			zblok.crec.Y += zblok.crec.Width / 2
-			level[roomNum].etc = append(level[roomNum].etc, zblok)
-			zblok.cnt = airstrikeV2[1]
+			gs.Level.Level[gs.Level.RoomNum].etc = append(gs.Level.Level[gs.Level.RoomNum].etc, zblok)
+			zblok.cnt = gs.FX.AirstrikeV2[1]
 			zblok.cnt.Y += rF32(-bsU4, bsU4)
 			zblok.rec = rl.NewRectangle(zblok.cnt.X-siz/2, zblok.cnt.Y-siz/2, siz, siz)
 			zblok.crec = zblok.rec
@@ -3077,8 +2971,8 @@ func drawUpAirStrike() { //MARK:DRAW UP AIR STRIKE
 			zblok.crec.Height = zblok.crec.Width
 			zblok.crec.X += zblok.crec.Width / 2
 			zblok.crec.Y += zblok.crec.Width / 2
-			level[roomNum].etc = append(level[roomNum].etc, zblok)
-			zblok.cnt = airstrikeV2[2]
+			gs.Level.Level[gs.Level.RoomNum].etc = append(gs.Level.Level[gs.Level.RoomNum].etc, zblok)
+			zblok.cnt = gs.FX.AirstrikeV2[2]
 			zblok.cnt.Y += rF32(-bsU4, bsU4)
 			zblok.rec = rl.NewRectangle(zblok.cnt.X-siz/2, zblok.cnt.Y-siz/2, siz, siz)
 			zblok.crec = zblok.rec
@@ -3086,10 +2980,10 @@ func drawUpAirStrike() { //MARK:DRAW UP AIR STRIKE
 			zblok.crec.Height = zblok.crec.Width
 			zblok.crec.X += zblok.crec.Width / 2
 			zblok.crec.Y += zblok.crec.Width / 2
-			level[roomNum].etc = append(level[roomNum].etc, zblok)
+			gs.Level.Level[gs.Level.RoomNum].etc = append(gs.Level.Level[gs.Level.RoomNum].etc, zblok)
 		}
 
-		airstrikebombT = rI32(int(gs.Core.Fps/4), int(gs.Core.Fps*2))
+		gs.FX.AirstrikebombT = rI32(int(gs.Core.Fps/4), int(gs.Core.Fps*2))
 	}
 
 }
@@ -3097,58 +2991,58 @@ func drawUpPlayerProj() { //MARK:DRAW UP PLAYER PROJECTILES
 
 	//MOVE DRAW
 	clear := false
-	for a := 0; a < len(plProj); a++ {
-		if plProj[a].onoff {
-			shadowRec := plProj[a].drec
+	for a := 0; a < len(gs.Player.PlProj); a++ {
+		if gs.Player.PlProj[a].onoff {
+			shadowRec := gs.Player.PlProj[a].drec
 			shadowRec.X -= 5
 			shadowRec.Y += 5
-			rl.DrawTexturePro(imgs, plProj[a].img, shadowRec, plProj[a].ori, plProj[a].ro, rl.Fade(rl.Black, 0.8))
-			rl.DrawTexturePro(imgs, plProj[a].img, plProj[a].drec, plProj[a].ori, plProj[a].ro, rl.Fade(plProj[a].col, plProj[a].fade))
+			rl.DrawTexturePro(gs.Render.Imgs, gs.Player.PlProj[a].img, shadowRec, gs.Player.PlProj[a].ori, gs.Player.PlProj[a].ro, rl.Fade(rl.Black, 0.8))
+			rl.DrawTexturePro(gs.Render.Imgs, gs.Player.PlProj[a].img, gs.Player.PlProj[a].drec, gs.Player.PlProj[a].ori, gs.Player.PlProj[a].ro, rl.Fade(gs.Player.PlProj[a].col, gs.Player.PlProj[a].fade))
 
-			if debug {
-				rl.DrawRectangleLinesEx(plProj[a].rec, 0.5, rl.Magenta)
+			if gs.Core.Debug {
+				rl.DrawRectangleLinesEx(gs.Player.PlProj[a].rec, 0.5, rl.Magenta)
 			}
 
-			plProj[a].cnt.X += plProj[a].velx
-			plProj[a].cnt.Y += plProj[a].vely
-			plProj[a].rec = rl.NewRectangle(plProj[a].cnt.X-plProj[a].rec.Width/2, plProj[a].cnt.Y-plProj[a].rec.Height/2, plProj[a].rec.Width, plProj[a].rec.Height)
-			plProj[a].drec = plProj[a].rec
-			plProj[a].drec.X += plProj[a].rec.Width / 2
-			plProj[a].drec.Y += plProj[a].rec.Height / 2
+			gs.Player.PlProj[a].cnt.X += gs.Player.PlProj[a].velx
+			gs.Player.PlProj[a].cnt.Y += gs.Player.PlProj[a].vely
+			gs.Player.PlProj[a].rec = rl.NewRectangle(gs.Player.PlProj[a].cnt.X-gs.Player.PlProj[a].rec.Width/2, gs.Player.PlProj[a].cnt.Y-gs.Player.PlProj[a].rec.Height/2, gs.Player.PlProj[a].rec.Width, gs.Player.PlProj[a].rec.Height)
+			gs.Player.PlProj[a].drec = gs.Player.PlProj[a].rec
+			gs.Player.PlProj[a].drec.X += gs.Player.PlProj[a].rec.Width / 2
+			gs.Player.PlProj[a].drec.Y += gs.Player.PlProj[a].rec.Height / 2
 
-			switch plProj[a].name {
+			switch gs.Player.PlProj[a].name {
 			case "gs.Companions.MrCarrot":
-				plProj[a].ro += 8
+				gs.Player.PlProj[a].ro += 8
 			case "plantbull":
-				if frames%4 == 0 {
-					plProj[a].img.X += plantBull.recTL.Width
-					if plProj[a].img.X >= plantBull.xl+(plantBull.recTL.Width*plantBull.frames) {
-						plProj[a].img.X = plantBull.xl
+				if gs.Core.Frames%4 == 0 {
+					gs.Player.PlProj[a].img.X += gs.Render.PlantBull.recTL.Width
+					if gs.Player.PlProj[a].img.X >= gs.Render.PlantBull.xl+(gs.Render.PlantBull.recTL.Width*gs.Render.PlantBull.frames) {
+						gs.Player.PlProj[a].img.X = gs.Render.PlantBull.xl
 					}
 				}
 			case "fireball":
-				if frames%3 == 0 {
-					plProj[a].img.X += 17
-					if plProj[a].img.X >= fireballPlayer.xl+(17*fireballPlayer.frames) {
-						plProj[a].img.X = fireballPlayer.xl
+				if gs.Core.Frames%3 == 0 {
+					gs.Player.PlProj[a].img.X += 17
+					if gs.Player.PlProj[a].img.X >= gs.Render.FireballPlayer.xl+(17*gs.Render.FireballPlayer.frames) {
+						gs.Player.PlProj[a].img.X = gs.Render.FireballPlayer.xl
 					}
 				}
 			}
 
 			//COLLISION ETC
-			if len(level[roomNum].etc) > 0 {
-				for b := 0; b < len(level[roomNum].etc); b++ {
-					if level[roomNum].etc[b].onoff {
-						if rl.CheckCollisionRecs(level[roomNum].etc[b].rec, plProj[a].rec) {
-							switch level[roomNum].etc[b].name {
+			if len(gs.Level.Level[gs.Level.RoomNum].etc) > 0 {
+				for b := 0; b < len(gs.Level.Level[gs.Level.RoomNum].etc); b++ {
+					if gs.Level.Level[gs.Level.RoomNum].etc[b].onoff {
+						if rl.CheckCollisionRecs(gs.Level.Level[gs.Level.RoomNum].etc[b].rec, gs.Player.PlProj[a].rec) {
+							switch gs.Level.Level[gs.Level.RoomNum].etc[b].name {
 							case "powerupBlok":
 								destroyPowerupBlok(b)
-								makeFX(3, level[roomNum].etc[b].cnt)
-								level[roomNum].etc[b].onoff = false
+								makeFX(3, gs.Level.Level[gs.Level.RoomNum].etc[b].cnt)
+								gs.Level.Level[gs.Level.RoomNum].etc[b].onoff = false
 								rl.PlaySound(gs.Audio.Sfx[6])
 							case "oilbarrel":
-								makeFX(4, level[roomNum].etc[b].cnt)
-								level[roomNum].etc[b].onoff = false
+								makeFX(4, gs.Level.Level[gs.Level.RoomNum].etc[b].cnt)
+								gs.Level.Level[gs.Level.RoomNum].etc[b].onoff = false
 								rl.PlaySound(gs.Audio.Sfx[10])
 								rl.PlaySound(gs.Audio.Sfx[5])
 							}
@@ -3158,40 +3052,40 @@ func drawUpPlayerProj() { //MARK:DRAW UP PLAYER PROJECTILES
 			}
 
 			//COLLISION BOUNDARY
-			if !rl.CheckCollisionPointRec(plProj[a].cnt, levRecInner) {
+			if !rl.CheckCollisionPointRec(gs.Player.PlProj[a].cnt, gs.Level.LevRecInner) {
 
-				if plProj[a].bounceN > 0 {
-					plProj[a].bounceN--
-					plProj[a].velx *= -1
-					plProj[a].vely *= -1
-					if plProj[a].name == "fireball" || plProj[a].name == "fireworks" {
-						plProj[a].ro += 180
+				if gs.Player.PlProj[a].bounceN > 0 {
+					gs.Player.PlProj[a].bounceN--
+					gs.Player.PlProj[a].velx *= -1
+					gs.Player.PlProj[a].vely *= -1
+					if gs.Player.PlProj[a].name == "fireball" || gs.Player.PlProj[a].name == "fireworks" {
+						gs.Player.PlProj[a].ro += 180
 					}
 				} else {
-					plProj[a].onoff = false
+					gs.Player.PlProj[a].onoff = false
 				}
 			}
 			//COLLISION INNER RECS
-			if plProj[a].onoff {
-				for b := 0; b < len(level[roomNum].innerBloks); b++ {
-					if rl.CheckCollisionRecs(plProj[a].rec, level[roomNum].innerBloks[b].rec) {
-						if plProj[a].bounceN > 0 {
-							plProj[a].bounceN--
-							plProj[a].velx *= -1
-							plProj[a].vely *= -1
-							if plProj[a].name == "fireball" || plProj[a].name == "fireworks" {
-								plProj[a].ro += 180
+			if gs.Player.PlProj[a].onoff {
+				for b := 0; b < len(gs.Level.Level[gs.Level.RoomNum].innerBloks); b++ {
+					if rl.CheckCollisionRecs(gs.Player.PlProj[a].rec, gs.Level.Level[gs.Level.RoomNum].innerBloks[b].rec) {
+						if gs.Player.PlProj[a].bounceN > 0 {
+							gs.Player.PlProj[a].bounceN--
+							gs.Player.PlProj[a].velx *= -1
+							gs.Player.PlProj[a].vely *= -1
+							if gs.Player.PlProj[a].name == "fireball" || gs.Player.PlProj[a].name == "fireworks" {
+								gs.Player.PlProj[a].ro += 180
 							}
 						} else {
-							plProj[a].onoff = false
+							gs.Player.PlProj[a].onoff = false
 						}
 					}
 				}
 			}
 
-			switch plProj[a].name {
+			switch gs.Player.PlProj[a].name {
 			case "axe":
-				plProj[a].ro += 8
+				gs.Player.PlProj[a].ro += 8
 			}
 
 		} else {
@@ -3201,25 +3095,25 @@ func drawUpPlayerProj() { //MARK:DRAW UP PLAYER PROJECTILES
 	}
 
 	if clear {
-		for a := 0; a < len(plProj); a++ {
-			if !plProj[a].onoff {
-				plProj = remProj(plProj, a)
+		for a := 0; a < len(gs.Player.PlProj); a++ {
+			if !gs.Player.PlProj[a].onoff {
+				gs.Player.PlProj = remProj(gs.Player.PlProj, a)
 			}
 		}
 	}
 
 	//CHECK ENEMY PROJ COLLIS
-	if len(level[roomNum].enemies) > 0 {
-		for a := 0; a < len(plProj); a++ {
-			if plProj[a].onoff {
-				for b := 0; b < len(level[roomNum].enemies); b++ {
-					if rl.CheckCollisionRecs(plProj[a].rec, level[roomNum].enemies[b].rec) && level[roomNum].enemies[b].hppause == 0 {
-						level[roomNum].enemies[b].hppause = gs.Core.Fps / 2
-						level[roomNum].enemies[b].hp -= plProj[a].dmg
+	if len(gs.Level.Level[gs.Level.RoomNum].enemies) > 0 {
+		for a := 0; a < len(gs.Player.PlProj); a++ {
+			if gs.Player.PlProj[a].onoff {
+				for b := 0; b < len(gs.Level.Level[gs.Level.RoomNum].enemies); b++ {
+					if rl.CheckCollisionRecs(gs.Player.PlProj[a].rec, gs.Level.Level[gs.Level.RoomNum].enemies[b].rec) && gs.Level.Level[gs.Level.RoomNum].enemies[b].hppause == 0 {
+						gs.Level.Level[gs.Level.RoomNum].enemies[b].hppause = gs.Core.Fps / 2
+						gs.Level.Level[gs.Level.RoomNum].enemies[b].hp -= gs.Player.PlProj[a].dmg
 						playenemyhit()
-						if level[roomNum].enemies[b].hp <= 0 {
-							cntr := level[roomNum].enemies[b].cnt
-							level[roomNum].enemies[b].off = true
+						if gs.Level.Level[gs.Level.RoomNum].enemies[b].hp <= 0 {
+							cntr := gs.Level.Level[gs.Level.RoomNum].enemies[b].cnt
+							gs.Level.Level[gs.Level.RoomNum].enemies[b].off = true
 							addkill(b)
 							makeFX(2, cntr)
 						}
@@ -3231,25 +3125,25 @@ func drawUpPlayerProj() { //MARK:DRAW UP PLAYER PROJECTILES
 		}
 	}
 	//CHECK BOSS PROJ COLLIS
-	if levelnum == 6 {
-		for a := 0; a < len(plProj); a++ {
-			if plProj[a].onoff {
+	if gs.Level.Levelnum == 6 {
+		for a := 0; a < len(gs.Player.PlProj); a++ {
+			if gs.Player.PlProj[a].onoff {
 
-				if rl.CheckCollisionRecs(plProj[a].rec, bosses[bossnum].crec) && bosses[bossnum].hppause == 0 {
-					bosses[bossnum].hppause = gs.Core.Fps
-					bosses[bossnum].hp -= plProj[a].dmg
-					if bosses[bossnum].hp <= 0 {
-						cntr := bosses[bossnum].cnt
-						bosses[bossnum].off = true
+				if rl.CheckCollisionRecs(gs.Player.PlProj[a].rec, gs.Level.Bosses[gs.Level.Bossnum].crec) && gs.Level.Bosses[gs.Level.Bossnum].hppause == 0 {
+					gs.Level.Bosses[gs.Level.Bossnum].hppause = gs.Core.Fps
+					gs.Level.Bosses[gs.Level.Bossnum].hp -= gs.Player.PlProj[a].dmg
+					if gs.Level.Bosses[gs.Level.Bossnum].hp <= 0 {
+						cntr := gs.Level.Bosses[gs.Level.Bossnum].cnt
+						gs.Level.Bosses[gs.Level.Bossnum].off = true
 						makeFX(2, cntr)
-						if !endgame {
-							pause = true
-							minsEND = mins
-							secsEND = secs
+						if !gs.Level.Endgame {
+							gs.Core.Pause = true
+							gs.Level.MinsEND = gs.Level.Mins
+							gs.Level.SecsEND = gs.Level.Secs
 							addtime()
-							endgopherrec = rl.NewRectangle(cnt.X-bsU4, levRec.Y+levRec.Height, bsU8, bsU8)
-							endgameT = gs.Core.Fps * 3
-							endgame = true
+							gs.Level.EndgopherRec = rl.NewRectangle(gs.Core.Cnt.X-bsU4, gs.Level.LevRec.Y+gs.Level.LevRec.Height, bsU8, bsU8)
+							gs.Level.EndgameT = gs.Core.Fps * 3
+							gs.Level.Endgame = true
 						}
 					}
 					rl.PlaySound(gs.Audio.Sfx[11])
@@ -3264,341 +3158,341 @@ func drawUpPlayerProj() { //MARK:DRAW UP PLAYER PROJECTILES
 func drawUpEtc() { //MARK:DRAW UP ETC
 
 	clear := false
-	for a := 0; a < len(level[roomNum].etc); a++ {
+	for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].etc); a++ {
 
-		if level[roomNum].etc[a].onoff {
+		if gs.Level.Level[gs.Level.RoomNum].etc[a].onoff {
 
 			//TIMERS
-			if level[roomNum].etc[a].timer > 0 {
-				level[roomNum].etc[a].timer--
+			if gs.Level.Level[gs.Level.RoomNum].etc[a].timer > 0 {
+				gs.Level.Level[gs.Level.RoomNum].etc[a].timer--
 			}
-			if level[roomNum].etc[a].txtT > 0 {
-				level[roomNum].etc[a].txtT--
+			if gs.Level.Level[gs.Level.RoomNum].etc[a].txtT > 0 {
+				gs.Level.Level[gs.Level.RoomNum].etc[a].txtT--
 			}
 			//SHOP ARROWS
-			if level[roomNum].etc[a].name == "shop" {
-				rl.DrawTriangle(level[roomNum].etc[a].v2s[4], level[roomNum].etc[a].v2s[3], level[roomNum].etc[a].v2s[5], rl.Fade(rl.SkyBlue, 0.8))
+			if gs.Level.Level[gs.Level.RoomNum].etc[a].name == "shop" {
+				rl.DrawTriangle(gs.Level.Level[gs.Level.RoomNum].etc[a].v2s[4], gs.Level.Level[gs.Level.RoomNum].etc[a].v2s[3], gs.Level.Level[gs.Level.RoomNum].etc[a].v2s[5], rl.Fade(rl.SkyBlue, 0.8))
 
-				if frames%3 == 0 {
-					level[roomNum].etc[a].v2s[3].Y--
-					level[roomNum].etc[a].v2s[4].Y--
-					level[roomNum].etc[a].v2s[5].Y--
+				if gs.Core.Frames%3 == 0 {
+					gs.Level.Level[gs.Level.RoomNum].etc[a].v2s[3].Y--
+					gs.Level.Level[gs.Level.RoomNum].etc[a].v2s[4].Y--
+					gs.Level.Level[gs.Level.RoomNum].etc[a].v2s[5].Y--
 				}
 
-				if level[roomNum].etc[a].v2s[4].Y < level[roomNum].etc[a].rec.Y+level[roomNum].etc[a].rec.Height {
+				if gs.Level.Level[gs.Level.RoomNum].etc[a].v2s[4].Y < gs.Level.Level[gs.Level.RoomNum].etc[a].rec.Y+gs.Level.Level[gs.Level.RoomNum].etc[a].rec.Height {
 
-					level[roomNum].etc[a].v2s[3] = level[roomNum].etc[a].v2s[0]
-					level[roomNum].etc[a].v2s[4] = level[roomNum].etc[a].v2s[1]
-					level[roomNum].etc[a].v2s[5] = level[roomNum].etc[a].v2s[2]
+					gs.Level.Level[gs.Level.RoomNum].etc[a].v2s[3] = gs.Level.Level[gs.Level.RoomNum].etc[a].v2s[0]
+					gs.Level.Level[gs.Level.RoomNum].etc[a].v2s[4] = gs.Level.Level[gs.Level.RoomNum].etc[a].v2s[1]
+					gs.Level.Level[gs.Level.RoomNum].etc[a].v2s[5] = gs.Level.Level[gs.Level.RoomNum].etc[a].v2s[2]
 				}
 			}
 			//DRAW BLOK
-			if level[roomNum].etc[a].name == "turret" {
-				drawBlokDrec(level[roomNum].etc[a], true, false, 0)
+			if gs.Level.Level[gs.Level.RoomNum].etc[a].name == "turret" {
+				drawBlokDrec(gs.Level.Level[gs.Level.RoomNum].etc[a], true, false, 0)
 
-				level[roomNum].etc[a].ro++
-				if level[roomNum].etc[a].timer <= 0 {
-					level[roomNum].etc[a].timer = rI32(1, 3) * gs.Core.Fps
-					makeProjectileEnemy(1, level[roomNum].etc[a].cnt)
+				gs.Level.Level[gs.Level.RoomNum].etc[a].ro++
+				if gs.Level.Level[gs.Level.RoomNum].etc[a].timer <= 0 {
+					gs.Level.Level[gs.Level.RoomNum].etc[a].timer = rI32(1, 3) * gs.Core.Fps
+					makeProjectileEnemy(1, gs.Level.Level[gs.Level.RoomNum].etc[a].cnt)
 				}
-			} else if level[roomNum].etc[a].name == "spring" {
+			} else if gs.Level.Level[gs.Level.RoomNum].etc[a].name == "spring" {
 
-				drawBlokDrec(level[roomNum].etc[a], false, true, 4)
+				drawBlokDrec(gs.Level.Level[gs.Level.RoomNum].etc[a], false, true, 4)
 
-				if rl.CheckCollisionRecs(pl.crec, level[roomNum].etc[a].crec) && level[roomNum].etc[a].timer == 0 {
-					level[roomNum].etc[a].timer = gs.Core.Fps * 3
-					level[roomNum].etc[a].onoffswitch = true
+				if rl.CheckCollisionRecs(gs.Player.Pl.crec, gs.Level.Level[gs.Level.RoomNum].etc[a].crec) && gs.Level.Level[gs.Level.RoomNum].etc[a].timer == 0 {
+					gs.Level.Level[gs.Level.RoomNum].etc[a].timer = gs.Core.Fps * 3
+					gs.Level.Level[gs.Level.RoomNum].etc[a].onoffswitch = true
 
-					pl.slide = true
-					pl.slideT = gs.Core.Fps / 2
-					pl.slideDIR = level[roomNum].etc[a].slideDIR
+					gs.Player.Pl.slide = true
+					gs.Player.Pl.slideT = gs.Core.Fps / 2
+					gs.Player.Pl.slideDIR = gs.Level.Level[gs.Level.RoomNum].etc[a].slideDIR
 
 					rl.PlaySound(gs.Audio.Sfx[3])
 				}
-				if level[roomNum].etc[a].onoffswitch {
-					if frames%4 == 0 {
-						level[roomNum].etc[a].img.X += spring.W
-						if level[roomNum].etc[a].img.X > spring.xl+spring.frames*spring.W {
-							level[roomNum].etc[a].img.X = spring.xl
-							level[roomNum].etc[a].onoffswitch = false
+				if gs.Level.Level[gs.Level.RoomNum].etc[a].onoffswitch {
+					if gs.Core.Frames%4 == 0 {
+						gs.Level.Level[gs.Level.RoomNum].etc[a].img.X += gs.Render.Spring.W
+						if gs.Level.Level[gs.Level.RoomNum].etc[a].img.X > gs.Render.Spring.xl+gs.Render.Spring.frames*gs.Render.Spring.W {
+							gs.Level.Level[gs.Level.RoomNum].etc[a].img.X = gs.Render.Spring.xl
+							gs.Level.Level[gs.Level.RoomNum].etc[a].onoffswitch = false
 						}
 					}
 				} else {
-					if level[roomNum].etc[a].img.X > spring.xl {
-						if frames%4 == 0 {
-							level[roomNum].etc[a].img.X -= spring.W
-							if level[roomNum].etc[a].img.X < spring.xl {
-								level[roomNum].etc[a].img.X = spring.xl
+					if gs.Level.Level[gs.Level.RoomNum].etc[a].img.X > gs.Render.Spring.xl {
+						if gs.Core.Frames%4 == 0 {
+							gs.Level.Level[gs.Level.RoomNum].etc[a].img.X -= gs.Render.Spring.W
+							if gs.Level.Level[gs.Level.RoomNum].etc[a].img.X < gs.Render.Spring.xl {
+								gs.Level.Level[gs.Level.RoomNum].etc[a].img.X = gs.Render.Spring.xl
 							}
 						}
 					}
 				}
 
-			} else if level[roomNum].etc[a].name == "gascloudtrap" {
-				drawBlokDrec(level[roomNum].etc[a], false, true, 4)
-				level[roomNum].etc[a].ro++
+			} else if gs.Level.Level[gs.Level.RoomNum].etc[a].name == "gascloudtrap" {
+				drawBlokDrec(gs.Level.Level[gs.Level.RoomNum].etc[a], false, true, 4)
+				gs.Level.Level[gs.Level.RoomNum].etc[a].ro++
 
-				if rl.CheckCollisionRecs(pl.crec, level[roomNum].etc[a].rec) && level[roomNum].etc[a].timer == 0 {
-					level[roomNum].etc[a].timer = gs.Core.Fps * 3
-					makegascloud(level[roomNum].etc[a].cnt)
+				if rl.CheckCollisionRecs(gs.Player.Pl.crec, gs.Level.Level[gs.Level.RoomNum].etc[a].rec) && gs.Level.Level[gs.Level.RoomNum].etc[a].timer == 0 {
+					gs.Level.Level[gs.Level.RoomNum].etc[a].timer = gs.Core.Fps * 3
+					makegascloud(gs.Level.Level[gs.Level.RoomNum].etc[a].cnt)
 					rl.PlaySound(gs.Audio.Sfx[20])
 				}
 
-			} else if level[roomNum].etc[a].name == "gascloud" {
+			} else if gs.Level.Level[gs.Level.RoomNum].etc[a].name == "gascloud" {
 
-				rl.DrawTexturePro(imgs, etc[58], level[roomNum].etc[a].drec, level[roomNum].etc[a].ori, level[roomNum].etc[a].ro, rl.Fade(ranGreen(), rF32(0.3, 0.8)))
+				rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Etc[58], gs.Level.Level[gs.Level.RoomNum].etc[a].drec, gs.Level.Level[gs.Level.RoomNum].etc[a].ori, gs.Level.Level[gs.Level.RoomNum].etc[a].ro, rl.Fade(ranGreen(), rF32(0.3, 0.8)))
 
-				if rl.CheckCollisionRecs(pl.crec, level[roomNum].etc[a].crec) && !pl.poison && pl.poisonCollisT == 0 {
-					pl.poisonCollisT = gs.Core.Fps * 3
-					if mods.apple {
-						mods.appleN--
-						if mods.appleN == 0 {
-							mods.apple = false
+				if rl.CheckCollisionRecs(gs.Player.Pl.crec, gs.Level.Level[gs.Level.RoomNum].etc[a].crec) && !gs.Player.Pl.poison && gs.Player.Pl.poisonCollisT == 0 {
+					gs.Player.Pl.poisonCollisT = gs.Core.Fps * 3
+					if gs.Player.Mods.apple {
+						gs.Player.Mods.appleN--
+						if gs.Player.Mods.appleN == 0 {
+							gs.Player.Mods.apple = false
 							clearinven("apple")
 						}
 					} else {
-						pl.poison = true
-						pl.poisonCount = 2
-						pl.poisonT = gs.Core.Fps * 3
-						txtHere("poisoned", pl.rec)
+						gs.Player.Pl.poison = true
+						gs.Player.Pl.poisonCount = 2
+						gs.Player.Pl.poisonT = gs.Core.Fps * 3
+						txtHere("poisoned", gs.Player.Pl.rec)
 						rl.PlaySound(gs.Audio.Sfx[23])
 					}
 				}
 
-				if frames%3 == 0 {
-					level[roomNum].etc[a].img.X += posiongas.W
-					if level[roomNum].etc[a].img.X > posiongas.xl+posiongas.frames*posiongas.W {
-						level[roomNum].etc[a].img.X = posiongas.xl
+				if gs.Core.Frames%3 == 0 {
+					gs.Level.Level[gs.Level.RoomNum].etc[a].img.X += gs.Render.Posiongas.W
+					if gs.Level.Level[gs.Level.RoomNum].etc[a].img.X > gs.Render.Posiongas.xl+gs.Render.Posiongas.frames*gs.Render.Posiongas.W {
+						gs.Level.Level[gs.Level.RoomNum].etc[a].img.X = gs.Render.Posiongas.xl
 					}
 				}
 
-				rl.DrawTexturePro(imgs, etc[58], BlurRec(level[roomNum].etc[a].drec, 5), level[roomNum].etc[a].ori, level[roomNum].etc[a].ro, rl.Fade(ranGreen(), rF32(0.1, 0.3)))
-				rl.DrawTexturePro(imgs, etc[58], BlurRec(level[roomNum].etc[a].drec, 7), level[roomNum].etc[a].ori, level[roomNum].etc[a].ro, rl.Fade(ranGreen(), rF32(0.1, 0.3)))
+				rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Etc[58], BlurRec(gs.Level.Level[gs.Level.RoomNum].etc[a].drec, 5), gs.Level.Level[gs.Level.RoomNum].etc[a].ori, gs.Level.Level[gs.Level.RoomNum].etc[a].ro, rl.Fade(ranGreen(), rF32(0.1, 0.3)))
+				rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Etc[58], BlurRec(gs.Level.Level[gs.Level.RoomNum].etc[a].drec, 7), gs.Level.Level[gs.Level.RoomNum].etc[a].ori, gs.Level.Level[gs.Level.RoomNum].etc[a].ro, rl.Fade(ranGreen(), rF32(0.1, 0.3)))
 
-				if debug {
-					rl.DrawRectangleLinesEx(level[roomNum].etc[a].crec, 0.5, rl.White)
+				if gs.Core.Debug {
+					rl.DrawRectangleLinesEx(gs.Level.Level[gs.Level.RoomNum].etc[a].crec, 0.5, rl.White)
 				}
 
-				level[roomNum].etc[a].ro += 5
+				gs.Level.Level[gs.Level.RoomNum].etc[a].ro += 5
 
-				if checknextmoveV2innerRec(level[roomNum].etc[a].cnt, level[roomNum].etc[a].velX, level[roomNum].etc[a].velY) {
-					level[roomNum].etc[a].rec.X += level[roomNum].etc[a].velX
-					level[roomNum].etc[a].rec.Y += level[roomNum].etc[a].velY
-					level[roomNum].etc[a].drec.X += level[roomNum].etc[a].velX
-					level[roomNum].etc[a].drec.Y += level[roomNum].etc[a].velY
-					level[roomNum].etc[a].crec.X += level[roomNum].etc[a].velX
-					level[roomNum].etc[a].crec.Y += level[roomNum].etc[a].velY
-					level[roomNum].etc[a].cnt.X += level[roomNum].etc[a].velX
-					level[roomNum].etc[a].cnt.Y += level[roomNum].etc[a].velY
+				if checknextmoveV2innerRec(gs.Level.Level[gs.Level.RoomNum].etc[a].cnt, gs.Level.Level[gs.Level.RoomNum].etc[a].velX, gs.Level.Level[gs.Level.RoomNum].etc[a].velY) {
+					gs.Level.Level[gs.Level.RoomNum].etc[a].rec.X += gs.Level.Level[gs.Level.RoomNum].etc[a].velX
+					gs.Level.Level[gs.Level.RoomNum].etc[a].rec.Y += gs.Level.Level[gs.Level.RoomNum].etc[a].velY
+					gs.Level.Level[gs.Level.RoomNum].etc[a].drec.X += gs.Level.Level[gs.Level.RoomNum].etc[a].velX
+					gs.Level.Level[gs.Level.RoomNum].etc[a].drec.Y += gs.Level.Level[gs.Level.RoomNum].etc[a].velY
+					gs.Level.Level[gs.Level.RoomNum].etc[a].crec.X += gs.Level.Level[gs.Level.RoomNum].etc[a].velX
+					gs.Level.Level[gs.Level.RoomNum].etc[a].crec.Y += gs.Level.Level[gs.Level.RoomNum].etc[a].velY
+					gs.Level.Level[gs.Level.RoomNum].etc[a].cnt.X += gs.Level.Level[gs.Level.RoomNum].etc[a].velX
+					gs.Level.Level[gs.Level.RoomNum].etc[a].cnt.Y += gs.Level.Level[gs.Level.RoomNum].etc[a].velY
 				} else {
-					level[roomNum].etc[a].velX = rF32(-level[roomNum].etc[a].vel, level[roomNum].etc[a].vel)
-					level[roomNum].etc[a].velY = rF32(-level[roomNum].etc[a].vel, level[roomNum].etc[a].vel)
+					gs.Level.Level[gs.Level.RoomNum].etc[a].velX = rF32(-gs.Level.Level[gs.Level.RoomNum].etc[a].vel, gs.Level.Level[gs.Level.RoomNum].etc[a].vel)
+					gs.Level.Level[gs.Level.RoomNum].etc[a].velY = rF32(-gs.Level.Level[gs.Level.RoomNum].etc[a].vel, gs.Level.Level[gs.Level.RoomNum].etc[a].vel)
 				}
 
-			} else if level[roomNum].etc[a].name == "slimetrail" || level[roomNum].etc[a].name == "playerblood" {
+			} else if gs.Level.Level[gs.Level.RoomNum].etc[a].name == "slimetrail" || gs.Level.Level[gs.Level.RoomNum].etc[a].name == "playerblood" {
 
-				drawBlok(level[roomNum].etc[a], false, true, 7)
+				drawBlok(gs.Level.Level[gs.Level.RoomNum].etc[a], false, true, 7)
 
-				level[roomNum].etc[a].fade -= 0.005
-				if level[roomNum].etc[a].fade <= 0 {
-					level[roomNum].etc[a].onoff = false
+				gs.Level.Level[gs.Level.RoomNum].etc[a].fade -= 0.005
+				if gs.Level.Level[gs.Level.RoomNum].etc[a].fade <= 0 {
+					gs.Level.Level[gs.Level.RoomNum].etc[a].onoff = false
 				}
 
-				if level[roomNum].etc[a].name == "slimetrail" {
-					if rl.CheckCollisionRecs(pl.crec, level[roomNum].etc[a].crec) && !pl.poison && pl.poisonCollisT == 0 {
-						pl.poisonCollisT = gs.Core.Fps * 3
-						if mods.apple {
-							mods.appleN--
-							if mods.appleN == 0 {
-								mods.apple = false
+				if gs.Level.Level[gs.Level.RoomNum].etc[a].name == "slimetrail" {
+					if rl.CheckCollisionRecs(gs.Player.Pl.crec, gs.Level.Level[gs.Level.RoomNum].etc[a].crec) && !gs.Player.Pl.poison && gs.Player.Pl.poisonCollisT == 0 {
+						gs.Player.Pl.poisonCollisT = gs.Core.Fps * 3
+						if gs.Player.Mods.apple {
+							gs.Player.Mods.appleN--
+							if gs.Player.Mods.appleN == 0 {
+								gs.Player.Mods.apple = false
 								clearinven("apple")
 							}
 						} else {
-							pl.poison = true
-							pl.poisonCount = 2
-							pl.poisonT = gs.Core.Fps * 3
-							txtHere("poisoned", pl.rec)
+							gs.Player.Pl.poison = true
+							gs.Player.Pl.poisonCount = 2
+							gs.Player.Pl.poisonT = gs.Core.Fps * 3
+							txtHere("poisoned", gs.Player.Pl.rec)
 						}
 					}
 				}
 
-			} else if level[roomNum].etc[a].name == "footprints" {
+			} else if gs.Level.Level[gs.Level.RoomNum].etc[a].name == "footprints" {
 
-				drawBlokDrec(level[roomNum].etc[a], false, true, 4)
+				drawBlokDrec(gs.Level.Level[gs.Level.RoomNum].etc[a], false, true, 4)
 
-				level[roomNum].etc[a].fade -= 0.01
-				if level[roomNum].etc[a].fade <= 0 {
-					level[roomNum].etc[a].onoff = false
+				gs.Level.Level[gs.Level.RoomNum].etc[a].fade -= 0.01
+				if gs.Level.Level[gs.Level.RoomNum].etc[a].fade <= 0 {
+					gs.Level.Level[gs.Level.RoomNum].etc[a].onoff = false
 				}
 
-			} else if level[roomNum].etc[a].name == "blades" {
-				drawBlok(level[roomNum].etc[a], true, true, 4)
-				if frames%2 == 0 {
-					level[roomNum].etc[a].img.X += blades.W
-					if level[roomNum].etc[a].img.X > blades.xl+blades.frames*blades.W {
-						level[roomNum].etc[a].img.X = blades.xl
-						level[roomNum].etc[a].onoffswitch = false
+			} else if gs.Level.Level[gs.Level.RoomNum].etc[a].name == "blades" {
+				drawBlok(gs.Level.Level[gs.Level.RoomNum].etc[a], true, true, 4)
+				if gs.Core.Frames%2 == 0 {
+					gs.Level.Level[gs.Level.RoomNum].etc[a].img.X += gs.Render.Blades.W
+					if gs.Level.Level[gs.Level.RoomNum].etc[a].img.X > gs.Render.Blades.xl+gs.Render.Blades.frames*gs.Render.Blades.W {
+						gs.Level.Level[gs.Level.RoomNum].etc[a].img.X = gs.Render.Blades.xl
+						gs.Level.Level[gs.Level.RoomNum].etc[a].onoffswitch = false
 					}
 				}
-				if checkNextMove(level[roomNum].etc[a].rec, level[roomNum].etc[a].velX, level[roomNum].etc[a].velY, true) {
-					level[roomNum].etc[a].rec.X += level[roomNum].etc[a].velX
-					level[roomNum].etc[a].rec.Y += level[roomNum].etc[a].velY
-					level[roomNum].etc[a].cnt = rl.NewVector2(level[roomNum].etc[a].rec.X+level[roomNum].etc[a].rec.Width/2, level[roomNum].etc[a].rec.Y+level[roomNum].etc[a].rec.Width/2)
+				if checkNextMove(gs.Level.Level[gs.Level.RoomNum].etc[a].rec, gs.Level.Level[gs.Level.RoomNum].etc[a].velX, gs.Level.Level[gs.Level.RoomNum].etc[a].velY, true) {
+					gs.Level.Level[gs.Level.RoomNum].etc[a].rec.X += gs.Level.Level[gs.Level.RoomNum].etc[a].velX
+					gs.Level.Level[gs.Level.RoomNum].etc[a].rec.Y += gs.Level.Level[gs.Level.RoomNum].etc[a].velY
+					gs.Level.Level[gs.Level.RoomNum].etc[a].cnt = rl.NewVector2(gs.Level.Level[gs.Level.RoomNum].etc[a].rec.X+gs.Level.Level[gs.Level.RoomNum].etc[a].rec.Width/2, gs.Level.Level[gs.Level.RoomNum].etc[a].rec.Y+gs.Level.Level[gs.Level.RoomNum].etc[a].rec.Width/2)
 				} else {
-					level[roomNum].etc[a].velX = rF32(-level[roomNum].etc[a].velX, level[roomNum].etc[a].velX)
-					level[roomNum].etc[a].velY = rF32(-level[roomNum].etc[a].velY, level[roomNum].etc[a].velY)
+					gs.Level.Level[gs.Level.RoomNum].etc[a].velX = rF32(-gs.Level.Level[gs.Level.RoomNum].etc[a].velX, gs.Level.Level[gs.Level.RoomNum].etc[a].velX)
+					gs.Level.Level[gs.Level.RoomNum].etc[a].velY = rF32(-gs.Level.Level[gs.Level.RoomNum].etc[a].velY, gs.Level.Level[gs.Level.RoomNum].etc[a].velY)
 				}
 
-				if rl.CheckCollisionRecs(pl.crec, level[roomNum].etc[a].rec) {
+				if rl.CheckCollisionRecs(gs.Player.Pl.crec, gs.Level.Level[gs.Level.RoomNum].etc[a].rec) {
 					if !rl.IsSoundPlaying(gs.Audio.Sfx[30]) {
 						rl.PlaySound(gs.Audio.Sfx[30])
 					}
 					hitPL(0, 2)
 				}
 
-			} else if level[roomNum].etc[a].name == "spear" {
-				drawBlokDrec(level[roomNum].etc[a], false, true, 4)
+			} else if gs.Level.Level[gs.Level.RoomNum].etc[a].name == "spear" {
+				drawBlokDrec(gs.Level.Level[gs.Level.RoomNum].etc[a], false, true, 4)
 
-				if rl.CheckCollisionRecs(pl.crec, level[roomNum].etc[a].crec) {
+				if rl.CheckCollisionRecs(gs.Player.Pl.crec, gs.Level.Level[gs.Level.RoomNum].etc[a].crec) {
 					hitPL(0, 2)
-					if frames%4 == 0 {
-						if level[roomNum].etc[a].img.X == spear.xl {
+					if gs.Core.Frames%4 == 0 {
+						if gs.Level.Level[gs.Level.RoomNum].etc[a].img.X == gs.Render.Spear.xl {
 							rl.PlaySound(gs.Audio.Sfx[26])
 						}
-						level[roomNum].etc[a].img.X += spear.W
-						if level[roomNum].etc[a].img.X > spear.xl+spear.frames*spear.W {
-							level[roomNum].etc[a].img.X = spear.xl
+						gs.Level.Level[gs.Level.RoomNum].etc[a].img.X += gs.Render.Spear.W
+						if gs.Level.Level[gs.Level.RoomNum].etc[a].img.X > gs.Render.Spear.xl+gs.Render.Spear.frames*gs.Render.Spear.W {
+							gs.Level.Level[gs.Level.RoomNum].etc[a].img.X = gs.Render.Spear.xl
 						}
 					}
 
 				} else {
-					if level[roomNum].etc[a].img.X != spear.xl {
-						if frames%4 == 0 {
-							level[roomNum].etc[a].img.X -= spear.W
+					if gs.Level.Level[gs.Level.RoomNum].etc[a].img.X != gs.Render.Spear.xl {
+						if gs.Core.Frames%4 == 0 {
+							gs.Level.Level[gs.Level.RoomNum].etc[a].img.X -= gs.Render.Spear.W
 						}
 					}
 				}
 
-			} else if level[roomNum].etc[a].name == "powerupBlok" {
-				drawBlok(level[roomNum].etc[a], true, false, 4)
-			} else if level[roomNum].etc[a].name == "flamefiretrail" {
-				drawBlok(level[roomNum].etc[a], false, true, 4)
-				if frames%3 == 0 {
-					level[roomNum].etc[a].img.X += firetrailanim.W
-					if level[roomNum].etc[a].img.X > firetrailanim.xl+firetrailanim.frames*firetrailanim.W {
-						level[roomNum].etc[a].img.X = firetrailanim.xl
+			} else if gs.Level.Level[gs.Level.RoomNum].etc[a].name == "powerupBlok" {
+				drawBlok(gs.Level.Level[gs.Level.RoomNum].etc[a], true, false, 4)
+			} else if gs.Level.Level[gs.Level.RoomNum].etc[a].name == "flamefiretrail" {
+				drawBlok(gs.Level.Level[gs.Level.RoomNum].etc[a], false, true, 4)
+				if gs.Core.Frames%3 == 0 {
+					gs.Level.Level[gs.Level.RoomNum].etc[a].img.X += gs.Render.Firetrailanim.W
+					if gs.Level.Level[gs.Level.RoomNum].etc[a].img.X > gs.Render.Firetrailanim.xl+gs.Render.Firetrailanim.frames*gs.Render.Firetrailanim.W {
+						gs.Level.Level[gs.Level.RoomNum].etc[a].img.X = gs.Render.Firetrailanim.xl
 					}
 				}
 
-				level[roomNum].etc[a].fade -= 0.005
-				if level[roomNum].etc[a].fade <= 0 {
-					level[roomNum].etc[a].onoff = false
+				gs.Level.Level[gs.Level.RoomNum].etc[a].fade -= 0.005
+				if gs.Level.Level[gs.Level.RoomNum].etc[a].fade <= 0 {
+					gs.Level.Level[gs.Level.RoomNum].etc[a].onoff = false
 				}
 
-			} else if level[roomNum].etc[a].name == "airbomb" {
-				drawBlok(level[roomNum].etc[a], false, true, 4)
-				if frames%5 == 0 {
-					if level[roomNum].etc[a].img.X == airstrikeanim.xl {
+			} else if gs.Level.Level[gs.Level.RoomNum].etc[a].name == "airbomb" {
+				drawBlok(gs.Level.Level[gs.Level.RoomNum].etc[a], false, true, 4)
+				if gs.Core.Frames%5 == 0 {
+					if gs.Level.Level[gs.Level.RoomNum].etc[a].img.X == gs.Render.Airstrikeanim.xl {
 						rl.PlaySound(gs.Audio.Sfx[28])
 					}
-					level[roomNum].etc[a].img.X += airstrikeanim.W
-					if level[roomNum].etc[a].img.X > airstrikeanim.xl+airstrikeanim.frames*airstrikeanim.W {
-						level[roomNum].etc[a].img.X = airstrikeanim.xl
+					gs.Level.Level[gs.Level.RoomNum].etc[a].img.X += gs.Render.Airstrikeanim.W
+					if gs.Level.Level[gs.Level.RoomNum].etc[a].img.X > gs.Render.Airstrikeanim.xl+gs.Render.Airstrikeanim.frames*gs.Render.Airstrikeanim.W {
+						gs.Level.Level[gs.Level.RoomNum].etc[a].img.X = gs.Render.Airstrikeanim.xl
 					}
 				}
 
-				level[roomNum].etc[a].fade -= 0.03
-				if level[roomNum].etc[a].fade <= 0 {
-					level[roomNum].etc[a].onoff = false
+				gs.Level.Level[gs.Level.RoomNum].etc[a].fade -= 0.03
+				if gs.Level.Level[gs.Level.RoomNum].etc[a].fade <= 0 {
+					gs.Level.Level[gs.Level.RoomNum].etc[a].onoff = false
 				}
 
 			} else { //DRAW OTHER BLOKS
 
-				drawBlok(level[roomNum].etc[a], true, true, 4)
+				drawBlok(gs.Level.Level[gs.Level.RoomNum].etc[a], true, true, 4)
 
-				if level[roomNum].etc[a].name == "exit" {
+				if gs.Level.Level[gs.Level.RoomNum].etc[a].name == "exit" {
 					txt := "exit"
 					txtlen := rl.MeasureText(txt, 20)
-					txtx := int32(level[roomNum].etc[a].rec.X+level[roomNum].etc[a].rec.Width/2) - txtlen/2
+					txtx := int32(gs.Level.Level[gs.Level.RoomNum].etc[a].rec.X+gs.Level.Level[gs.Level.RoomNum].etc[a].rec.Width/2) - txtlen/2
 					txtx++
-					txty := int32(level[roomNum].etc[a].rec.Y) - 18
+					txty := int32(gs.Level.Level[gs.Level.RoomNum].etc[a].rec.Y) - 18
 					rl.DrawText(txt, txtx-4, txty+4, 20, rl.Black)
 					rl.DrawText(txt, txtx, txty, 20, ranCol())
 
-					if rl.CheckCollisionRecs(level[roomNum].etc[a].rec, pl.crec) {
+					if rl.CheckCollisionRecs(gs.Level.Level[gs.Level.RoomNum].etc[a].rec, gs.Player.Pl.crec) {
 						rl.PlaySound(gs.Audio.Sfx[15])
-						exited = true
+						gs.Level.Exited = true
 					}
 				}
 
-				if level[roomNum].etc[a].name == "chest" && level[roomNum].etc[a].img.X < 493 {
+				if gs.Level.Level[gs.Level.RoomNum].etc[a].name == "chest" && gs.Level.Level[gs.Level.RoomNum].etc[a].img.X < 493 {
 
-					if rl.CheckCollisionRecs(pl.arec, level[roomNum].etc[a].crec) && mods.key && !level[roomNum].etc[a].onoffswitch {
+					if rl.CheckCollisionRecs(gs.Player.Pl.arec, gs.Level.Level[gs.Level.RoomNum].etc[a].crec) && gs.Player.Mods.key && !gs.Level.Level[gs.Level.RoomNum].etc[a].onoffswitch {
 						rl.PlaySound(gs.Audio.Sfx[17])
-						level[roomNum].etc[a].onoffswitch = true
-						mods.keyN--
-						if mods.keyN == 0 {
-							mods.key = false
+						gs.Level.Level[gs.Level.RoomNum].etc[a].onoffswitch = true
+						gs.Player.Mods.keyN--
+						if gs.Player.Mods.keyN == 0 {
+							gs.Player.Mods.key = false
 						}
 						delInven("key")
 						makechestitem(a)
-					} else if rl.CheckCollisionRecs(pl.arec, level[roomNum].etc[a].crec) && !mods.key && !level[roomNum].etc[a].onoffswitch && level[roomNum].etc[a].txtT == 0 {
-						txtHere("locked", level[roomNum].etc[a].rec)
-						level[roomNum].etc[a].txtT = gs.Core.Fps * 3
+					} else if rl.CheckCollisionRecs(gs.Player.Pl.arec, gs.Level.Level[gs.Level.RoomNum].etc[a].crec) && !gs.Player.Mods.key && !gs.Level.Level[gs.Level.RoomNum].etc[a].onoffswitch && gs.Level.Level[gs.Level.RoomNum].etc[a].txtT == 0 {
+						txtHere("locked", gs.Level.Level[gs.Level.RoomNum].etc[a].rec)
+						gs.Level.Level[gs.Level.RoomNum].etc[a].txtT = gs.Core.Fps * 3
 						rl.PlaySound(gs.Audio.Sfx[25])
 					}
 
-					if level[roomNum].etc[a].onoffswitch {
-						if frames%6 == 0 {
-							level[roomNum].etc[a].img.X += 24
+					if gs.Level.Level[gs.Level.RoomNum].etc[a].onoffswitch {
+						if gs.Core.Frames%6 == 0 {
+							gs.Level.Level[gs.Level.RoomNum].etc[a].img.X += 24
 						}
 					}
 
 				}
 			}
 			//COLLISIONS PLAYER CREC > ETC REC
-			if rl.CheckCollisionRecs(pl.crec, level[roomNum].etc[a].rec) {
-				switch level[roomNum].etc[a].name {
+			if rl.CheckCollisionRecs(gs.Player.Pl.crec, gs.Level.Level[gs.Level.RoomNum].etc[a].rec) {
+				switch gs.Level.Level[gs.Level.RoomNum].etc[a].name {
 
 				case "gem":
-					if level[roomNum].etc[a].onoff {
-						pl.coins += level[roomNum].etc[a].numCoins
-						level[roomNum].etc[a].onoff = false
+					if gs.Level.Level[gs.Level.RoomNum].etc[a].onoff {
+						gs.Player.Pl.coins += gs.Level.Level[gs.Level.RoomNum].etc[a].numCoins
+						gs.Level.Level[gs.Level.RoomNum].etc[a].onoff = false
 						txtAddCoinMulti()
 					}
 
 				case "switch": //MARK: SWITCHES ON/OFF
-					if level[roomNum].etc[a].timer == 0 {
+					if gs.Level.Level[gs.Level.RoomNum].etc[a].timer == 0 {
 						rl.PlaySound(gs.Audio.Sfx[12])
-						level[roomNum].etc[a].timer = gs.Core.Fps * 2
-						level[roomNum].etc[a].onoffswitch = !level[roomNum].etc[a].onoffswitch
-						if level[roomNum].etc[a].img == etc[21] {
-							level[roomNum].etc[a].img = etc[22]
+						gs.Level.Level[gs.Level.RoomNum].etc[a].timer = gs.Core.Fps * 2
+						gs.Level.Level[gs.Level.RoomNum].etc[a].onoffswitch = !gs.Level.Level[gs.Level.RoomNum].etc[a].onoffswitch
+						if gs.Level.Level[gs.Level.RoomNum].etc[a].img == gs.Render.Etc[21] {
+							gs.Level.Level[gs.Level.RoomNum].etc[a].img = gs.Render.Etc[22]
 						} else {
-							level[roomNum].etc[a].img = etc[21]
+							gs.Level.Level[gs.Level.RoomNum].etc[a].img = gs.Render.Etc[21]
 						}
 
-						switch level[roomNum].etc[a].numType {
+						switch gs.Level.Level[gs.Level.RoomNum].etc[a].numType {
 						case 1:
 							makeSwitchArrows()
 						case 2:
-							night = !night
+							gs.Level.Night = !gs.Level.Night
 						case 3:
-							flipcam = !flipcam
+							gs.Level.Flipcam = !gs.Level.Flipcam
 							cams()
 						case 4:
-							shader2on = !shader2on
-							if shader3on {
-								shader3on = false
+							gs.Render.Shader2On = !gs.Render.Shader2On
+							if gs.Render.Shader3On {
+								gs.Render.Shader3On = false
 							}
 						case 5:
-							shader3on = !shader3on
-							if shader2on {
-								shader2on = false
+							gs.Render.Shader3On = !gs.Render.Shader3On
+							if gs.Render.Shader2On {
+								gs.Render.Shader2On = false
 							}
 						case 6:
-							if level[roomNum].etc[a].numCoins > 0 {
-								level[roomNum].etc[a].numCoins--
+							if gs.Level.Level[gs.Level.RoomNum].etc[a].numCoins > 0 {
+								gs.Level.Level[gs.Level.RoomNum].etc[a].numCoins--
 								txtAddCoin()
 							}
 
@@ -3608,36 +3502,36 @@ func drawUpEtc() { //MARK:DRAW UP ETC
 				//MARK:INGAME COLLECT INVEN
 				case "health potion", "throwing axe", "recharge hp", "medi kit", "wallet", "mr planty", "apple", "key", "vine", "bounce", "santa", "fireball", "map", "firetrail", "invisible", "coffee", "teleport", "attack range", "attack damage", "orbital", "chain lightning", "health ring", "armor", "recharge", "anchor", "umbrella", "moldy socks", "cherry", "fish", "birthday cake", "peace", "mr alien", "air strike", "fireworks", "mr carrot", "mario":
 					collectInven(a)
-					level[roomNum].etc[a].onoff = false
+					gs.Level.Level[gs.Level.RoomNum].etc[a].onoff = false
 				}
 			}
 			//COLLISIONS PLAYER CREC > ETC CREC2
-			if rl.CheckCollisionRecs(pl.crec, level[roomNum].etc[a].crec2) && level[roomNum].etc[a].name == "shop" && !pl.escape && gs.Shop.ShopExitT == 0 {
+			if rl.CheckCollisionRecs(gs.Player.Pl.crec, gs.Level.Level[gs.Level.RoomNum].etc[a].crec2) && gs.Level.Level[gs.Level.RoomNum].etc[a].name == "shop" && !gs.Player.Pl.escape && gs.Shop.ShopExitT == 0 {
 				rl.PlaySound(gs.Audio.Sfx[16])
-				gs.Shop.ShopExitY = level[roomNum].etc[a].rec.Y + level[roomNum].etc[a].rec.Height + bsU2
+				gs.Shop.ShopExitY = gs.Level.Level[gs.Level.RoomNum].etc[a].rec.Y + gs.Level.Level[gs.Level.RoomNum].etc[a].rec.Height + bsU2
 				gs.Shop.ShopOn = true
-				pause = true
+				gs.Core.Pause = true
 			}
 
 			//COLLISIONS PLAYER ATTACK AREA
-			if rl.CheckCollisionRecs(pl.atkrec, level[roomNum].etc[a].rec) {
+			if rl.CheckCollisionRecs(gs.Player.Pl.atkrec, gs.Level.Level[gs.Level.RoomNum].etc[a].rec) {
 
-				switch level[roomNum].etc[a].name {
+				switch gs.Level.Level[gs.Level.RoomNum].etc[a].name {
 				case "oilbarrel":
-					if pl.atk {
-						makeFX(4, level[roomNum].etc[a].cnt)
-						level[roomNum].etc[a].onoff = false
+					if gs.Player.Pl.atk {
+						makeFX(4, gs.Level.Level[gs.Level.RoomNum].etc[a].cnt)
+						gs.Level.Level[gs.Level.RoomNum].etc[a].onoff = false
 						rl.PlaySound(gs.Audio.Sfx[10])
 						rl.PlaySound(gs.Audio.Sfx[5])
 					}
 				case "powerupBlok":
-					if pl.atk {
-						if mods.fireworks {
-							fireworksCnt = level[roomNum].etc[a].cnt
+					if gs.Player.Pl.atk {
+						if gs.Player.Mods.fireworks {
+							gs.FX.FireworksCnt = gs.Level.Level[gs.Level.RoomNum].etc[a].cnt
 							makeProjectile("fireworks")
 						}
 						destroyPowerupBlok(a)
-						level[roomNum].etc[a].onoff = false
+						gs.Level.Level[gs.Level.RoomNum].etc[a].onoff = false
 						rl.PlaySound(gs.Audio.Sfx[6])
 					}
 				}
@@ -3648,78 +3542,78 @@ func drawUpEtc() { //MARK:DRAW UP ETC
 	}
 
 	if clear {
-		for a := 0; a < len(level[roomNum].etc); a++ {
-			if !level[roomNum].etc[a].onoff {
-				level[roomNum].etc = remBlok(level[roomNum].etc, a)
+		for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].etc); a++ {
+			if !gs.Level.Level[gs.Level.RoomNum].etc[a].onoff {
+				gs.Level.Level[gs.Level.RoomNum].etc = remBlok(gs.Level.Level[gs.Level.RoomNum].etc, a)
 			}
 		}
 
 	}
 
-	if exited {
-		pause = true
-		rl.DrawRectangle(0, 0, scrW32, scrH32, rl.Black)
+	if gs.Level.Exited {
+		gs.Core.Pause = true
+		rl.DrawRectangle(0, 0, gs.Core.ScrW32, gs.Core.ScrH32, rl.Black)
 		makenewlevel()
-		exited = false
+		gs.Level.Exited = false
 	}
 
 }
 func drawupfx() { //MARK:DRAW UP FX
 
 	clear := false
-	for a := 0; a < len(fx); a++ {
+	for a := 0; a < len(gs.FX.Fx); a++ {
 
-		switch fx[a].name {
+		switch gs.FX.Fx[a].name {
 
 		case "fxBurnWoodBarrel", "fxBurnOilBarrel":
 			col := ranOrange()
-			rl.DrawTexturePro(imgs, fx[a].img, fx[a].rec, ori, 0, col)
-			rl.DrawTexturePro(imgs, fx[a].img, BlurRec(fx[a].rec, 4), ori, 0, rl.Fade(col, rF32(0.2, 0.5)))
-			if frames%3 == 0 {
-				fx[a].img.X += 17
-				if fx[a].img.X >= burn.xl+(17*burn.frames) {
-					fx[a].img.X = burn.xl
+			rl.DrawTexturePro(gs.Render.Imgs, gs.FX.Fx[a].img, gs.FX.Fx[a].rec, gs.Core.Ori, 0, col)
+			rl.DrawTexturePro(gs.Render.Imgs, gs.FX.Fx[a].img, BlurRec(gs.FX.Fx[a].rec, 4), gs.Core.Ori, 0, rl.Fade(col, rF32(0.2, 0.5)))
+			if gs.Core.Frames%3 == 0 {
+				gs.FX.Fx[a].img.X += 17
+				if gs.FX.Fx[a].img.X >= gs.Render.Burn.xl+(17*gs.Render.Burn.frames) {
+					gs.FX.Fx[a].img.X = gs.Render.Burn.xl
 				}
 			}
 
-			if rl.CheckCollisionRecs(pl.crec, fx[a].rec) {
+			if rl.CheckCollisionRecs(gs.Player.Pl.crec, gs.FX.Fx[a].rec) {
 				hitPL(0, 2)
 			}
 
-			if debug {
-				rl.DrawRectangleLinesEx(fx[a].rec, 0.5, rl.Blue)
+			if gs.Core.Debug {
+				rl.DrawRectangleLinesEx(gs.FX.Fx[a].rec, 0.5, rl.Blue)
 			}
 
 		case "fxEnemy":
 
-			for b := 0; b < len(fx[a].recs); b++ {
-				v2 := rl.NewVector2(fx[a].recs[b].rec.X+fx[a].recs[b].rec.Width/2, fx[a].recs[b].rec.Y+fx[a].recs[b].rec.Height/2)
-				rl.DrawCircleV(v2, fx[a].recs[b].rec.Width/2, rl.Fade(fx[a].recs[b].col, fx[a].recs[b].fade))
-				fx[a].recs[b].rec.X += fx[a].recs[b].velX
-				fx[a].recs[b].rec.Y += fx[a].recs[b].velY
-				fx[a].recs[b].fade -= 0.05
-				fx[a].recs[b].rec.Width += 0.1
-				fx[a].recs[b].rec.Height += 0.1
+			for b := 0; b < len(gs.FX.Fx[a].recs); b++ {
+				v2 := rl.NewVector2(gs.FX.Fx[a].recs[b].rec.X+gs.FX.Fx[a].recs[b].rec.Width/2, gs.FX.Fx[a].recs[b].rec.Y+gs.FX.Fx[a].recs[b].rec.Height/2)
+				rl.DrawCircleV(v2, gs.FX.Fx[a].recs[b].rec.Width/2, rl.Fade(gs.FX.Fx[a].recs[b].col, gs.FX.Fx[a].recs[b].fade))
+				gs.FX.Fx[a].recs[b].rec.X += gs.FX.Fx[a].recs[b].velX
+				gs.FX.Fx[a].recs[b].rec.Y += gs.FX.Fx[a].recs[b].velY
+				gs.FX.Fx[a].recs[b].fade -= 0.05
+				gs.FX.Fx[a].recs[b].rec.Width += 0.1
+				gs.FX.Fx[a].recs[b].rec.Height += 0.1
 			}
 
 		case "fxBarrel":
 
-			for b := 0; b < len(fx[a].recs); b++ {
-				rl.DrawRectangleRec(fx[a].recs[b].rec, rl.Fade(fx[a].recs[b].col, fx[a].recs[b].fade))
-				fx[a].recs[b].rec.X += fx[a].recs[b].velX
-				fx[a].recs[b].rec.Y += fx[a].recs[b].velY
-				fx[a].recs[b].fade -= 0.05
-				fx[a].recs[b].rec.Width -= 0.05
-				fx[a].recs[b].rec.Height -= 0.05
+			for b := 0; b < len(gs.FX.Fx[a].recs); b++ {
+				rl.DrawRectangleRec(gs.FX.Fx[a].recs[b].rec, rl.Fade(gs.FX.Fx[a].recs[b].col, gs.FX.Fx[a].recs[b].fade))
+				gs.FX.Fx[a].recs[b].rec.X += gs.FX.Fx[a].recs[b].velX
+				gs.FX.Fx[a].recs[b].rec.Y += gs.FX.Fx[a].recs[b].velY
+				gs.FX.Fx[a].recs[b].fade -= 0.05
+				gs.FX.Fx[a].recs[b].rec.Width -= 0.05
+				gs.FX.Fx[a].recs[b].rec.Height -= 0.05
 			}
 
 		}
 
-		if fx[a].onoff {
+		if gs.FX.Fx[a].onoff {
 
-			fx[a].timer--
-			if fx[a].timer == 0 {
-				fx[a].onoff = false
+			gs.FX.Fx[a].timer--
+			if gs.FX.Fx[a].timer == 0 {
+				gs.FX.Fx[a].onoff = false
 			}
 
 		} else {
@@ -3729,9 +3623,9 @@ func drawupfx() { //MARK:DRAW UP FX
 	}
 
 	if clear {
-		for a := 0; a < len(fx); a++ {
-			if !fx[a].onoff {
-				fx = remFX(fx, a)
+		for a := 0; a < len(gs.FX.Fx); a++ {
+			if !gs.FX.Fx[a].onoff {
+				gs.FX.Fx = remFX(gs.FX.Fx, a)
 			}
 		}
 	}
@@ -3740,170 +3634,170 @@ func drawupfx() { //MARK:DRAW UP FX
 func drawUpEnemies() { //MARK:DRAW UP ENEMIES
 
 	clear := false
-	for a := 0; a < len(level[roomNum].enemies); a++ {
+	for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].enemies); a++ {
 
-		if !level[roomNum].enemies[a].off {
+		if !gs.Level.Level[gs.Level.RoomNum].enemies[a].off {
 
 			//TIMERS
-			if level[roomNum].enemies[a].T1 > 0 {
-				level[roomNum].enemies[a].T1--
+			if gs.Level.Level[gs.Level.RoomNum].enemies[a].T1 > 0 {
+				gs.Level.Level[gs.Level.RoomNum].enemies[a].T1--
 			}
-			if level[roomNum].enemies[a].hppause > 0 {
-				level[roomNum].enemies[a].hppause--
+			if gs.Level.Level[gs.Level.RoomNum].enemies[a].hppause > 0 {
+				gs.Level.Level[gs.Level.RoomNum].enemies[a].hppause--
 			}
 
 			//PLAYER ENEMY CREC COLLIS
-			if rl.CheckCollisionRecs(pl.crec, level[roomNum].enemies[a].crec) && pl.hppause == 0 {
+			if rl.CheckCollisionRecs(gs.Player.Pl.crec, gs.Level.Level[gs.Level.RoomNum].enemies[a].crec) && gs.Player.Pl.hppause == 0 {
 				hitPL(0, 2)
 			}
 
-			shadowRec := level[roomNum].enemies[a].rec
+			shadowRec := gs.Level.Level[gs.Level.RoomNum].enemies[a].rec
 			shadowRec.X -= 5
 			shadowRec.Y += 5
-			rl.DrawTexturePro(imgs, level[roomNum].enemies[a].img, shadowRec, ori, level[roomNum].enemies[a].ro, rl.Fade(rl.Black, 0.8))
+			rl.DrawTexturePro(gs.Render.Imgs, gs.Level.Level[gs.Level.RoomNum].enemies[a].img, shadowRec, gs.Core.Ori, gs.Level.Level[gs.Level.RoomNum].enemies[a].ro, rl.Fade(rl.Black, 0.8))
 
-			if level[roomNum].enemies[a].hppause > 0 {
-				rl.DrawTexturePro(imgs, level[roomNum].enemies[a].img, level[roomNum].enemies[a].rec, ori, level[roomNum].enemies[a].ro, rl.Fade(ranCol(), level[roomNum].enemies[a].fade))
+			if gs.Level.Level[gs.Level.RoomNum].enemies[a].hppause > 0 {
+				rl.DrawTexturePro(gs.Render.Imgs, gs.Level.Level[gs.Level.RoomNum].enemies[a].img, gs.Level.Level[gs.Level.RoomNum].enemies[a].rec, gs.Core.Ori, gs.Level.Level[gs.Level.RoomNum].enemies[a].ro, rl.Fade(ranCol(), gs.Level.Level[gs.Level.RoomNum].enemies[a].fade))
 			} else {
-				rl.DrawTexturePro(imgs, level[roomNum].enemies[a].img, level[roomNum].enemies[a].rec, ori, level[roomNum].enemies[a].ro, rl.Fade(level[roomNum].enemies[a].col, level[roomNum].enemies[a].fade))
+				rl.DrawTexturePro(gs.Render.Imgs, gs.Level.Level[gs.Level.RoomNum].enemies[a].img, gs.Level.Level[gs.Level.RoomNum].enemies[a].rec, gs.Core.Ori, gs.Level.Level[gs.Level.RoomNum].enemies[a].ro, rl.Fade(gs.Level.Level[gs.Level.RoomNum].enemies[a].col, gs.Level.Level[gs.Level.RoomNum].enemies[a].fade))
 			}
 
-			if anchorT > 0 {
+			if gs.Level.AnchorT > 0 {
 				siz := bsU
-				rec := rl.NewRectangle(level[roomNum].enemies[a].crec.X+level[roomNum].enemies[a].crec.Width/2-siz/2, level[roomNum].enemies[a].crec.Y+level[roomNum].enemies[a].crec.Height/2-siz/2, siz, siz)
+				rec := rl.NewRectangle(gs.Level.Level[gs.Level.RoomNum].enemies[a].crec.X+gs.Level.Level[gs.Level.RoomNum].enemies[a].crec.Width/2-siz/2, gs.Level.Level[gs.Level.RoomNum].enemies[a].crec.Y+gs.Level.Level[gs.Level.RoomNum].enemies[a].crec.Height/2-siz/2, siz, siz)
 				rec.Y -= siz * 2
-				rl.DrawTexturePro(imgs, etc[39], rec, ori, 0, ranCyan())
+				rl.DrawTexturePro(gs.Render.Imgs, gs.Render.Etc[39], rec, gs.Core.Ori, 0, ranCyan())
 			}
 
-			if debug {
-				rl.DrawRectangleLinesEx(level[roomNum].enemies[a].rec, 1, rl.Red)
-				rl.DrawRectangleLinesEx(level[roomNum].enemies[a].crec, 1, rl.White)
-				rl.DrawRectangleLinesEx(level[roomNum].enemies[a].arec, 1, rl.Magenta)
-				rl.DrawCircleV(level[roomNum].enemies[a].cnt, 4, rl.Red)
+			if gs.Core.Debug {
+				rl.DrawRectangleLinesEx(gs.Level.Level[gs.Level.RoomNum].enemies[a].rec, 1, rl.Red)
+				rl.DrawRectangleLinesEx(gs.Level.Level[gs.Level.RoomNum].enemies[a].crec, 1, rl.White)
+				rl.DrawRectangleLinesEx(gs.Level.Level[gs.Level.RoomNum].enemies[a].arec, 1, rl.Magenta)
+				rl.DrawCircleV(gs.Level.Level[gs.Level.RoomNum].enemies[a].cnt, 4, rl.Red)
 			}
 
 			//ANIM
-			switch level[roomNum].enemies[a].name {
+			switch gs.Level.Level[gs.Level.RoomNum].enemies[a].name {
 
 			case "ghost", "slime", "rock":
-				if frames%4 == 0 {
-					if level[roomNum].enemies[a].imgr.X < level[roomNum].enemies[a].xImg2+(level[roomNum].enemies[a].img.Width*float32(level[roomNum].enemies[a].frameNum)) {
-						level[roomNum].enemies[a].imgr.X += level[roomNum].enemies[a].img.Width
+				if gs.Core.Frames%4 == 0 {
+					if gs.Level.Level[gs.Level.RoomNum].enemies[a].imgr.X < gs.Level.Level[gs.Level.RoomNum].enemies[a].xImg2+(gs.Level.Level[gs.Level.RoomNum].enemies[a].img.Width*float32(gs.Level.Level[gs.Level.RoomNum].enemies[a].frameNum)) {
+						gs.Level.Level[gs.Level.RoomNum].enemies[a].imgr.X += gs.Level.Level[gs.Level.RoomNum].enemies[a].img.Width
 					} else {
-						level[roomNum].enemies[a].imgr.X = level[roomNum].enemies[a].xImg2
+						gs.Level.Level[gs.Level.RoomNum].enemies[a].imgr.X = gs.Level.Level[gs.Level.RoomNum].enemies[a].xImg2
 					}
-					if level[roomNum].enemies[a].imgl.X < level[roomNum].enemies[a].xImg+(level[roomNum].enemies[a].img.Width*float32(level[roomNum].enemies[a].frameNum)) {
-						level[roomNum].enemies[a].imgl.X += level[roomNum].enemies[a].img.Width
+					if gs.Level.Level[gs.Level.RoomNum].enemies[a].imgl.X < gs.Level.Level[gs.Level.RoomNum].enemies[a].xImg+(gs.Level.Level[gs.Level.RoomNum].enemies[a].img.Width*float32(gs.Level.Level[gs.Level.RoomNum].enemies[a].frameNum)) {
+						gs.Level.Level[gs.Level.RoomNum].enemies[a].imgl.X += gs.Level.Level[gs.Level.RoomNum].enemies[a].img.Width
 					} else {
-						level[roomNum].enemies[a].imgl.X = level[roomNum].enemies[a].xImg
+						gs.Level.Level[gs.Level.RoomNum].enemies[a].imgl.X = gs.Level.Level[gs.Level.RoomNum].enemies[a].xImg
 					}
 				}
 
-				if level[roomNum].enemies[a].velX > 0 {
-					level[roomNum].enemies[a].img = level[roomNum].enemies[a].imgr
+				if gs.Level.Level[gs.Level.RoomNum].enemies[a].velX > 0 {
+					gs.Level.Level[gs.Level.RoomNum].enemies[a].img = gs.Level.Level[gs.Level.RoomNum].enemies[a].imgr
 				} else {
-					level[roomNum].enemies[a].img = level[roomNum].enemies[a].imgl
+					gs.Level.Level[gs.Level.RoomNum].enemies[a].img = gs.Level.Level[gs.Level.RoomNum].enemies[a].imgl
 				}
 
 			case "mushroom":
-				if frames%3 == 0 {
-					if level[roomNum].enemies[a].imgr.X < level[roomNum].enemies[a].xImg2+(level[roomNum].enemies[a].img.Width*float32(level[roomNum].enemies[a].frameNum)) {
-						level[roomNum].enemies[a].imgr.X += level[roomNum].enemies[a].img.Width
+				if gs.Core.Frames%3 == 0 {
+					if gs.Level.Level[gs.Level.RoomNum].enemies[a].imgr.X < gs.Level.Level[gs.Level.RoomNum].enemies[a].xImg2+(gs.Level.Level[gs.Level.RoomNum].enemies[a].img.Width*float32(gs.Level.Level[gs.Level.RoomNum].enemies[a].frameNum)) {
+						gs.Level.Level[gs.Level.RoomNum].enemies[a].imgr.X += gs.Level.Level[gs.Level.RoomNum].enemies[a].img.Width
 					} else {
-						level[roomNum].enemies[a].imgr.X = level[roomNum].enemies[a].xImg2
+						gs.Level.Level[gs.Level.RoomNum].enemies[a].imgr.X = gs.Level.Level[gs.Level.RoomNum].enemies[a].xImg2
 					}
-					if level[roomNum].enemies[a].imgl.X < level[roomNum].enemies[a].xImg+(level[roomNum].enemies[a].img.Width*float32(level[roomNum].enemies[a].frameNum)) {
-						level[roomNum].enemies[a].imgl.X += level[roomNum].enemies[a].img.Width
+					if gs.Level.Level[gs.Level.RoomNum].enemies[a].imgl.X < gs.Level.Level[gs.Level.RoomNum].enemies[a].xImg+(gs.Level.Level[gs.Level.RoomNum].enemies[a].img.Width*float32(gs.Level.Level[gs.Level.RoomNum].enemies[a].frameNum)) {
+						gs.Level.Level[gs.Level.RoomNum].enemies[a].imgl.X += gs.Level.Level[gs.Level.RoomNum].enemies[a].img.Width
 					} else {
-						level[roomNum].enemies[a].imgl.X = level[roomNum].enemies[a].xImg
+						gs.Level.Level[gs.Level.RoomNum].enemies[a].imgl.X = gs.Level.Level[gs.Level.RoomNum].enemies[a].xImg
 					}
 				}
 
-				if level[roomNum].enemies[a].velX > 0 {
-					level[roomNum].enemies[a].img = level[roomNum].enemies[a].imgr
+				if gs.Level.Level[gs.Level.RoomNum].enemies[a].velX > 0 {
+					gs.Level.Level[gs.Level.RoomNum].enemies[a].img = gs.Level.Level[gs.Level.RoomNum].enemies[a].imgr
 				} else {
-					level[roomNum].enemies[a].img = level[roomNum].enemies[a].imgl
+					gs.Level.Level[gs.Level.RoomNum].enemies[a].img = gs.Level.Level[gs.Level.RoomNum].enemies[a].imgl
 				}
 
 			case "spikehog":
-				if frames%4 == 0 {
-					if level[roomNum].enemies[a].img.X < level[roomNum].enemies[a].xImg+(level[roomNum].enemies[a].img.Width*float32(level[roomNum].enemies[a].frameNum)) {
-						level[roomNum].enemies[a].img.X += level[roomNum].enemies[a].img.Width
+				if gs.Core.Frames%4 == 0 {
+					if gs.Level.Level[gs.Level.RoomNum].enemies[a].img.X < gs.Level.Level[gs.Level.RoomNum].enemies[a].xImg+(gs.Level.Level[gs.Level.RoomNum].enemies[a].img.Width*float32(gs.Level.Level[gs.Level.RoomNum].enemies[a].frameNum)) {
+						gs.Level.Level[gs.Level.RoomNum].enemies[a].img.X += gs.Level.Level[gs.Level.RoomNum].enemies[a].img.Width
 					} else {
-						level[roomNum].enemies[a].img.X = level[roomNum].enemies[a].xImg
+						gs.Level.Level[gs.Level.RoomNum].enemies[a].img.X = gs.Level.Level[gs.Level.RoomNum].enemies[a].xImg
 					}
 				}
 
 			case "rabbit1":
-				if frames%8 == 0 {
-					if level[roomNum].enemies[a].img.X < rabbit1.xl+(rabbit1.frames*rabbit1.W) {
-						level[roomNum].enemies[a].img.X += rabbit1.W
+				if gs.Core.Frames%8 == 0 {
+					if gs.Level.Level[gs.Level.RoomNum].enemies[a].img.X < gs.Render.Rabbit1.xl+(gs.Render.Rabbit1.frames*gs.Render.Rabbit1.W) {
+						gs.Level.Level[gs.Level.RoomNum].enemies[a].img.X += gs.Render.Rabbit1.W
 					} else {
-						level[roomNum].enemies[a].img.X = rabbit1.xl
+						gs.Level.Level[gs.Level.RoomNum].enemies[a].img.X = gs.Render.Rabbit1.xl
 					}
 				}
-				switch level[roomNum].enemies[a].direc {
+				switch gs.Level.Level[gs.Level.RoomNum].enemies[a].direc {
 				case 1:
-					level[roomNum].enemies[a].img.Y = rabbit1.yt + rabbit1.W
+					gs.Level.Level[gs.Level.RoomNum].enemies[a].img.Y = gs.Render.Rabbit1.yt + gs.Render.Rabbit1.W
 				case 2:
-					level[roomNum].enemies[a].img.Y = rabbit1.yt + rabbit1.W*2
+					gs.Level.Level[gs.Level.RoomNum].enemies[a].img.Y = gs.Render.Rabbit1.yt + gs.Render.Rabbit1.W*2
 				case 3:
-					level[roomNum].enemies[a].img.Y = rabbit1.yt
+					gs.Level.Level[gs.Level.RoomNum].enemies[a].img.Y = gs.Render.Rabbit1.yt
 				case 4:
-					level[roomNum].enemies[a].img.Y = rabbit1.yt + rabbit1.W*3
+					gs.Level.Level[gs.Level.RoomNum].enemies[a].img.Y = gs.Render.Rabbit1.yt + gs.Render.Rabbit1.W*3
 				}
 			case "bat":
-				if frames%8 == 0 {
-					if level[roomNum].enemies[a].img.X < level[roomNum].enemies[a].xImg+(level[roomNum].enemies[a].img.Width*float32(level[roomNum].enemies[a].frameNum)) {
-						level[roomNum].enemies[a].img.X += level[roomNum].enemies[a].img.Width
+				if gs.Core.Frames%8 == 0 {
+					if gs.Level.Level[gs.Level.RoomNum].enemies[a].img.X < gs.Level.Level[gs.Level.RoomNum].enemies[a].xImg+(gs.Level.Level[gs.Level.RoomNum].enemies[a].img.Width*float32(gs.Level.Level[gs.Level.RoomNum].enemies[a].frameNum)) {
+						gs.Level.Level[gs.Level.RoomNum].enemies[a].img.X += gs.Level.Level[gs.Level.RoomNum].enemies[a].img.Width
 					} else {
-						level[roomNum].enemies[a].img.X = level[roomNum].enemies[a].xImg
+						gs.Level.Level[gs.Level.RoomNum].enemies[a].img.X = gs.Level.Level[gs.Level.RoomNum].enemies[a].xImg
 					}
 				}
 			}
 
 			//ENEMY HP BAR
 			if gs.UI.HpBarsOn {
-				hpX := level[roomNum].enemies[a].rec.X + level[roomNum].enemies[a].rec.Width/2
+				hpX := gs.Level.Level[gs.Level.RoomNum].enemies[a].rec.X + gs.Level.Level[gs.Level.RoomNum].enemies[a].rec.Width/2
 				siz := float32(4)
-				wid := float32(level[roomNum].enemies[a].hpmax) * (siz + 1)
+				wid := float32(gs.Level.Level[gs.Level.RoomNum].enemies[a].hpmax) * (siz + 1)
 				hpX -= wid / 2
-				hpY := level[roomNum].enemies[a].rec.Y + level[roomNum].enemies[a].rec.Height + 5
+				hpY := gs.Level.Level[gs.Level.RoomNum].enemies[a].rec.Y + gs.Level.Level[gs.Level.RoomNum].enemies[a].rec.Height + 5
 
 				rec := rl.NewRectangle(hpX, hpY, siz, siz)
-				for b := 0; b < level[roomNum].enemies[a].hpmax; b++ {
+				for b := 0; b < gs.Level.Level[gs.Level.RoomNum].enemies[a].hpmax; b++ {
 					rl.DrawRectangleLinesEx(rec, 1, rl.White)
 					rec.X += siz + 1
 				}
 				rec = rl.NewRectangle(hpX, hpY, siz, siz)
-				for b := 0; b < level[roomNum].enemies[a].hp; b++ {
+				for b := 0; b < gs.Level.Level[gs.Level.RoomNum].enemies[a].hp; b++ {
 					rl.DrawRectangleRec(rec, rl.Red)
 					rec.X += siz + 1
 				}
 			}
 
 			//MOVE
-			if anchorT == 0 {
+			if gs.Level.AnchorT == 0 {
 				moveenemy(a)
 			}
 
 			//MARK:PLAYER ENEMY ATTACK
-			if rl.CheckCollisionRecs(pl.atkrec, level[roomNum].enemies[a].rec) {
-				if level[roomNum].enemies[a].hppause == 0 {
-					if pl.atk {
-						level[roomNum].enemies[a].hppause = gs.Core.Fps / 2
-						level[roomNum].enemies[a].hp -= pl.atkDMG
-						if level[roomNum].enemies[a].hp <= 0 {
-							cntr := level[roomNum].enemies[a].cnt
+			if rl.CheckCollisionRecs(gs.Player.Pl.atkrec, gs.Level.Level[gs.Level.RoomNum].enemies[a].rec) {
+				if gs.Level.Level[gs.Level.RoomNum].enemies[a].hppause == 0 {
+					if gs.Player.Pl.atk {
+						gs.Level.Level[gs.Level.RoomNum].enemies[a].hppause = gs.Core.Fps / 2
+						gs.Level.Level[gs.Level.RoomNum].enemies[a].hp -= gs.Player.Pl.atkDMG
+						if gs.Level.Level[gs.Level.RoomNum].enemies[a].hp <= 0 {
+							cntr := gs.Level.Level[gs.Level.RoomNum].enemies[a].cnt
 							addkill(a)
-							level[roomNum].enemies[a].off = true
+							gs.Level.Level[gs.Level.RoomNum].enemies[a].off = true
 							makeFX(2, cntr)
 						} else {
 							playenemyhit()
 						}
 
-						if mods.chainlightning && !chainLightingSwingOnOff {
-							chainLightingSwingOnOff = true
+						if gs.Player.Mods.chainlightning && !gs.Player.ChainLightingSwingOnOff {
+							gs.Player.ChainLightingSwingOnOff = true
 							if roll6() > 2 {
 								makeChainLightning()
 
@@ -3919,9 +3813,9 @@ func drawUpEnemies() { //MARK:DRAW UP ENEMIES
 	}
 
 	if clear {
-		for a := 0; a < len(level[roomNum].enemies); a++ {
-			if level[roomNum].enemies[a].off {
-				level[roomNum].enemies = remEnemy(level[roomNum].enemies, a)
+		for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].enemies); a++ {
+			if gs.Level.Level[gs.Level.RoomNum].enemies[a].off {
+				gs.Level.Level[gs.Level.RoomNum].enemies = remEnemy(gs.Level.Level[gs.Level.RoomNum].enemies, a)
 			}
 		}
 	}
@@ -3930,90 +3824,90 @@ func drawUpEnemies() { //MARK:DRAW UP ENEMIES
 func drawUpBoss() { //MARK: DRAW UP BOSS
 
 	//IMG
-	shadowrec := bosses[bossnum].rec
+	shadowrec := gs.Level.Bosses[gs.Level.Bossnum].rec
 	shadowrec.X -= 4
 	shadowrec.Y += 4
-	rl.DrawTexturePro(imgs, bosses[bossnum].img, shadowrec, ori, 0, rl.Fade(rl.Black, 0.7))
+	rl.DrawTexturePro(gs.Render.Imgs, gs.Level.Bosses[gs.Level.Bossnum].img, shadowrec, gs.Core.Ori, 0, rl.Fade(rl.Black, 0.7))
 
-	if bosses[bossnum].hppause > 0 {
-		rl.DrawTexturePro(imgs, bosses[bossnum].img, bosses[bossnum].rec, ori, 0, ranCol())
+	if gs.Level.Bosses[gs.Level.Bossnum].hppause > 0 {
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Level.Bosses[gs.Level.Bossnum].img, gs.Level.Bosses[gs.Level.Bossnum].rec, gs.Core.Ori, 0, ranCol())
 	} else {
-		rl.DrawTexturePro(imgs, bosses[bossnum].img, bosses[bossnum].rec, ori, 0, rl.White)
+		rl.DrawTexturePro(gs.Render.Imgs, gs.Level.Bosses[gs.Level.Bossnum].img, gs.Level.Bosses[gs.Level.Bossnum].rec, gs.Core.Ori, 0, rl.White)
 	}
 
-	if frames%6 == 0 {
-		bosses[bossnum].img.X += 48
-		if bosses[bossnum].img.X > bosses[bossnum].xl+bosses[bossnum].img.Width*2 {
-			bosses[bossnum].img.X = bosses[bossnum].xl
+	if gs.Core.Frames%6 == 0 {
+		gs.Level.Bosses[gs.Level.Bossnum].img.X += 48
+		if gs.Level.Bosses[gs.Level.Bossnum].img.X > gs.Level.Bosses[gs.Level.Bossnum].xl+gs.Level.Bosses[gs.Level.Bossnum].img.Width*2 {
+			gs.Level.Bosses[gs.Level.Bossnum].img.X = gs.Level.Bosses[gs.Level.Bossnum].xl
 		}
 	}
-	switch bosses[bossnum].direc {
+	switch gs.Level.Bosses[gs.Level.Bossnum].direc {
 	case 1:
-		bosses[bossnum].img.Y = bosses[bossnum].yt + bosses[bossnum].img.Height*3
+		gs.Level.Bosses[gs.Level.Bossnum].img.Y = gs.Level.Bosses[gs.Level.Bossnum].yt + gs.Level.Bosses[gs.Level.Bossnum].img.Height*3
 	case 2:
-		bosses[bossnum].img.Y = bosses[bossnum].yt + bosses[bossnum].img.Height*2
+		gs.Level.Bosses[gs.Level.Bossnum].img.Y = gs.Level.Bosses[gs.Level.Bossnum].yt + gs.Level.Bosses[gs.Level.Bossnum].img.Height*2
 	case 3:
-		bosses[bossnum].img.Y = bosses[bossnum].yt
+		gs.Level.Bosses[gs.Level.Bossnum].img.Y = gs.Level.Bosses[gs.Level.Bossnum].yt
 	case 4:
-		bosses[bossnum].img.Y = bosses[bossnum].yt + bosses[bossnum].img.Height
+		gs.Level.Bosses[gs.Level.Bossnum].img.Y = gs.Level.Bosses[gs.Level.Bossnum].yt + gs.Level.Bosses[gs.Level.Bossnum].img.Height
 	}
-	if debug {
-		rl.DrawRectangleLinesEx(bosses[bossnum].rec, 1, rl.White)
-		rl.DrawRectangleLinesEx(bosses[bossnum].crec, 1, rl.White)
+	if gs.Core.Debug {
+		rl.DrawRectangleLinesEx(gs.Level.Bosses[gs.Level.Bossnum].rec, 1, rl.White)
+		rl.DrawRectangleLinesEx(gs.Level.Bosses[gs.Level.Bossnum].crec, 1, rl.White)
 	}
 
 	//HP BARS
 	if gs.UI.HpBarsOn {
-		hpX := bosses[bossnum].rec.X + bosses[bossnum].rec.Width/2
+		hpX := gs.Level.Bosses[gs.Level.Bossnum].rec.X + gs.Level.Bosses[gs.Level.Bossnum].rec.Width/2
 		siz := float32(4)
-		wid := float32(bosses[bossnum].hpmax) * (siz + 1)
+		wid := float32(gs.Level.Bosses[gs.Level.Bossnum].hpmax) * (siz + 1)
 		hpX -= wid / 2
-		hpY := bosses[bossnum].rec.Y + bosses[bossnum].rec.Height + 5
+		hpY := gs.Level.Bosses[gs.Level.Bossnum].rec.Y + gs.Level.Bosses[gs.Level.Bossnum].rec.Height + 5
 
 		rec := rl.NewRectangle(hpX, hpY, siz, siz)
-		for b := 0; b < bosses[bossnum].hpmax; b++ {
+		for b := 0; b < gs.Level.Bosses[gs.Level.Bossnum].hpmax; b++ {
 			rl.DrawRectangleLinesEx(rec, 1, rl.White)
 			rec.X += siz + 1
 		}
 		rec = rl.NewRectangle(hpX, hpY, siz, siz)
-		for b := 0; b < bosses[bossnum].hp; b++ {
+		for b := 0; b < gs.Level.Bosses[gs.Level.Bossnum].hp; b++ {
 			rl.DrawRectangleRec(rec, rl.Red)
 			rec.X += siz + 1
 		}
 	}
 
 	//TIMERS
-	bosses[bossnum].timer--
-	if bosses[bossnum].timer <= 0 {
-		bosses[bossnum].timer = gs.Core.Fps * rI32(1, 4)
-		switch bosses[bossnum].atkType {
+	gs.Level.Bosses[gs.Level.Bossnum].timer--
+	if gs.Level.Bosses[gs.Level.Bossnum].timer <= 0 {
+		gs.Level.Bosses[gs.Level.Bossnum].timer = gs.Core.Fps * rI32(1, 4)
+		switch gs.Level.Bosses[gs.Level.Bossnum].atkType {
 		case 1:
-			makeProjectileEnemy(7, bosses[bossnum].cnt)
+			makeProjectileEnemy(7, gs.Level.Bosses[gs.Level.Bossnum].cnt)
 		case 2:
-			makeProjectileEnemy(8, bosses[bossnum].cnt)
+			makeProjectileEnemy(8, gs.Level.Bosses[gs.Level.Bossnum].cnt)
 		case 3:
-			makeProjectileEnemy(9, bosses[bossnum].cnt)
+			makeProjectileEnemy(9, gs.Level.Bosses[gs.Level.Bossnum].cnt)
 		}
 	}
-	if bosses[bossnum].hppause > 0 {
-		bosses[bossnum].hppause--
+	if gs.Level.Bosses[gs.Level.Bossnum].hppause > 0 {
+		gs.Level.Bosses[gs.Level.Bossnum].hppause--
 	}
 
 	//MARK:PLAYER BOSS ATTACK
-	if rl.CheckCollisionRecs(pl.atkrec, bosses[bossnum].crec) {
-		if bosses[bossnum].hppause == 0 {
-			if pl.atk {
-				bosses[bossnum].hppause = gs.Core.Fps
-				bosses[bossnum].hp -= pl.atkDMG
-				if bosses[bossnum].hp <= 0 {
-					cntr := bosses[bossnum].cnt
-					bosses[bossnum].off = true
+	if rl.CheckCollisionRecs(gs.Player.Pl.atkrec, gs.Level.Bosses[gs.Level.Bossnum].crec) {
+		if gs.Level.Bosses[gs.Level.Bossnum].hppause == 0 {
+			if gs.Player.Pl.atk {
+				gs.Level.Bosses[gs.Level.Bossnum].hppause = gs.Core.Fps
+				gs.Level.Bosses[gs.Level.Bossnum].hp -= gs.Player.Pl.atkDMG
+				if gs.Level.Bosses[gs.Level.Bossnum].hp <= 0 {
+					cntr := gs.Level.Bosses[gs.Level.Bossnum].cnt
+					gs.Level.Bosses[gs.Level.Bossnum].off = true
 					makeFX(2, cntr)
-					if !endgame {
-						minsEND = mins
-						secsEND = secs
+					if !gs.Level.Endgame {
+						gs.Level.MinsEND = gs.Level.Mins
+						gs.Level.SecsEND = gs.Level.Secs
 						addtime()
-						endgame = true
+						gs.Level.Endgame = true
 					}
 				}
 				rl.PlaySound(gs.Audio.Sfx[29])
@@ -4043,19 +3937,19 @@ func checkcontroller() { //MARK:CHECK CONTROLLER
 		gs.Input.ControllerWasOn = true
 	}
 
-	if gs.Input.ControllerDisconnect && gs.Input.ControllerWasOn && !pause {
+	if gs.Input.ControllerDisconnect && gs.Input.ControllerWasOn && !gs.Core.Pause {
 		gs.Input.ControllerOn = false
 		gs.Input.ControllerWasOn = false
 		gs.UI.OptionsOn = true
 		gs.UI.OptionNum = 0
-		pause = true
+		gs.Core.Pause = true
 	}
 }
 func checknextmoveV2innerRec(cnt rl.Vector2, velx, velxy float32) bool { //MARK:CHECK NEXT MOVE V2 POINT INNER REC
 	canmove := true
 	cnt.X += velx
 	cnt.Y += velxy
-	if !rl.CheckCollisionPointRec(cnt, levRecInner) {
+	if !rl.CheckCollisionPointRec(cnt, gs.Level.LevRecInner) {
 		canmove = false
 	}
 	return canmove
@@ -4073,15 +3967,15 @@ func checkNextMove(rec rl.Rectangle, velx, vely float32, destroyEtc bool) bool {
 
 	//CHECK INNER REC
 
-	if !rl.CheckCollisionPointRec(tl, levRecInner) || !rl.CheckCollisionPointRec(tr, levRecInner) || !rl.CheckCollisionPointRec(br, levRecInner) || !rl.CheckCollisionPointRec(bl, levRecInner) {
+	if !rl.CheckCollisionPointRec(tl, gs.Level.LevRecInner) || !rl.CheckCollisionPointRec(tr, gs.Level.LevRecInner) || !rl.CheckCollisionPointRec(br, gs.Level.LevRecInner) || !rl.CheckCollisionPointRec(bl, gs.Level.LevRecInner) {
 		canmove = false
 	}
 
 	//CHECK MOVE BLOCKS
 	if canmove {
-		if len(level[roomNum].movBloks) > 0 {
-			for a := 0; a < len(level[roomNum].movBloks); a++ {
-				if rl.CheckCollisionRecs(nextRec, level[roomNum].movBloks[a].rec) {
+		if len(gs.Level.Level[gs.Level.RoomNum].movBloks) > 0 {
+			for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].movBloks); a++ {
+				if rl.CheckCollisionRecs(nextRec, gs.Level.Level[gs.Level.RoomNum].movBloks[a].rec) {
 					canmove = false
 				}
 			}
@@ -4090,21 +3984,21 @@ func checkNextMove(rec rl.Rectangle, velx, vely float32, destroyEtc bool) bool {
 
 	//CHECK ETC
 	if canmove {
-		if len(level[roomNum].etc) > 0 {
-			for a := 0; a < len(level[roomNum].etc); a++ {
-				if level[roomNum].etc[a].solid && level[roomNum].etc[a].name != "turret" {
-					if rl.CheckCollisionRecs(level[roomNum].etc[a].rec, nextRec) {
+		if len(gs.Level.Level[gs.Level.RoomNum].etc) > 0 {
+			for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].etc); a++ {
+				if gs.Level.Level[gs.Level.RoomNum].etc[a].solid && gs.Level.Level[gs.Level.RoomNum].etc[a].name != "turret" {
+					if rl.CheckCollisionRecs(gs.Level.Level[gs.Level.RoomNum].etc[a].rec, nextRec) {
 						canmove = false
 						if destroyEtc {
-							switch level[roomNum].etc[a].name {
+							switch gs.Level.Level[gs.Level.RoomNum].etc[a].name {
 							case "powerupBlok":
 								destroyPowerupBlok(a)
-								makeFX(3, level[roomNum].etc[a].cnt)
-								level[roomNum].etc[a].onoff = false
+								makeFX(3, gs.Level.Level[gs.Level.RoomNum].etc[a].cnt)
+								gs.Level.Level[gs.Level.RoomNum].etc[a].onoff = false
 								rl.PlaySound(gs.Audio.Sfx[6])
 							case "oilbarrel":
-								makeFX(4, level[roomNum].etc[a].cnt)
-								level[roomNum].etc[a].onoff = false
+								makeFX(4, gs.Level.Level[gs.Level.RoomNum].etc[a].cnt)
+								gs.Level.Level[gs.Level.RoomNum].etc[a].onoff = false
 								rl.PlaySound(gs.Audio.Sfx[10])
 								rl.PlaySound(gs.Audio.Sfx[5])
 							}
@@ -4117,10 +4011,10 @@ func checkNextMove(rec rl.Rectangle, velx, vely float32, destroyEtc bool) bool {
 
 	//CHECK INNER BLOKS
 	if canmove {
-		if len(level[roomNum].innerBloks) > 0 {
-			for a := 0; a < len(level[roomNum].innerBloks); a++ {
-				if level[roomNum].innerBloks[a].solid {
-					if rl.CheckCollisionRecs(level[roomNum].innerBloks[a].crec, nextRec) {
+		if len(gs.Level.Level[gs.Level.RoomNum].innerBloks) > 0 {
+			for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].innerBloks); a++ {
+				if gs.Level.Level[gs.Level.RoomNum].innerBloks[a].solid {
+					if rl.CheckCollisionRecs(gs.Level.Level[gs.Level.RoomNum].innerBloks[a].crec, nextRec) {
 						canmove = false
 					}
 				}
@@ -4135,15 +4029,15 @@ func checkInnerBloksExits(roomN int, rec rl.Rectangle) bool { //MARK:CHECK INNER
 
 	canadd := true
 
-	for a := 0; a < len(level[roomN].doorExitRecs); a++ {
-		if rl.CheckCollisionRecs(rec, level[roomN].doorExitRecs[a]) {
+	for a := 0; a < len(gs.Level.Level[roomN].doorExitRecs); a++ {
+		if rl.CheckCollisionRecs(rec, gs.Level.Level[roomN].doorExitRecs[a]) {
 			canadd = false
 		}
 	}
 
 	if canadd {
-		for a := 0; a < len(level[roomN].innerBloks); a++ {
-			if rl.CheckCollisionRecs(rec, level[roomN].innerBloks[a].rec) {
+		for a := 0; a < len(gs.Level.Level[roomN].innerBloks); a++ {
+			if rl.CheckCollisionRecs(rec, gs.Level.Level[roomN].innerBloks[a].rec) {
 				canadd = false
 			}
 		}
@@ -4154,7 +4048,7 @@ func checkInnerBloksExits(roomN int, rec rl.Rectangle) bool { //MARK:CHECK INNER
 func checkMoveBlok(blokNum int) bool { //MARK:CHECK MOVE BLOK
 
 	canmove := true
-	checkBlok := level[roomNum].movBloks[blokNum]
+	checkBlok := gs.Level.Level[gs.Level.RoomNum].movBloks[blokNum]
 	nextRec := checkBlok.rec
 	if checkBlok.velX != 0 {
 		nextRec.X += checkBlok.velX
@@ -4164,16 +4058,16 @@ func checkMoveBlok(blokNum int) bool { //MARK:CHECK MOVE BLOK
 	}
 
 	//CHECK PLAYER
-	if rl.CheckCollisionRecs(nextRec, pl.crec) {
+	if rl.CheckCollisionRecs(nextRec, gs.Player.Pl.crec) {
 		canmove = false
 	}
 
 	//CHECK MOVE BLOKS
 	if canmove {
-		if len(level[roomNum].movBloks) > 1 {
-			for a := 0; a < len(level[roomNum].movBloks); a++ {
+		if len(gs.Level.Level[gs.Level.RoomNum].movBloks) > 1 {
+			for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].movBloks); a++ {
 				if blokNum != a {
-					if rl.CheckCollisionRecs(nextRec, level[roomNum].movBloks[a].rec) {
+					if rl.CheckCollisionRecs(nextRec, gs.Level.Level[gs.Level.RoomNum].movBloks[a].rec) {
 						canmove = false
 					}
 				}
@@ -4183,9 +4077,9 @@ func checkMoveBlok(blokNum int) bool { //MARK:CHECK MOVE BLOK
 
 	//CHECK INNER BLOKS
 	if canmove {
-		if len(level[roomNum].innerBloks) > 0 {
-			for a := 0; a < len(level[roomNum].innerBloks); a++ {
-				if rl.CheckCollisionRecs(nextRec, level[roomNum].innerBloks[a].crec) {
+		if len(gs.Level.Level[gs.Level.RoomNum].innerBloks) > 0 {
+			for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].innerBloks); a++ {
+				if rl.CheckCollisionRecs(nextRec, gs.Level.Level[gs.Level.RoomNum].innerBloks[a].crec) {
 					canmove = false
 				}
 			}
@@ -4201,7 +4095,7 @@ func checkMoveBlok(blokNum int) bool { //MARK:CHECK MOVE BLOK
 		checkV4 := checkV1
 		checkV4.Y += nextRec.Height
 
-		if !rl.CheckCollisionPointRec(checkV1, levRecInner) || !rl.CheckCollisionPointRec(checkV2, levRecInner) || !rl.CheckCollisionPointRec(checkV3, levRecInner) || !rl.CheckCollisionPointRec(checkV4, levRecInner) {
+		if !rl.CheckCollisionPointRec(checkV1, gs.Level.LevRecInner) || !rl.CheckCollisionPointRec(checkV2, gs.Level.LevRecInner) || !rl.CheckCollisionPointRec(checkV3, gs.Level.LevRecInner) || !rl.CheckCollisionPointRec(checkV4, gs.Level.LevRecInner) {
 			canmove = false
 		}
 	}
@@ -4212,23 +4106,23 @@ func checkMoveBlok(blokNum int) bool { //MARK:CHECK MOVE BLOK
 func checkplayermove(direc int) bool { //MARK:CHECK PLAYER MOVE
 
 	canmove := true
-	nextRec := pl.crec
+	nextRec := gs.Player.Pl.crec
 
 	switch direc {
 	case 1:
-		nextRec.Y -= pl.vel
+		nextRec.Y -= gs.Player.Pl.vel
 	case 2:
-		nextRec.X += pl.vel
+		nextRec.X += gs.Player.Pl.vel
 	case 3:
-		nextRec.Y += pl.vel
+		nextRec.Y += gs.Player.Pl.vel
 	case 4:
-		nextRec.X -= pl.vel
+		nextRec.X -= gs.Player.Pl.vel
 	}
 
 	tl, tr, br, bl := rl.NewVector2(nextRec.X, nextRec.Y), rl.NewVector2(nextRec.X+nextRec.Width, nextRec.Y), rl.NewVector2(nextRec.X+nextRec.Width, nextRec.Y+nextRec.Height), rl.NewVector2(nextRec.X, nextRec.Y+nextRec.Height)
 
 	//CHECK BOUNDARY WALLS
-	dWalls := level[roomNum].walls
+	dWalls := gs.Level.Level[gs.Level.RoomNum].walls
 	for a := 0; a < len(dWalls); a++ {
 		if rl.CheckCollisionPointRec(tl, dWalls[a].rec) || rl.CheckCollisionPointRec(tr, dWalls[a].rec) || rl.CheckCollisionPointRec(br, dWalls[a].rec) || rl.CheckCollisionPointRec(bl, dWalls[a].rec) {
 			canmove = false
@@ -4240,20 +4134,20 @@ func checkplayermove(direc int) bool { //MARK:CHECK PLAYER MOVE
 
 	//CHECK MOVE BLOCKS
 	if canmove {
-		if len(level[roomNum].movBloks) > 0 {
-			for a := 0; a < len(level[roomNum].movBloks); a++ {
-				if rl.CheckCollisionRecs(nextRec, level[roomNum].movBloks[a].rec) {
+		if len(gs.Level.Level[gs.Level.RoomNum].movBloks) > 0 {
+			for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].movBloks); a++ {
+				if rl.CheckCollisionRecs(nextRec, gs.Level.Level[gs.Level.RoomNum].movBloks[a].rec) {
 					canmove = false
-					if level[roomNum].movBloks[a].bump {
+					if gs.Level.Level[gs.Level.RoomNum].movBloks[a].bump {
 						switch direc {
 						case 1:
-							level[roomNum].movBloks[a].velY += -pl.vel / 8
+							gs.Level.Level[gs.Level.RoomNum].movBloks[a].velY += -gs.Player.Pl.vel / 8
 						case 2:
-							level[roomNum].movBloks[a].velX += pl.vel / 8
+							gs.Level.Level[gs.Level.RoomNum].movBloks[a].velX += gs.Player.Pl.vel / 8
 						case 3:
-							level[roomNum].movBloks[a].velY += pl.vel / 8
+							gs.Level.Level[gs.Level.RoomNum].movBloks[a].velY += gs.Player.Pl.vel / 8
 						case 4:
-							level[roomNum].movBloks[a].velX -= pl.vel / 8
+							gs.Level.Level[gs.Level.RoomNum].movBloks[a].velX -= gs.Player.Pl.vel / 8
 						}
 					}
 				}
@@ -4264,10 +4158,10 @@ func checkplayermove(direc int) bool { //MARK:CHECK PLAYER MOVE
 
 	//CHECK ETC
 	if canmove {
-		if len(level[roomNum].etc) > 0 {
-			for a := 0; a < len(level[roomNum].etc); a++ {
-				if level[roomNum].etc[a].solid {
-					if rl.CheckCollisionRecs(level[roomNum].etc[a].rec, nextRec) {
+		if len(gs.Level.Level[gs.Level.RoomNum].etc) > 0 {
+			for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].etc); a++ {
+				if gs.Level.Level[gs.Level.RoomNum].etc[a].solid {
+					if rl.CheckCollisionRecs(gs.Level.Level[gs.Level.RoomNum].etc[a].rec, nextRec) {
 						canmove = false
 					}
 				}
@@ -4277,10 +4171,10 @@ func checkplayermove(direc int) bool { //MARK:CHECK PLAYER MOVE
 
 	//CHECK INNER BLOKS
 	if canmove {
-		if len(level[roomNum].innerBloks) > 0 {
-			for a := 0; a < len(level[roomNum].innerBloks); a++ {
-				if level[roomNum].innerBloks[a].solid {
-					if rl.CheckCollisionRecs(level[roomNum].innerBloks[a].crec, nextRec) {
+		if len(gs.Level.Level[gs.Level.RoomNum].innerBloks) > 0 {
+			for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].innerBloks); a++ {
+				if gs.Level.Level[gs.Level.RoomNum].innerBloks[a].solid {
+					if rl.CheckCollisionRecs(gs.Level.Level[gs.Level.RoomNum].innerBloks[a].crec, nextRec) {
 						canmove = false
 					}
 				}
@@ -4301,31 +4195,31 @@ func findRecPoswithSpacing(wid, space float32, numRoom int) (rec rl.Rectangle, f
 	wid2 := wid + (space * 2)
 
 	for {
-		rec = rl.NewRectangle(rF32(levRecInner.X, levRecInner.X+levRecInner.Width-wid2), rF32(levRecInner.Y, levRecInner.Y+levRecInner.Width-wid2), wid2, wid2)
+		rec = rl.NewRectangle(rF32(gs.Level.LevRecInner.X, gs.Level.LevRecInner.X+gs.Level.LevRecInner.Width-wid2), rF32(gs.Level.LevRecInner.Y, gs.Level.LevRecInner.Y+gs.Level.LevRecInner.Width-wid2), wid2, wid2)
 		canadd := true
 
-		for a := 0; a < len(level[numRoom].doorExitRecs); a++ {
-			if rl.CheckCollisionRecs(rec, level[numRoom].doorExitRecs[a]) {
+		for a := 0; a < len(gs.Level.Level[numRoom].doorExitRecs); a++ {
+			if rl.CheckCollisionRecs(rec, gs.Level.Level[numRoom].doorExitRecs[a]) {
 				canadd = false
 			}
 		}
 		if canadd {
-			for a := 0; a < len(level[numRoom].movBloks); a++ {
-				if rl.CheckCollisionRecs(rec, level[numRoom].movBloks[a].rec) {
+			for a := 0; a < len(gs.Level.Level[numRoom].movBloks); a++ {
+				if rl.CheckCollisionRecs(rec, gs.Level.Level[numRoom].movBloks[a].rec) {
 					canadd = false
 				}
 			}
 		}
 		if canadd {
-			for a := 0; a < len(level[numRoom].innerBloks); a++ {
-				if rl.CheckCollisionRecs(rec, level[numRoom].innerBloks[a].rec) {
+			for a := 0; a < len(gs.Level.Level[numRoom].innerBloks); a++ {
+				if rl.CheckCollisionRecs(rec, gs.Level.Level[numRoom].innerBloks[a].rec) {
 					canadd = false
 				}
 			}
 		}
 		if canadd {
-			for a := 0; a < len(level[numRoom].etc); a++ {
-				if rl.CheckCollisionRecs(rec, level[numRoom].etc[a].rec) && level[numRoom].etc[a].solid {
+			for a := 0; a < len(gs.Level.Level[numRoom].etc); a++ {
+				if rl.CheckCollisionRecs(rec, gs.Level.Level[numRoom].etc[a].rec) && gs.Level.Level[numRoom].etc[a].solid {
 					canadd = false
 				}
 			}
@@ -4355,23 +4249,23 @@ func findRecPos(wid float32, numRoom int) (rec rl.Rectangle, found bool) { //MAR
 	found = true
 
 	for {
-		rec = rl.NewRectangle(rF32(levRecInner.X, levRecInner.X+levRecInner.Width-wid), rF32(levRecInner.Y, levRecInner.Y+levRecInner.Width-wid), wid, wid)
+		rec = rl.NewRectangle(rF32(gs.Level.LevRecInner.X, gs.Level.LevRecInner.X+gs.Level.LevRecInner.Width-wid), rF32(gs.Level.LevRecInner.Y, gs.Level.LevRecInner.Y+gs.Level.LevRecInner.Width-wid), wid, wid)
 		canadd := true
-		for a := 0; a < len(level[numRoom].movBloks); a++ {
-			if rl.CheckCollisionRecs(rec, level[numRoom].movBloks[a].rec) {
+		for a := 0; a < len(gs.Level.Level[numRoom].movBloks); a++ {
+			if rl.CheckCollisionRecs(rec, gs.Level.Level[numRoom].movBloks[a].rec) {
 				canadd = false
 			}
 		}
 		if canadd {
-			for a := 0; a < len(level[numRoom].innerBloks); a++ {
-				if rl.CheckCollisionRecs(rec, level[numRoom].innerBloks[a].rec) {
+			for a := 0; a < len(gs.Level.Level[numRoom].innerBloks); a++ {
+				if rl.CheckCollisionRecs(rec, gs.Level.Level[numRoom].innerBloks[a].rec) {
 					canadd = false
 				}
 			}
 		}
 		if canadd {
-			for a := 0; a < len(level[numRoom].etc); a++ {
-				if rl.CheckCollisionRecs(rec, level[numRoom].etc[a].rec) && level[numRoom].etc[a].solid {
+			for a := 0; a < len(gs.Level.Level[numRoom].etc); a++ {
+				if rl.CheckCollisionRecs(rec, gs.Level.Level[numRoom].etc[a].rec) && gs.Level.Level[numRoom].etc[a].solid {
 					canadd = false
 				}
 			}
@@ -4390,8 +4284,8 @@ func findRecPos(wid float32, numRoom int) (rec rl.Rectangle, found bool) { //MAR
 	return rec, found
 }
 func findRanCntV2() rl.Vector2 { //MARK: FIND RANDOM CNTR V2
-	v2 := cnt
-	wid := levW / 2
+	v2 := gs.Core.Cnt
+	wid := gs.Level.LevW / 2
 	wid -= bsU2
 	v2.X += rF32(-wid, wid)
 	v2.Y += rF32(-wid, wid)
@@ -4402,8 +4296,8 @@ func findRanRecLoc(w, h float32, roomNum int) (tl rl.Vector2) { //MARK: FIND RAN
 	v2 := rl.Vector2{}
 	countbreak := 100
 	for {
-		v2 = rl.NewVector2(levRecInner.X+bsU2, levRecInner.Y+bsU2)
-		wid := levRecInner.Width - bsU4
+		v2 = rl.NewVector2(gs.Level.LevRecInner.X+bsU2, gs.Level.LevRecInner.Y+bsU2)
+		wid := gs.Level.LevRecInner.Width - bsU4
 		heig := wid
 		wid -= w
 		heig -= h
@@ -4412,8 +4306,8 @@ func findRanRecLoc(w, h float32, roomNum int) (tl rl.Vector2) { //MARK: FIND RAN
 
 		checkrec := rl.NewRectangle(v2.X, v2.Y, w, h)
 		canadd := true
-		for a := 0; a < len(level[roomNum].doorExitRecs); a++ {
-			if rl.CheckCollisionRecs(checkrec, level[roomNum].doorExitRecs[a]) {
+		for a := 0; a < len(gs.Level.Level[roomNum].doorExitRecs); a++ {
+			if rl.CheckCollisionRecs(checkrec, gs.Level.Level[roomNum].doorExitRecs[a]) {
 				canadd = false
 			}
 		}
@@ -4430,9 +4324,9 @@ func findRanRecLoc(w, h float32, roomNum int) (tl rl.Vector2) { //MARK: FIND RAN
 // MARK: MOVE MOVE MOVE MOVE MOVE MOVE MOVE MOVE MOVE MOVE MOVE MOVE MOVE MOVE MOVE MOVE MOVE
 func moveboss() { //MARK:MOVE BOSS
 
-	checkRec := bosses[bossnum].crec
-	checkRec.X += bosses[bossnum].velX
-	checkRec.Y += bosses[bossnum].velY
+	checkRec := gs.Level.Bosses[gs.Level.Bossnum].crec
+	checkRec.X += gs.Level.Bosses[gs.Level.Bossnum].velX
+	checkRec.Y += gs.Level.Bosses[gs.Level.Bossnum].velY
 
 	canmove := true
 
@@ -4445,15 +4339,15 @@ func moveboss() { //MARK:MOVE BOSS
 	bl.Y += checkRec.Height
 
 	//CHECK BOUNDARY
-	if !rl.CheckCollisionPointRec(tl, levRecInner) || !rl.CheckCollisionPointRec(tr, levRecInner) || !rl.CheckCollisionPointRec(br, levRecInner) || !rl.CheckCollisionPointRec(bl, levRecInner) {
+	if !rl.CheckCollisionPointRec(tl, gs.Level.LevRecInner) || !rl.CheckCollisionPointRec(tr, gs.Level.LevRecInner) || !rl.CheckCollisionPointRec(br, gs.Level.LevRecInner) || !rl.CheckCollisionPointRec(bl, gs.Level.LevRecInner) {
 		canmove = false
 	}
 
 	//CHECK INNER BLOKS
 	if canmove {
-		if len(level[roomNum].innerBloks) > 0 {
-			for a := 0; a < len(level[roomNum].innerBloks); a++ {
-				if rl.CheckCollisionRecs(level[roomNum].innerBloks[a].crec, checkRec) {
+		if len(gs.Level.Level[gs.Level.RoomNum].innerBloks) > 0 {
+			for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].innerBloks); a++ {
+				if rl.CheckCollisionRecs(gs.Level.Level[gs.Level.RoomNum].innerBloks[a].crec, checkRec) {
 					canmove = false
 				}
 			}
@@ -4463,30 +4357,30 @@ func moveboss() { //MARK:MOVE BOSS
 	//MOVE
 	if canmove {
 
-		bosses[bossnum].rec.X += bosses[bossnum].velX
-		bosses[bossnum].rec.Y += bosses[bossnum].velY
-		bosses[bossnum].crec = bosses[bossnum].rec
-		bosses[bossnum].crec.X += bosses[bossnum].rec.Width / 4
-		bosses[bossnum].crec.Y += bosses[bossnum].rec.Height / 5
-		bosses[bossnum].crec.Width -= bosses[bossnum].rec.Width / 2
-		bosses[bossnum].crec.Height -= bosses[bossnum].rec.Height / 5
-		bosses[bossnum].cnt = rl.NewVector2(bosses[bossnum].rec.X+bosses[bossnum].rec.Width/2, bosses[bossnum].rec.Y+bosses[bossnum].rec.Height/2)
+		gs.Level.Bosses[gs.Level.Bossnum].rec.X += gs.Level.Bosses[gs.Level.Bossnum].velX
+		gs.Level.Bosses[gs.Level.Bossnum].rec.Y += gs.Level.Bosses[gs.Level.Bossnum].velY
+		gs.Level.Bosses[gs.Level.Bossnum].crec = gs.Level.Bosses[gs.Level.Bossnum].rec
+		gs.Level.Bosses[gs.Level.Bossnum].crec.X += gs.Level.Bosses[gs.Level.Bossnum].rec.Width / 4
+		gs.Level.Bosses[gs.Level.Bossnum].crec.Y += gs.Level.Bosses[gs.Level.Bossnum].rec.Height / 5
+		gs.Level.Bosses[gs.Level.Bossnum].crec.Width -= gs.Level.Bosses[gs.Level.Bossnum].rec.Width / 2
+		gs.Level.Bosses[gs.Level.Bossnum].crec.Height -= gs.Level.Bosses[gs.Level.Bossnum].rec.Height / 5
+		gs.Level.Bosses[gs.Level.Bossnum].cnt = rl.NewVector2(gs.Level.Bosses[gs.Level.Bossnum].rec.X+gs.Level.Bosses[gs.Level.Bossnum].rec.Width/2, gs.Level.Bosses[gs.Level.Bossnum].rec.Y+gs.Level.Bosses[gs.Level.Bossnum].rec.Height/2)
 
 		//CHECK SOCKS COLLIS
-		if mods.socks && bosses[bossnum].hppause == 0 {
-			for a := 0; a < len(level[roomNum].etc); a++ {
-				if level[roomNum].etc[a].name == "footprints" && bosses[bossnum].hppause == 0 && rl.CheckCollisionRecs(level[roomNum].etc[a].rec, bosses[bossnum].crec) {
-					bosses[bossnum].hppause = gs.Core.Fps
-					bosses[bossnum].hp--
-					if bosses[bossnum].hp <= 0 {
-						cntr := bosses[bossnum].cnt
-						bosses[bossnum].off = true
+		if gs.Player.Mods.socks && gs.Level.Bosses[gs.Level.Bossnum].hppause == 0 {
+			for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].etc); a++ {
+				if gs.Level.Level[gs.Level.RoomNum].etc[a].name == "footprints" && gs.Level.Bosses[gs.Level.Bossnum].hppause == 0 && rl.CheckCollisionRecs(gs.Level.Level[gs.Level.RoomNum].etc[a].rec, gs.Level.Bosses[gs.Level.Bossnum].crec) {
+					gs.Level.Bosses[gs.Level.Bossnum].hppause = gs.Core.Fps
+					gs.Level.Bosses[gs.Level.Bossnum].hp--
+					if gs.Level.Bosses[gs.Level.Bossnum].hp <= 0 {
+						cntr := gs.Level.Bosses[gs.Level.Bossnum].cnt
+						gs.Level.Bosses[gs.Level.Bossnum].off = true
 						makeFX(2, cntr)
-						if !endgame {
-							minsEND = mins
-							secsEND = secs
+						if !gs.Level.Endgame {
+							gs.Level.MinsEND = gs.Level.Mins
+							gs.Level.SecsEND = gs.Level.Secs
 							addtime()
-							endgame = true
+							gs.Level.Endgame = true
 						}
 					}
 					rl.PlaySound(gs.Audio.Sfx[29])
@@ -4494,37 +4388,37 @@ func moveboss() { //MARK:MOVE BOSS
 			}
 		}
 		//CHECK ORBITAL COLLIS
-		if mods.orbital && bosses[bossnum].hppause == 0 {
-			if rl.CheckCollisionRecs(pl.orbrec1, bosses[bossnum].crec) {
-				bosses[bossnum].hppause = gs.Core.Fps
-				bosses[bossnum].hp--
-				if bosses[bossnum].hp <= 0 {
-					cntr := bosses[bossnum].cnt
-					bosses[bossnum].off = true
+		if gs.Player.Mods.orbital && gs.Level.Bosses[gs.Level.Bossnum].hppause == 0 {
+			if rl.CheckCollisionRecs(gs.Player.Pl.orbrec1, gs.Level.Bosses[gs.Level.Bossnum].crec) {
+				gs.Level.Bosses[gs.Level.Bossnum].hppause = gs.Core.Fps
+				gs.Level.Bosses[gs.Level.Bossnum].hp--
+				if gs.Level.Bosses[gs.Level.Bossnum].hp <= 0 {
+					cntr := gs.Level.Bosses[gs.Level.Bossnum].cnt
+					gs.Level.Bosses[gs.Level.Bossnum].off = true
 					makeFX(2, cntr)
-					if !endgame {
-						minsEND = mins
-						secsEND = secs
+					if !gs.Level.Endgame {
+						gs.Level.MinsEND = gs.Level.Mins
+						gs.Level.SecsEND = gs.Level.Secs
 						addtime()
-						endgame = true
+						gs.Level.Endgame = true
 					}
 					rl.PlaySound(gs.Audio.Sfx[29])
 				}
 			}
 
-			if mods.orbitalN == 2 {
-				if rl.CheckCollisionRecs(pl.orbrec2, bosses[bossnum].crec) {
-					bosses[bossnum].hppause = gs.Core.Fps
-					bosses[bossnum].hp--
-					if bosses[bossnum].hp <= 0 {
-						cntr := bosses[bossnum].cnt
-						bosses[bossnum].off = true
+			if gs.Player.Mods.orbitalN == 2 {
+				if rl.CheckCollisionRecs(gs.Player.Pl.orbrec2, gs.Level.Bosses[gs.Level.Bossnum].crec) {
+					gs.Level.Bosses[gs.Level.Bossnum].hppause = gs.Core.Fps
+					gs.Level.Bosses[gs.Level.Bossnum].hp--
+					if gs.Level.Bosses[gs.Level.Bossnum].hp <= 0 {
+						cntr := gs.Level.Bosses[gs.Level.Bossnum].cnt
+						gs.Level.Bosses[gs.Level.Bossnum].off = true
 						makeFX(2, cntr)
-						if !endgame {
-							minsEND = mins
-							secsEND = secs
+						if !gs.Level.Endgame {
+							gs.Level.MinsEND = gs.Level.Mins
+							gs.Level.SecsEND = gs.Level.Secs
 							addtime()
-							endgame = true
+							gs.Level.Endgame = true
 						}
 					}
 					rl.PlaySound(gs.Audio.Sfx[29])
@@ -4533,20 +4427,20 @@ func moveboss() { //MARK:MOVE BOSS
 
 		}
 		//CHECK AIRSTRIKE COLLIS
-		if mods.airstrike && bosses[bossnum].hppause == 0 {
-			for a := 0; a < len(level[roomNum].etc); a++ {
-				if level[roomNum].etc[a].name == "airbomb" && rl.CheckCollisionRecs(level[roomNum].etc[a].crec, bosses[bossnum].crec) {
-					bosses[bossnum].hppause = gs.Core.Fps
-					bosses[bossnum].hp--
-					if bosses[bossnum].hp <= 0 {
-						cntr := bosses[bossnum].cnt
-						bosses[bossnum].off = true
+		if gs.Player.Mods.airstrike && gs.Level.Bosses[gs.Level.Bossnum].hppause == 0 {
+			for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].etc); a++ {
+				if gs.Level.Level[gs.Level.RoomNum].etc[a].name == "airbomb" && rl.CheckCollisionRecs(gs.Level.Level[gs.Level.RoomNum].etc[a].crec, gs.Level.Bosses[gs.Level.Bossnum].crec) {
+					gs.Level.Bosses[gs.Level.Bossnum].hppause = gs.Core.Fps
+					gs.Level.Bosses[gs.Level.Bossnum].hp--
+					if gs.Level.Bosses[gs.Level.Bossnum].hp <= 0 {
+						cntr := gs.Level.Bosses[gs.Level.Bossnum].cnt
+						gs.Level.Bosses[gs.Level.Bossnum].off = true
 						makeFX(2, cntr)
-						if !endgame {
-							minsEND = mins
-							secsEND = secs
+						if !gs.Level.Endgame {
+							gs.Level.MinsEND = gs.Level.Mins
+							gs.Level.SecsEND = gs.Level.Secs
 							addtime()
-							endgame = true
+							gs.Level.Endgame = true
 						}
 						rl.PlaySound(gs.Audio.Sfx[29])
 					}
@@ -4554,22 +4448,22 @@ func moveboss() { //MARK:MOVE BOSS
 			}
 		}
 		//CHECK FIRETRAIL COLLIS
-		if mods.firetrail {
-			for a := 0; a < len(level[roomNum].etc); a++ {
-				if level[roomNum].etc[a].name == "flamefiretrail" && bosses[bossnum].hppause == 0 && rl.CheckCollisionRecs(level[roomNum].etc[a].rec, bosses[bossnum].crec) {
-					bosses[bossnum].hppause = gs.Core.Fps
-					bosses[bossnum].hp--
-					if bosses[bossnum].hp <= 0 && !endgame {
-						pause = true
-						endPauseT = gs.Core.Fps * 5
-						cntr := bosses[bossnum].cnt
-						bosses[bossnum].off = true
+		if gs.Player.Mods.firetrail {
+			for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].etc); a++ {
+				if gs.Level.Level[gs.Level.RoomNum].etc[a].name == "flamefiretrail" && gs.Level.Bosses[gs.Level.Bossnum].hppause == 0 && rl.CheckCollisionRecs(gs.Level.Level[gs.Level.RoomNum].etc[a].rec, gs.Level.Bosses[gs.Level.Bossnum].crec) {
+					gs.Level.Bosses[gs.Level.Bossnum].hppause = gs.Core.Fps
+					gs.Level.Bosses[gs.Level.Bossnum].hp--
+					if gs.Level.Bosses[gs.Level.Bossnum].hp <= 0 && !gs.Level.Endgame {
+						gs.Core.Pause = true
+						gs.Level.EndPauseT = gs.Core.Fps * 5
+						cntr := gs.Level.Bosses[gs.Level.Bossnum].cnt
+						gs.Level.Bosses[gs.Level.Bossnum].off = true
 						makeFX(2, cntr)
-						if !endgame {
-							minsEND = mins
-							secsEND = secs
+						if !gs.Level.Endgame {
+							gs.Level.MinsEND = gs.Level.Mins
+							gs.Level.SecsEND = gs.Level.Secs
 							addtime()
-							endgame = true
+							gs.Level.Endgame = true
 						}
 					}
 					rl.PlaySound(gs.Audio.Sfx[29])
@@ -4578,22 +4472,22 @@ func moveboss() { //MARK:MOVE BOSS
 		}
 
 	} else {
-		bosses[bossnum].velX = rF32(-bosses[bossnum].vel, bosses[bossnum].vel)
-		bosses[bossnum].velY = rF32(-bosses[bossnum].vel, bosses[bossnum].vel)
+		gs.Level.Bosses[gs.Level.Bossnum].velX = rF32(-gs.Level.Bosses[gs.Level.Bossnum].vel, gs.Level.Bosses[gs.Level.Bossnum].vel)
+		gs.Level.Bosses[gs.Level.Bossnum].velY = rF32(-gs.Level.Bosses[gs.Level.Bossnum].vel, gs.Level.Bosses[gs.Level.Bossnum].vel)
 	}
 
 	//FIND DIREC FOR ANIM
-	if getabs(bosses[bossnum].velX) > getabs(bosses[bossnum].velY) {
-		if bosses[bossnum].velX > 0 {
-			bosses[bossnum].direc = 2
+	if getabs(gs.Level.Bosses[gs.Level.Bossnum].velX) > getabs(gs.Level.Bosses[gs.Level.Bossnum].velY) {
+		if gs.Level.Bosses[gs.Level.Bossnum].velX > 0 {
+			gs.Level.Bosses[gs.Level.Bossnum].direc = 2
 		} else {
-			bosses[bossnum].direc = 4
+			gs.Level.Bosses[gs.Level.Bossnum].direc = 4
 		}
 	} else {
-		if bosses[bossnum].velY > 0 {
-			bosses[bossnum].direc = 3
+		if gs.Level.Bosses[gs.Level.Bossnum].velY > 0 {
+			gs.Level.Bosses[gs.Level.Bossnum].direc = 3
 		} else {
-			bosses[bossnum].direc = 1
+			gs.Level.Bosses[gs.Level.Bossnum].direc = 1
 		}
 
 	}
@@ -4629,9 +4523,9 @@ func moveFollow(v2, targetV2 rl.Vector2, vel float32) (velx, vely float32) { //M
 }
 func moveenemy(num int) { //MARK:MOVE ENEMY
 
-	checkRec := level[roomNum].enemies[num].rec
-	checkRec.X += level[roomNum].enemies[num].velX
-	checkRec.Y += level[roomNum].enemies[num].velY
+	checkRec := gs.Level.Level[gs.Level.RoomNum].enemies[num].rec
+	checkRec.X += gs.Level.Level[gs.Level.RoomNum].enemies[num].velX
+	checkRec.Y += gs.Level.Level[gs.Level.RoomNum].enemies[num].velY
 
 	canmove := true
 
@@ -4644,15 +4538,15 @@ func moveenemy(num int) { //MARK:MOVE ENEMY
 	bl.Y += checkRec.Height
 
 	//CHECK BOUNDARY
-	if !rl.CheckCollisionPointRec(tl, levRecInner) || !rl.CheckCollisionPointRec(tr, levRecInner) || !rl.CheckCollisionPointRec(br, levRecInner) || !rl.CheckCollisionPointRec(bl, levRecInner) {
+	if !rl.CheckCollisionPointRec(tl, gs.Level.LevRecInner) || !rl.CheckCollisionPointRec(tr, gs.Level.LevRecInner) || !rl.CheckCollisionPointRec(br, gs.Level.LevRecInner) || !rl.CheckCollisionPointRec(bl, gs.Level.LevRecInner) {
 		canmove = false
 	}
 
 	//CHECK INNER BLOKS
 	if canmove {
-		if len(level[roomNum].innerBloks) > 0 {
-			for a := 0; a < len(level[roomNum].innerBloks); a++ {
-				if rl.CheckCollisionRecs(level[roomNum].innerBloks[a].crec, checkRec) {
+		if len(gs.Level.Level[gs.Level.RoomNum].innerBloks) > 0 {
+			for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].innerBloks); a++ {
+				if rl.CheckCollisionRecs(gs.Level.Level[gs.Level.RoomNum].innerBloks[a].crec, checkRec) {
 					canmove = false
 				}
 			}
@@ -4662,47 +4556,47 @@ func moveenemy(num int) { //MARK:MOVE ENEMY
 	//MOVE
 	if canmove {
 
-		level[roomNum].enemies[num].rec = checkRec
-		level[roomNum].enemies[num].crec = level[roomNum].enemies[num].rec
+		gs.Level.Level[gs.Level.RoomNum].enemies[num].rec = checkRec
+		gs.Level.Level[gs.Level.RoomNum].enemies[num].crec = gs.Level.Level[gs.Level.RoomNum].enemies[num].rec
 
 		//MOVE COLLIS REC & AREA REC
-		switch level[roomNum].enemies[num].name {
+		switch gs.Level.Level[gs.Level.RoomNum].enemies[num].name {
 		case "mushroom":
-			level[roomNum].enemies[num].crec = level[roomNum].enemies[num].rec
-			level[roomNum].enemies[num].crec.Y += level[roomNum].enemies[num].crec.Height / 2
-			level[roomNum].enemies[num].crec.Height -= level[roomNum].enemies[num].crec.Height / 2
+			gs.Level.Level[gs.Level.RoomNum].enemies[num].crec = gs.Level.Level[gs.Level.RoomNum].enemies[num].rec
+			gs.Level.Level[gs.Level.RoomNum].enemies[num].crec.Y += gs.Level.Level[gs.Level.RoomNum].enemies[num].crec.Height / 2
+			gs.Level.Level[gs.Level.RoomNum].enemies[num].crec.Height -= gs.Level.Level[gs.Level.RoomNum].enemies[num].crec.Height / 2
 		case "slime", "rock":
-			level[roomNum].enemies[num].crec = level[roomNum].enemies[num].rec
-			level[roomNum].enemies[num].crec.Y += level[roomNum].enemies[num].crec.Height / 3
-			level[roomNum].enemies[num].crec.Height -= level[roomNum].enemies[num].crec.Height / 3
+			gs.Level.Level[gs.Level.RoomNum].enemies[num].crec = gs.Level.Level[gs.Level.RoomNum].enemies[num].rec
+			gs.Level.Level[gs.Level.RoomNum].enemies[num].crec.Y += gs.Level.Level[gs.Level.RoomNum].enemies[num].crec.Height / 3
+			gs.Level.Level[gs.Level.RoomNum].enemies[num].crec.Height -= gs.Level.Level[gs.Level.RoomNum].enemies[num].crec.Height / 3
 		case "spikehog":
-			level[roomNum].enemies[num].crec.Height = level[roomNum].enemies[num].crec.Height / 2
-			level[roomNum].enemies[num].crec.Y += level[roomNum].enemies[num].crec.Height
+			gs.Level.Level[gs.Level.RoomNum].enemies[num].crec.Height = gs.Level.Level[gs.Level.RoomNum].enemies[num].crec.Height / 2
+			gs.Level.Level[gs.Level.RoomNum].enemies[num].crec.Y += gs.Level.Level[gs.Level.RoomNum].enemies[num].crec.Height
 		case "ghost":
-			level[roomNum].enemies[num].crec.Y += level[roomNum].enemies[num].crec.Height / 3
-			level[roomNum].enemies[num].crec.Height -= level[roomNum].enemies[num].crec.Height / 3
-			level[roomNum].enemies[num].crec.X += level[roomNum].enemies[num].crec.Width / 8
-			level[roomNum].enemies[num].crec.Width -= level[roomNum].enemies[num].crec.Width / 4
-			level[roomNum].enemies[num].arec = level[roomNum].enemies[num].crec
-			level[roomNum].enemies[num].arec.X -= level[roomNum].enemies[num].arec.Width * 2
-			level[roomNum].enemies[num].arec.Y -= level[roomNum].enemies[num].arec.Width * 2
-			level[roomNum].enemies[num].arec.Width = level[roomNum].enemies[num].arec.Width * 5
-			level[roomNum].enemies[num].arec.Height = level[roomNum].enemies[num].arec.Height * 5
+			gs.Level.Level[gs.Level.RoomNum].enemies[num].crec.Y += gs.Level.Level[gs.Level.RoomNum].enemies[num].crec.Height / 3
+			gs.Level.Level[gs.Level.RoomNum].enemies[num].crec.Height -= gs.Level.Level[gs.Level.RoomNum].enemies[num].crec.Height / 3
+			gs.Level.Level[gs.Level.RoomNum].enemies[num].crec.X += gs.Level.Level[gs.Level.RoomNum].enemies[num].crec.Width / 8
+			gs.Level.Level[gs.Level.RoomNum].enemies[num].crec.Width -= gs.Level.Level[gs.Level.RoomNum].enemies[num].crec.Width / 4
+			gs.Level.Level[gs.Level.RoomNum].enemies[num].arec = gs.Level.Level[gs.Level.RoomNum].enemies[num].crec
+			gs.Level.Level[gs.Level.RoomNum].enemies[num].arec.X -= gs.Level.Level[gs.Level.RoomNum].enemies[num].arec.Width * 2
+			gs.Level.Level[gs.Level.RoomNum].enemies[num].arec.Y -= gs.Level.Level[gs.Level.RoomNum].enemies[num].arec.Width * 2
+			gs.Level.Level[gs.Level.RoomNum].enemies[num].arec.Width = gs.Level.Level[gs.Level.RoomNum].enemies[num].arec.Width * 5
+			gs.Level.Level[gs.Level.RoomNum].enemies[num].arec.Height = gs.Level.Level[gs.Level.RoomNum].enemies[num].arec.Height * 5
 
 		}
 
-		level[roomNum].enemies[num].cnt = rl.NewVector2(checkRec.X+checkRec.Width/2, checkRec.Y+checkRec.Height/2)
+		gs.Level.Level[gs.Level.RoomNum].enemies[num].cnt = rl.NewVector2(checkRec.X+checkRec.Width/2, checkRec.Y+checkRec.Height/2)
 
 		//CHECK SOCKS COLLIS
-		if mods.socks && level[roomNum].enemies[num].hppause == 0 && !level[roomNum].enemies[num].fly {
-			for a := 0; a < len(level[roomNum].etc); a++ {
-				if level[roomNum].etc[a].name == "footprints" && level[roomNum].enemies[num].hppause == 0 && rl.CheckCollisionRecs(level[roomNum].etc[a].rec, level[roomNum].enemies[num].crec) {
-					level[roomNum].enemies[num].hppause = gs.Core.Fps / 2
-					level[roomNum].enemies[num].hp--
-					if level[roomNum].enemies[num].hp <= 0 {
-						cntr := level[roomNum].enemies[num].cnt
+		if gs.Player.Mods.socks && gs.Level.Level[gs.Level.RoomNum].enemies[num].hppause == 0 && !gs.Level.Level[gs.Level.RoomNum].enemies[num].fly {
+			for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].etc); a++ {
+				if gs.Level.Level[gs.Level.RoomNum].etc[a].name == "footprints" && gs.Level.Level[gs.Level.RoomNum].enemies[num].hppause == 0 && rl.CheckCollisionRecs(gs.Level.Level[gs.Level.RoomNum].etc[a].rec, gs.Level.Level[gs.Level.RoomNum].enemies[num].crec) {
+					gs.Level.Level[gs.Level.RoomNum].enemies[num].hppause = gs.Core.Fps / 2
+					gs.Level.Level[gs.Level.RoomNum].enemies[num].hp--
+					if gs.Level.Level[gs.Level.RoomNum].enemies[num].hp <= 0 {
+						cntr := gs.Level.Level[gs.Level.RoomNum].enemies[num].cnt
 						addkill(num)
-						level[roomNum].enemies[num].off = true
+						gs.Level.Level[gs.Level.RoomNum].enemies[num].off = true
 						makeFX(2, cntr)
 					} else {
 						playenemyhit()
@@ -4711,29 +4605,29 @@ func moveenemy(num int) { //MARK:MOVE ENEMY
 			}
 		}
 		//CHECK ORBITAL COLLIS
-		if mods.orbital && level[roomNum].enemies[num].hppause == 0 {
+		if gs.Player.Mods.orbital && gs.Level.Level[gs.Level.RoomNum].enemies[num].hppause == 0 {
 
-			if rl.CheckCollisionRecs(pl.orbrec1, level[roomNum].enemies[num].crec) {
-				level[roomNum].enemies[num].hppause = gs.Core.Fps / 2
-				level[roomNum].enemies[num].hp--
-				if level[roomNum].enemies[num].hp <= 0 {
-					cntr := level[roomNum].enemies[num].cnt
+			if rl.CheckCollisionRecs(gs.Player.Pl.orbrec1, gs.Level.Level[gs.Level.RoomNum].enemies[num].crec) {
+				gs.Level.Level[gs.Level.RoomNum].enemies[num].hppause = gs.Core.Fps / 2
+				gs.Level.Level[gs.Level.RoomNum].enemies[num].hp--
+				if gs.Level.Level[gs.Level.RoomNum].enemies[num].hp <= 0 {
+					cntr := gs.Level.Level[gs.Level.RoomNum].enemies[num].cnt
 					addkill(num)
-					level[roomNum].enemies[num].off = true
+					gs.Level.Level[gs.Level.RoomNum].enemies[num].off = true
 					makeFX(2, cntr)
 				} else {
 					playenemyhit()
 				}
 			}
 
-			if mods.orbitalN == 2 {
-				if rl.CheckCollisionRecs(pl.orbrec2, level[roomNum].enemies[num].crec) {
-					level[roomNum].enemies[num].hppause = gs.Core.Fps / 2
-					level[roomNum].enemies[num].hp--
-					if level[roomNum].enemies[num].hp <= 0 {
-						cntr := level[roomNum].enemies[num].cnt
+			if gs.Player.Mods.orbitalN == 2 {
+				if rl.CheckCollisionRecs(gs.Player.Pl.orbrec2, gs.Level.Level[gs.Level.RoomNum].enemies[num].crec) {
+					gs.Level.Level[gs.Level.RoomNum].enemies[num].hppause = gs.Core.Fps / 2
+					gs.Level.Level[gs.Level.RoomNum].enemies[num].hp--
+					if gs.Level.Level[gs.Level.RoomNum].enemies[num].hp <= 0 {
+						cntr := gs.Level.Level[gs.Level.RoomNum].enemies[num].cnt
 						addkill(num)
-						level[roomNum].enemies[num].off = true
+						gs.Level.Level[gs.Level.RoomNum].enemies[num].off = true
 						makeFX(2, cntr)
 					} else {
 						if flipcoin() {
@@ -4747,27 +4641,27 @@ func moveenemy(num int) { //MARK:MOVE ENEMY
 
 		}
 		//CHECK AIRSTRIKE COLLIS
-		if mods.airstrike {
-			for a := 0; a < len(level[roomNum].etc); a++ {
-				if level[roomNum].etc[a].name == "airbomb" && rl.CheckCollisionRecs(level[roomNum].etc[a].crec, level[roomNum].enemies[num].crec) {
-					level[roomNum].enemies[num].hp = 0
-					cntr := level[roomNum].enemies[num].cnt
+		if gs.Player.Mods.airstrike {
+			for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].etc); a++ {
+				if gs.Level.Level[gs.Level.RoomNum].etc[a].name == "airbomb" && rl.CheckCollisionRecs(gs.Level.Level[gs.Level.RoomNum].etc[a].crec, gs.Level.Level[gs.Level.RoomNum].enemies[num].crec) {
+					gs.Level.Level[gs.Level.RoomNum].enemies[num].hp = 0
+					cntr := gs.Level.Level[gs.Level.RoomNum].enemies[num].cnt
 					addkill(num)
-					level[roomNum].enemies[num].off = true
+					gs.Level.Level[gs.Level.RoomNum].enemies[num].off = true
 					makeFX(2, cntr)
 				}
 			}
 		}
 		//CHECK FIRETRAIL COLLIS
-		if mods.firetrail && !level[roomNum].enemies[num].fly {
-			for a := 0; a < len(level[roomNum].etc); a++ {
-				if level[roomNum].etc[a].name == "flamefiretrail" && level[roomNum].enemies[num].hppause == 0 && rl.CheckCollisionRecs(level[roomNum].etc[a].rec, level[roomNum].enemies[num].crec) {
-					level[roomNum].enemies[num].hppause = gs.Core.Fps / 2
-					level[roomNum].enemies[num].hp--
-					if level[roomNum].enemies[num].hp <= 0 {
-						cntr := level[roomNum].enemies[num].cnt
+		if gs.Player.Mods.firetrail && !gs.Level.Level[gs.Level.RoomNum].enemies[num].fly {
+			for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].etc); a++ {
+				if gs.Level.Level[gs.Level.RoomNum].etc[a].name == "flamefiretrail" && gs.Level.Level[gs.Level.RoomNum].enemies[num].hppause == 0 && rl.CheckCollisionRecs(gs.Level.Level[gs.Level.RoomNum].etc[a].rec, gs.Level.Level[gs.Level.RoomNum].enemies[num].crec) {
+					gs.Level.Level[gs.Level.RoomNum].enemies[num].hppause = gs.Core.Fps / 2
+					gs.Level.Level[gs.Level.RoomNum].enemies[num].hp--
+					if gs.Level.Level[gs.Level.RoomNum].enemies[num].hp <= 0 {
+						cntr := gs.Level.Level[gs.Level.RoomNum].enemies[num].cnt
 						addkill(num)
-						level[roomNum].enemies[num].off = true
+						gs.Level.Level[gs.Level.RoomNum].enemies[num].off = true
 						makeFX(2, cntr)
 					} else {
 						playenemyhit()
@@ -4776,139 +4670,139 @@ func moveenemy(num int) { //MARK:MOVE ENEMY
 			}
 		}
 		//PLAYER ENEMY AREC COLLIS
-		if !mods.invisible {
-			if rl.CheckCollisionRecs(pl.rec, level[roomNum].enemies[num].arec) {
-				if level[roomNum].enemies[num].name == "ghost" {
-					level[roomNum].enemies[num].velX, level[roomNum].enemies[num].velY = moveFollow(level[roomNum].enemies[num].cnt, pl.cnt, level[roomNum].enemies[num].vel)
+		if !gs.Player.Mods.invisible {
+			if rl.CheckCollisionRecs(gs.Player.Pl.rec, gs.Level.Level[gs.Level.RoomNum].enemies[num].arec) {
+				if gs.Level.Level[gs.Level.RoomNum].enemies[num].name == "ghost" {
+					gs.Level.Level[gs.Level.RoomNum].enemies[num].velX, gs.Level.Level[gs.Level.RoomNum].enemies[num].velY = moveFollow(gs.Level.Level[gs.Level.RoomNum].enemies[num].cnt, gs.Player.Pl.cnt, gs.Level.Level[gs.Level.RoomNum].enemies[num].vel)
 				}
 			}
 		}
 
-		switch level[roomNum].enemies[num].name {
+		switch gs.Level.Level[gs.Level.RoomNum].enemies[num].name {
 
 		case "mushroom":
-			if level[roomNum].enemies[num].T1 == 0 {
-				level[roomNum].enemies[num].T1 = rI32(int(gs.Core.Fps*2), int(gs.Core.Fps*5))
+			if gs.Level.Level[gs.Level.RoomNum].enemies[num].T1 == 0 {
+				gs.Level.Level[gs.Level.RoomNum].enemies[num].T1 = rI32(int(gs.Core.Fps*2), int(gs.Core.Fps*5))
 				zproj := xproj{}
-				zproj.img = mushBull.recTL
+				zproj.img = gs.Render.MushBull.recTL
 				zproj.onoff = true
-				zproj.cnt = level[roomNum].enemies[num].cnt
+				zproj.cnt = gs.Level.Level[gs.Level.RoomNum].enemies[num].cnt
 				zproj.vel = bsU / 5
 				siz := bsU2
 				zproj.rec = rl.NewRectangle(zproj.cnt.X-siz/2, zproj.cnt.Y-siz/2, siz, siz)
-				zproj.velx, zproj.vely = moveFollow(level[roomNum].enemies[num].cnt, pl.cnt, zproj.vel)
+				zproj.velx, zproj.vely = moveFollow(gs.Level.Level[gs.Level.RoomNum].enemies[num].cnt, gs.Player.Pl.cnt, zproj.vel)
 				zproj.fade = 1
 				zproj.col = ranRed()
 				zproj.name = "mushbull"
-				enProj = append(enProj, zproj)
+				gs.Enemies.EnProj = append(gs.Enemies.EnProj, zproj)
 			}
 
 		case "rock":
-			if level[roomNum].enemies[num].T1 == 0 && level[roomNum].enemies[num].spawnN > 0 {
-				level[roomNum].enemies[num].spawnN--
-				level[roomNum].enemies[num].T1 = rI32(int(gs.Core.Fps*2), int(gs.Core.Fps*5))
+			if gs.Level.Level[gs.Level.RoomNum].enemies[num].T1 == 0 && gs.Level.Level[gs.Level.RoomNum].enemies[num].spawnN > 0 {
+				gs.Level.Level[gs.Level.RoomNum].enemies[num].spawnN--
+				gs.Level.Level[gs.Level.RoomNum].enemies[num].T1 = rI32(int(gs.Core.Fps*2), int(gs.Core.Fps*5))
 				zen := xenemy{}
-				zen = enRock
+				zen = gs.Enemies.EnRock
 				zen.spawnN = 0
-				zen.rec = level[roomNum].enemies[num].rec
+				zen.rec = gs.Level.Level[gs.Level.RoomNum].enemies[num].rec
 				zen.crec = zen.rec
 				zen.crec.Y += zen.crec.Height / 3
 				zen.crec.Height -= zen.crec.Height / 3
 				zen.velX = rF32(-zen.vel, zen.vel)
 				zen.velY = rF32(-zen.vel, zen.vel)
-				level[roomNum].enemies = append(level[roomNum].enemies, zen)
+				gs.Level.Level[gs.Level.RoomNum].enemies = append(gs.Level.Level[gs.Level.RoomNum].enemies, zen)
 			}
 			if roll18() == 18 {
-				level[roomNum].enemies[num].velX = rF32(-level[roomNum].enemies[num].vel, level[roomNum].enemies[num].vel)
-				level[roomNum].enemies[num].velY = rF32(-level[roomNum].enemies[num].vel, level[roomNum].enemies[num].vel)
+				gs.Level.Level[gs.Level.RoomNum].enemies[num].velX = rF32(-gs.Level.Level[gs.Level.RoomNum].enemies[num].vel, gs.Level.Level[gs.Level.RoomNum].enemies[num].vel)
+				gs.Level.Level[gs.Level.RoomNum].enemies[num].velY = rF32(-gs.Level.Level[gs.Level.RoomNum].enemies[num].vel, gs.Level.Level[gs.Level.RoomNum].enemies[num].vel)
 			}
 		case "slime":
-			if level[roomNum].enemies[num].T1 == 0 {
-				level[roomNum].enemies[num].T1 = rI32(int(gs.Core.Fps/2), int(gs.Core.Fps*2))
+			if gs.Level.Level[gs.Level.RoomNum].enemies[num].T1 == 0 {
+				gs.Level.Level[gs.Level.RoomNum].enemies[num].T1 = rI32(int(gs.Core.Fps/2), int(gs.Core.Fps*2))
 				zblok := xblok{}
-				zblok.rec = level[roomNum].enemies[num].rec
+				zblok.rec = gs.Level.Level[gs.Level.RoomNum].enemies[num].rec
 				zblok.crec = zblok.rec
 				zblok.crec.X += zblok.crec.Width / 8
 				zblok.crec.Y += zblok.crec.Width / 8
 				zblok.crec.Width -= zblok.crec.Width / 4
 				zblok.crec.Height -= zblok.crec.Height / 4
-				zblok.cnt = level[roomNum].enemies[num].cnt
-				zblok.img = splats[rInt(0, len(splats))]
+				zblok.cnt = gs.Level.Level[gs.Level.RoomNum].enemies[num].cnt
+				zblok.img = gs.Render.Splats[rInt(0, len(gs.Render.Splats))]
 				zblok.color = ranGreen()
 				zblok.fade = 0.7
 				zblok.onoff = true
 				zblok.name = "slimetrail"
-				level[roomNum].etc = append(level[roomNum].etc, zblok)
+				gs.Level.Level[gs.Level.RoomNum].etc = append(gs.Level.Level[gs.Level.RoomNum].etc, zblok)
 			}
 			if roll36() == 36 {
-				level[roomNum].enemies[num].velX = rF32(-level[roomNum].enemies[num].vel, level[roomNum].enemies[num].vel)
-				level[roomNum].enemies[num].velY = rF32(-level[roomNum].enemies[num].vel, level[roomNum].enemies[num].vel)
+				gs.Level.Level[gs.Level.RoomNum].enemies[num].velX = rF32(-gs.Level.Level[gs.Level.RoomNum].enemies[num].vel, gs.Level.Level[gs.Level.RoomNum].enemies[num].vel)
+				gs.Level.Level[gs.Level.RoomNum].enemies[num].velY = rF32(-gs.Level.Level[gs.Level.RoomNum].enemies[num].vel, gs.Level.Level[gs.Level.RoomNum].enemies[num].vel)
 			}
 		case "spikehog":
 			if roll18() == 18 {
-				level[roomNum].enemies[num].velX = 0
-				level[roomNum].enemies[num].velY = 0
+				gs.Level.Level[gs.Level.RoomNum].enemies[num].velX = 0
+				gs.Level.Level[gs.Level.RoomNum].enemies[num].velY = 0
 				if flipcoin() {
-					level[roomNum].enemies[num].velX = level[roomNum].enemies[num].vel
+					gs.Level.Level[gs.Level.RoomNum].enemies[num].velX = gs.Level.Level[gs.Level.RoomNum].enemies[num].vel
 					if flipcoin() {
-						level[roomNum].enemies[num].velX *= -1
+						gs.Level.Level[gs.Level.RoomNum].enemies[num].velX *= -1
 					}
 				} else {
-					level[roomNum].enemies[num].velY = level[roomNum].enemies[num].vel
+					gs.Level.Level[gs.Level.RoomNum].enemies[num].velY = gs.Level.Level[gs.Level.RoomNum].enemies[num].vel
 					if flipcoin() {
-						level[roomNum].enemies[num].velY *= -1
+						gs.Level.Level[gs.Level.RoomNum].enemies[num].velY *= -1
 					}
 				}
 			}
 		}
 
 	} else {
-		switch level[roomNum].enemies[num].name {
+		switch gs.Level.Level[gs.Level.RoomNum].enemies[num].name {
 
 		case "ghost", "slime", "rock", "mushroom":
-			level[roomNum].enemies[num].velX = rF32(-level[roomNum].enemies[num].vel, level[roomNum].enemies[num].vel)
-			level[roomNum].enemies[num].velY = rF32(-level[roomNum].enemies[num].vel, level[roomNum].enemies[num].vel)
+			gs.Level.Level[gs.Level.RoomNum].enemies[num].velX = rF32(-gs.Level.Level[gs.Level.RoomNum].enemies[num].vel, gs.Level.Level[gs.Level.RoomNum].enemies[num].vel)
+			gs.Level.Level[gs.Level.RoomNum].enemies[num].velY = rF32(-gs.Level.Level[gs.Level.RoomNum].enemies[num].vel, gs.Level.Level[gs.Level.RoomNum].enemies[num].vel)
 		case "spikehog":
-			level[roomNum].enemies[num].velX = 0
-			level[roomNum].enemies[num].velY = 0
+			gs.Level.Level[gs.Level.RoomNum].enemies[num].velX = 0
+			gs.Level.Level[gs.Level.RoomNum].enemies[num].velY = 0
 			if flipcoin() {
-				level[roomNum].enemies[num].velX = level[roomNum].enemies[num].vel
+				gs.Level.Level[gs.Level.RoomNum].enemies[num].velX = gs.Level.Level[gs.Level.RoomNum].enemies[num].vel
 				if flipcoin() {
-					level[roomNum].enemies[num].velX *= -1
+					gs.Level.Level[gs.Level.RoomNum].enemies[num].velX *= -1
 				}
 			} else {
-				level[roomNum].enemies[num].velY = level[roomNum].enemies[num].vel
+				gs.Level.Level[gs.Level.RoomNum].enemies[num].velY = gs.Level.Level[gs.Level.RoomNum].enemies[num].vel
 				if flipcoin() {
-					level[roomNum].enemies[num].velY *= -1
+					gs.Level.Level[gs.Level.RoomNum].enemies[num].velY *= -1
 				}
 			}
 		case "bat", "rabbit1":
-			if level[roomNum].enemies[num].velX > 0 {
-				level[roomNum].enemies[num].velX = rF32(-level[roomNum].enemies[num].vel, 0)
-			} else if level[roomNum].enemies[num].velX < 0 {
-				level[roomNum].enemies[num].velX = rF32(0, level[roomNum].enemies[num].vel)
+			if gs.Level.Level[gs.Level.RoomNum].enemies[num].velX > 0 {
+				gs.Level.Level[gs.Level.RoomNum].enemies[num].velX = rF32(-gs.Level.Level[gs.Level.RoomNum].enemies[num].vel, 0)
+			} else if gs.Level.Level[gs.Level.RoomNum].enemies[num].velX < 0 {
+				gs.Level.Level[gs.Level.RoomNum].enemies[num].velX = rF32(0, gs.Level.Level[gs.Level.RoomNum].enemies[num].vel)
 			}
 
-			if level[roomNum].enemies[num].velY > 0 {
-				level[roomNum].enemies[num].velY = rF32(-level[roomNum].enemies[num].vel, 0)
-			} else if level[roomNum].enemies[num].velY < 0 {
-				level[roomNum].enemies[num].velY = rF32(0, level[roomNum].enemies[num].vel)
+			if gs.Level.Level[gs.Level.RoomNum].enemies[num].velY > 0 {
+				gs.Level.Level[gs.Level.RoomNum].enemies[num].velY = rF32(-gs.Level.Level[gs.Level.RoomNum].enemies[num].vel, 0)
+			} else if gs.Level.Level[gs.Level.RoomNum].enemies[num].velY < 0 {
+				gs.Level.Level[gs.Level.RoomNum].enemies[num].velY = rF32(0, gs.Level.Level[gs.Level.RoomNum].enemies[num].vel)
 			}
 		}
 	}
 
 	//FIND DIREC FOR ANIM
-	if getabs(level[roomNum].enemies[num].velX) > getabs(level[roomNum].enemies[num].velY) {
-		if level[roomNum].enemies[num].velX > 0 {
-			level[roomNum].enemies[num].direc = 2
+	if getabs(gs.Level.Level[gs.Level.RoomNum].enemies[num].velX) > getabs(gs.Level.Level[gs.Level.RoomNum].enemies[num].velY) {
+		if gs.Level.Level[gs.Level.RoomNum].enemies[num].velX > 0 {
+			gs.Level.Level[gs.Level.RoomNum].enemies[num].direc = 2
 		} else {
-			level[roomNum].enemies[num].direc = 4
+			gs.Level.Level[gs.Level.RoomNum].enemies[num].direc = 4
 		}
 	} else {
-		if level[roomNum].enemies[num].velY > 0 {
-			level[roomNum].enemies[num].direc = 3
+		if gs.Level.Level[gs.Level.RoomNum].enemies[num].velY > 0 {
+			gs.Level.Level[gs.Level.RoomNum].enemies[num].direc = 3
 		} else {
-			level[roomNum].enemies[num].direc = 1
+			gs.Level.Level[gs.Level.RoomNum].enemies[num].direc = 1
 		}
 	}
 
@@ -4916,34 +4810,34 @@ func moveenemy(num int) { //MARK:MOVE ENEMY
 
 func movebloks() { //MARK:MOVE BLOKS
 
-	for a := 0; a < len(level[roomNum].movBloks); a++ {
+	for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].movBloks); a++ {
 
 		if checkMoveBlok(a) {
 
-			level[roomNum].movBloks[a].cnt.X += level[roomNum].movBloks[a].velX
-			level[roomNum].movBloks[a].cnt.Y += level[roomNum].movBloks[a].velY
-			level[roomNum].movBloks[a].rec = rl.NewRectangle(level[roomNum].movBloks[a].cnt.X-level[roomNum].movBloks[a].rec.Width/2, level[roomNum].movBloks[a].cnt.Y-level[roomNum].movBloks[a].rec.Height/2, level[roomNum].movBloks[a].rec.Width, level[roomNum].movBloks[a].rec.Height)
+			gs.Level.Level[gs.Level.RoomNum].movBloks[a].cnt.X += gs.Level.Level[gs.Level.RoomNum].movBloks[a].velX
+			gs.Level.Level[gs.Level.RoomNum].movBloks[a].cnt.Y += gs.Level.Level[gs.Level.RoomNum].movBloks[a].velY
+			gs.Level.Level[gs.Level.RoomNum].movBloks[a].rec = rl.NewRectangle(gs.Level.Level[gs.Level.RoomNum].movBloks[a].cnt.X-gs.Level.Level[gs.Level.RoomNum].movBloks[a].rec.Width/2, gs.Level.Level[gs.Level.RoomNum].movBloks[a].cnt.Y-gs.Level.Level[gs.Level.RoomNum].movBloks[a].rec.Height/2, gs.Level.Level[gs.Level.RoomNum].movBloks[a].rec.Width, gs.Level.Level[gs.Level.RoomNum].movBloks[a].rec.Height)
 
 		} else {
-			switch level[roomNum].movBloks[a].movType {
+			switch gs.Level.Level[gs.Level.RoomNum].movBloks[a].movType {
 			case 1, 2: //LR UD
-				if level[roomNum].movBloks[a].velX > 0 {
-					level[roomNum].movBloks[a].velX = -level[roomNum].movBloks[a].velX
-				} else if level[roomNum].movBloks[a].velX < 0 {
-					level[roomNum].movBloks[a].velX = getabs(level[roomNum].movBloks[a].velX)
+				if gs.Level.Level[gs.Level.RoomNum].movBloks[a].velX > 0 {
+					gs.Level.Level[gs.Level.RoomNum].movBloks[a].velX = -gs.Level.Level[gs.Level.RoomNum].movBloks[a].velX
+				} else if gs.Level.Level[gs.Level.RoomNum].movBloks[a].velX < 0 {
+					gs.Level.Level[gs.Level.RoomNum].movBloks[a].velX = getabs(gs.Level.Level[gs.Level.RoomNum].movBloks[a].velX)
 				}
-				if level[roomNum].movBloks[a].velY > 0 {
-					level[roomNum].movBloks[a].velY = -level[roomNum].movBloks[a].velY
-				} else if level[roomNum].movBloks[a].velY < 0 {
-					level[roomNum].movBloks[a].velY = getabs(level[roomNum].movBloks[a].velY)
+				if gs.Level.Level[gs.Level.RoomNum].movBloks[a].velY > 0 {
+					gs.Level.Level[gs.Level.RoomNum].movBloks[a].velY = -gs.Level.Level[gs.Level.RoomNum].movBloks[a].velY
+				} else if gs.Level.Level[gs.Level.RoomNum].movBloks[a].velY < 0 {
+					gs.Level.Level[gs.Level.RoomNum].movBloks[a].velY = getabs(gs.Level.Level[gs.Level.RoomNum].movBloks[a].velY)
 				}
 			}
 		}
 
-		if rl.CheckCollisionRecs(pl.crec, level[roomNum].movBloks[a].rec) {
-			level[roomNum].movBloks[a].cnt.X -= level[roomNum].movBloks[a].rec.Width * 2
-			level[roomNum].movBloks[a].cnt.Y -= level[roomNum].movBloks[a].rec.Width * 2
-			level[roomNum].movBloks[a].rec = rl.NewRectangle(level[roomNum].movBloks[a].cnt.X-level[roomNum].movBloks[a].rec.Width/2, level[roomNum].movBloks[a].cnt.Y-level[roomNum].movBloks[a].rec.Height/2, level[roomNum].movBloks[a].rec.Width, level[roomNum].movBloks[a].rec.Height)
+		if rl.CheckCollisionRecs(gs.Player.Pl.crec, gs.Level.Level[gs.Level.RoomNum].movBloks[a].rec) {
+			gs.Level.Level[gs.Level.RoomNum].movBloks[a].cnt.X -= gs.Level.Level[gs.Level.RoomNum].movBloks[a].rec.Width * 2
+			gs.Level.Level[gs.Level.RoomNum].movBloks[a].cnt.Y -= gs.Level.Level[gs.Level.RoomNum].movBloks[a].rec.Width * 2
+			gs.Level.Level[gs.Level.RoomNum].movBloks[a].rec = rl.NewRectangle(gs.Level.Level[gs.Level.RoomNum].movBloks[a].cnt.X-gs.Level.Level[gs.Level.RoomNum].movBloks[a].rec.Width/2, gs.Level.Level[gs.Level.RoomNum].movBloks[a].cnt.Y-gs.Level.Level[gs.Level.RoomNum].movBloks[a].rec.Height/2, gs.Level.Level[gs.Level.RoomNum].movBloks[a].rec.Width, gs.Level.Level[gs.Level.RoomNum].movBloks[a].rec.Height)
 		}
 	}
 
@@ -4975,12 +4869,12 @@ func savesettings() { //MARK:SAVE SETTINGS
 	} else {
 		settingsTXT = settingsTXT + "0,"
 	}
-	if shaderon {
+	if gs.Render.ShaderOn {
 		settingsTXT = settingsTXT + "1,"
 	} else {
 		settingsTXT = settingsTXT + "0,"
 	}
-	if platkrecon {
+	if gs.Player.PlatkrecOn {
 		settingsTXT = settingsTXT + "1,"
 	} else {
 		settingsTXT = settingsTXT + "0,"
@@ -5007,7 +4901,7 @@ func savesettings() { //MARK:SAVE SETTINGS
 	voltxt := fmt.Sprintf("%.0f", gs.Audio.Volume*10)
 	settingsTXT = settingsTXT + voltxt + ","
 
-	if hardcore {
+	if gs.Level.Hardcore {
 		settingsTXT = settingsTXT + "1"
 	} else {
 		settingsTXT = settingsTXT + "0"
@@ -5021,7 +4915,7 @@ func savesettings() { //MARK:SAVE SETTINGS
 
 func addtime() { //MARK:ADD TIME
 
-	totaltime := minsEND*60 + secsEND
+	totaltime := gs.Level.MinsEND*60 + gs.Level.SecsEND
 
 	checktime := totaltime
 	canadd := false
@@ -5044,59 +4938,59 @@ func addtime() { //MARK:ADD TIME
 }
 func restartgame() { //MARK: RESTART GAME
 
-	for a := 0; a < len(level); a++ {
-		level[a].etc = nil
-		level[a].enemies = nil
-		level[a].doorExitRecs = nil
-		level[a].doorSides = nil
-		level[a].floor = nil
-		level[a].innerBloks = nil
-		level[a].movBloks = nil
-		level[a].nextRooms = nil
-		level[a].spikes = nil
-		level[a].visited = false
-		level[a].walls = nil
+	for a := 0; a < len(gs.Level.Level); a++ {
+		gs.Level.Level[a].etc = nil
+		gs.Level.Level[a].enemies = nil
+		gs.Level.Level[a].doorExitRecs = nil
+		gs.Level.Level[a].doorSides = nil
+		gs.Level.Level[a].floor = nil
+		gs.Level.Level[a].innerBloks = nil
+		gs.Level.Level[a].movBloks = nil
+		gs.Level.Level[a].nextRooms = nil
+		gs.Level.Level[a].spikes = nil
+		gs.Level.Level[a].visited = false
+		gs.Level.Level[a].walls = nil
 	}
 
-	kills = xkills{}
-	inven = []xblok{}
-	mods = xmod{}
-	airstrikeT = 0
-	airstrikeOn = false
-	fx = nil
-	plProj = nil
-	enProj = nil
-	flipcam = false
-	cam2.Rotation = 0
+	gs.Player.Kills = xkills{}
+	gs.Player.Inven = []xblok{}
+	gs.Player.Mods = xmod{}
+	gs.FX.AirstrikeT = 0
+	gs.FX.AirstrikeOn = false
+	gs.FX.Fx = nil
+	gs.Player.PlProj = nil
+	gs.Enemies.EnProj = nil
+	gs.Level.Flipcam = false
+	gs.Render.Cam2.Rotation = 0
 
-	pl.armor = 0
-	pl.coins = 0
-	mods.armorN = 0
-	pl.armorMax = 0
-	pl.armor = 0
-	floodRec.Y = scrHF32 + bsU
+	gs.Player.Pl.armor = 0
+	gs.Player.Pl.coins = 0
+	gs.Player.Mods.armorN = 0
+	gs.Player.Pl.armorMax = 0
+	gs.Player.Pl.armor = 0
+	gs.FX.FloodRec.Y = gs.Core.ScrHF32 + bsU
 
-	pl.atk, pl.slide, pl.escape, pl.revived, pl.poison = false, false, false, false, false
+	gs.Player.Pl.atk, gs.Player.Pl.slide, gs.Player.Pl.escape, gs.Player.Pl.revived, gs.Player.Pl.poison = false, false, false, false, false
 
-	night = false
+	gs.Level.Night = false
 
-	level = nil
-	shader2on = false
-	shader3on = false
+	gs.Level.Level = nil
+	gs.Render.Shader2On = false
+	gs.Render.Shader3On = false
 
-	levelnum = 1
+	gs.Level.Levelnum = 1
 
 	makeplayer()
 	makelevel()
 
-	pl.cnt = cnt
-	roomNum = 0
+	gs.Player.Pl.cnt = gs.Core.Cnt
+	gs.Level.RoomNum = 0
 
-	introcount = true
-	introT3 = gs.Core.Fps * 3
+	gs.UI.IntroCount = true
+	gs.UI.IntroT3 = gs.Core.Fps * 3
 
-	intro = true
-	startdmgT = gs.Core.Fps * 7
+	gs.UI.Intro = true
+	gs.Player.StartdmgT = gs.Core.Fps * 7
 	rl.PlaySound(gs.Audio.Sfx[13])
 
 }
@@ -5125,7 +5019,7 @@ func savetimes() { //MARK: SAVE TIMES
 
 func exitgame() { //MARK: EXIT GAME
 
-	if optionsChange {
+	if gs.UI.OptionsChange {
 		savesettings()
 	}
 	savetimes()
@@ -5140,114 +5034,114 @@ func addshopitem(num int) { //MARK: ADD SHOP ITEM
 
 	//CHECK FOR SAME ADD TO INVEN
 	sold := false
-	if len(inven) > 0 {
+	if len(gs.Player.Inven) > 0 {
 		foundsame := false
-		for a := 0; a < len(inven); a++ {
-			if gs.Shop.ShopItems[num].name == inven[a].name {
+		for a := 0; a < len(gs.Player.Inven); a++ {
+			if gs.Shop.ShopItems[num].name == gs.Player.Inven[a].name {
 
 				switch gs.Shop.ShopItems[num].name {
 				case "fireworks":
-					pl.coins++
+					gs.Player.Pl.coins++
 					txtSold("fireworks")
 					sold = true
 				case "peace":
-					pl.coins++
+					gs.Player.Pl.coins++
 					txtSold("peace")
 					sold = true
 				case "anchor":
-					pl.coins++
+					gs.Player.Pl.coins++
 					txtSold("anchor")
 					sold = true
 				case "recharge":
-					pl.coins++
+					gs.Player.Pl.coins++
 					txtSold("recharge")
 					sold = true
 				case "orbital":
-					if mods.orbitalN < max.orbital {
-						inven[a].numof++
+					if gs.Player.Mods.orbitalN < gs.Player.Max.orbital {
+						gs.Player.Inven[a].numof++
 						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
-						pl.coins++
+						gs.Player.Pl.coins++
 						txtSold("orbital")
 						sold = true
 					}
 				case "coffee":
-					if mods.coffeeN < max.coffee {
-						inven[a].numof++
+					if gs.Player.Mods.coffeeN < gs.Player.Max.coffee {
+						gs.Player.Inven[a].numof++
 						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
-						pl.coins++
+						gs.Player.Pl.coins++
 						txtSold("coffee")
 						sold = true
 					}
 				case "invisible":
-					pl.coins++
+					gs.Player.Pl.coins++
 					txtSold("invisible")
 					sold = true
 				case "health potion":
-					if mods.hppotionN < max.hppotion {
-						inven[a].numof++
+					if gs.Player.Mods.hppotionN < gs.Player.Max.hppotion {
+						gs.Player.Inven[a].numof++
 						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
-						pl.coins++
+						gs.Player.Pl.coins++
 						txtSold("health potion")
 						sold = true
 					}
 				case "firetrail":
-					if mods.firetrailN < max.firetrail {
-						inven[a].numof++
+					if gs.Player.Mods.firetrailN < gs.Player.Max.firetrail {
+						gs.Player.Inven[a].numof++
 						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
-						pl.coins++
+						gs.Player.Pl.coins++
 						txtSold("firetrail")
 						sold = true
 					}
 				case "map":
-					pl.coins++
+					gs.Player.Pl.coins++
 					txtSold("map")
 					sold = true
 				case "apple":
-					if mods.appleN < max.apple {
-						inven[a].numof++
+					if gs.Player.Mods.appleN < gs.Player.Max.apple {
+						gs.Player.Inven[a].numof++
 						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
-						pl.coins++
+						gs.Player.Pl.coins++
 						txtSold("apple")
 						sold = true
 					}
 				case "key":
-					if mods.keyN < max.key {
-						inven[a].numof++
+					if gs.Player.Mods.keyN < gs.Player.Max.key {
+						gs.Player.Inven[a].numof++
 						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
-						pl.coins++
+						gs.Player.Pl.coins++
 						txtSold("key")
 						sold = true
 					}
 				case "bounce":
-					if mods.bounceN < max.bounce {
-						inven[a].numof++
+					if gs.Player.Mods.bounceN < gs.Player.Max.bounce {
+						gs.Player.Inven[a].numof++
 						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
-						pl.coins++
+						gs.Player.Pl.coins++
 						txtSold("bounce")
 						sold = true
 					}
 				case "fireball":
-					if mods.fireballN < max.fireball {
-						inven[a].numof++
+					if gs.Player.Mods.fireballN < gs.Player.Max.fireball {
+						gs.Player.Inven[a].numof++
 						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
-						pl.coins++
+						gs.Player.Pl.coins++
 						txtSold("fireball")
 						sold = true
 					}
 				case "throwing axe":
-					if mods.axeN < max.axe {
-						inven[a].numof++
+					if gs.Player.Mods.axeN < gs.Player.Max.axe {
+						gs.Player.Inven[a].numof++
 						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
-						pl.coins++
+						gs.Player.Pl.coins++
 						txtSold("axe")
 						sold = true
 					}
@@ -5256,11 +5150,11 @@ func addshopitem(num int) { //MARK: ADD SHOP ITEM
 			}
 		}
 		if !foundsame {
-			inven = append(inven, gs.Shop.ShopItems[num])
+			gs.Player.Inven = append(gs.Player.Inven, gs.Shop.ShopItems[num])
 			rl.PlaySound(gs.Audio.Sfx[8])
 		}
 	} else {
-		inven = append(inven, gs.Shop.ShopItems[num])
+		gs.Player.Inven = append(gs.Player.Inven, gs.Shop.ShopItems[num])
 		rl.PlaySound(gs.Audio.Sfx[8])
 	}
 
@@ -5268,73 +5162,73 @@ func addshopitem(num int) { //MARK: ADD SHOP ITEM
 	if !sold {
 		switch gs.Shop.ShopItems[num].name {
 		case "fireworks":
-			mods.fireworks = true
+			gs.Player.Mods.fireworks = true
 		case "peace":
-			mods.peace = true
+			gs.Player.Mods.peace = true
 		case "anchor":
-			mods.anchor = true
+			gs.Player.Mods.anchor = true
 		case "recharge":
-			mods.recharge = true
+			gs.Player.Mods.recharge = true
 		case "orbital":
-			mods.orbital = true
-			if mods.orbitalN < max.orbital {
-				mods.orbitalN++
-				if mods.orbitalN == 1 {
-					pl.orbital1 = rl.NewVector2(pl.cnt.X+bsU4, pl.cnt.Y+bsU4)
+			gs.Player.Mods.orbital = true
+			if gs.Player.Mods.orbitalN < gs.Player.Max.orbital {
+				gs.Player.Mods.orbitalN++
+				if gs.Player.Mods.orbitalN == 1 {
+					gs.Player.Pl.orbital1 = rl.NewVector2(gs.Player.Pl.cnt.X+bsU4, gs.Player.Pl.cnt.Y+bsU4)
 				}
-				if mods.orbitalN == 2 {
-					pl.orbital2 = rl.NewVector2(pl.cnt.X-bsU7, pl.cnt.Y-bsU7)
+				if gs.Player.Mods.orbitalN == 2 {
+					gs.Player.Pl.orbital2 = rl.NewVector2(gs.Player.Pl.cnt.X-bsU7, gs.Player.Pl.cnt.Y-bsU7)
 				}
 			}
 		case "coffee":
-			if mods.coffeeN < max.coffee {
-				mods.coffeeN++
-				pl.vel++
+			if gs.Player.Mods.coffeeN < gs.Player.Max.coffee {
+				gs.Player.Mods.coffeeN++
+				gs.Player.Pl.vel++
 			}
 		case "invisible":
-			mods.invisible = true
+			gs.Player.Mods.invisible = true
 		case "health potion":
-			mods.hppotion = true
-			if mods.hppotionN < max.hppotion {
-				mods.hppotionN++
+			gs.Player.Mods.hppotion = true
+			if gs.Player.Mods.hppotionN < gs.Player.Max.hppotion {
+				gs.Player.Mods.hppotionN++
 			}
 		case "firetrail":
-			mods.firetrail = true
-			if mods.firetrailN < max.firetrail {
-				mods.firetrailN++
+			gs.Player.Mods.firetrail = true
+			if gs.Player.Mods.firetrailN < gs.Player.Max.firetrail {
+				gs.Player.Mods.firetrailN++
 			}
 		case "bounce":
-			if mods.bounceN < max.bounce {
-				mods.bounceN++
+			if gs.Player.Mods.bounceN < gs.Player.Max.bounce {
+				gs.Player.Mods.bounceN++
 			}
 		case "map":
-			mods.exitmap = true
+			gs.Player.Mods.exitmap = true
 		case "apple":
-			mods.apple = true
-			if mods.appleN < max.apple {
-				mods.appleN++
+			gs.Player.Mods.apple = true
+			if gs.Player.Mods.appleN < gs.Player.Max.apple {
+				gs.Player.Mods.appleN++
 			}
 		case "key":
-			mods.key = true
-			if mods.keyN < max.key {
-				mods.keyN++
+			gs.Player.Mods.key = true
+			if gs.Player.Mods.keyN < gs.Player.Max.key {
+				gs.Player.Mods.keyN++
 			}
 		case "fireball":
-			mods.fireball = true
-			if mods.fireballN < max.fireball {
-				mods.fireballN++
+			gs.Player.Mods.fireball = true
+			if gs.Player.Mods.fireballN < gs.Player.Max.fireball {
+				gs.Player.Mods.fireballN++
 			}
 		case "santa":
-			mods.santa = true
-			mods.santaT = rI32(7, 21) * gs.Core.Fps
+			gs.Player.Mods.santa = true
+			gs.Player.Mods.santaT = rI32(7, 21) * gs.Core.Fps
 		case "throwing axe":
-			mods.axe = true
-			if mods.axeN < max.axe {
-				mods.axeN++
-				mods.axeT = (int32(max.axe) * gs.Core.Fps) - (int32(mods.axeN) * gs.Core.Fps)
+			gs.Player.Mods.axe = true
+			if gs.Player.Mods.axeN < gs.Player.Max.axe {
+				gs.Player.Mods.axeN++
+				gs.Player.Mods.axeT = (int32(gs.Player.Max.axe) * gs.Core.Fps) - (int32(gs.Player.Mods.axeN) * gs.Core.Fps)
 			}
-			if mods.axeT < gs.Core.Fps {
-				mods.axeT = gs.Core.Fps
+			if gs.Player.Mods.axeT < gs.Core.Fps {
+				gs.Player.Mods.axeT = gs.Core.Fps
 			}
 
 		}
@@ -5389,12 +5283,12 @@ func updownswitch(x32, y32 int32, siz, value float32, numType int) float32 { //M
 
 func destroyPowerupBlok(blokNum int) { //MARK:DESTROY POWERUP BLOK
 
-	makeFX(1, level[roomNum].etc[blokNum].cnt)
+	makeFX(1, gs.Level.Level[gs.Level.RoomNum].etc[blokNum].cnt)
 
 	choose := rInt(1, 36)
 	//choose = 6
 
-	zblok := makeBlokGeneric(bsU+bsU/2, level[roomNum].etc[blokNum].cnt)
+	zblok := makeBlokGeneric(bsU+bsU/2, gs.Level.Level[gs.Level.RoomNum].etc[blokNum].cnt)
 	zblok.onoff = true
 	zblok.numof = 1
 
@@ -5403,402 +5297,402 @@ func destroyPowerupBlok(blokNum int) { //MARK:DESTROY POWERUP BLOK
 		zblok.name = "mario"
 		zblok.desc = "collect extra coins"
 		zblok.color = rl.White
-		zblok.img = etc[51]
+		zblok.img = gs.Render.Etc[51]
 	case 34: //MR CARROT
 		zblok.name = "mr carrot"
 		zblok.desc = "your friend the root vegetable"
 		zblok.color = rl.White
-		zblok.img = etc[50]
+		zblok.img = gs.Render.Etc[50]
 	case 33: //FIREWORKS
 		zblok.name = "fireworks"
 		zblok.desc = "shoot fireworks when activating powerup block"
 		zblok.color = rl.White
-		zblok.img = etc[49]
+		zblok.img = gs.Render.Etc[49]
 	case 32: //AIR STRIKE
 		zblok.name = "air strike"
 		zblok.desc = "support from above at random intervals"
 		zblok.color = rl.White
-		zblok.img = etc[48]
+		zblok.img = gs.Render.Etc[48]
 	case 31: //ALIEN
 		zblok.name = "mr alien"
 		zblok.desc = "a strange companion"
 		zblok.color = rl.White
-		zblok.img = etc[47]
+		zblok.img = gs.Render.Etc[47]
 	case 30: //PEACE
 		zblok.name = "peace"
 		zblok.desc = "take no damage for 2 seconds on entering room"
 		zblok.color = rl.White
-		zblok.img = etc[46]
+		zblok.img = gs.Render.Etc[46]
 	case 29: //CAKE
 		zblok.name = "birthday cake"
 		zblok.desc = "get a random present"
 		zblok.color = rl.White
-		zblok.img = etc[45]
+		zblok.img = gs.Render.Etc[45]
 	case 28: //FLOOD
 		zblok.name = "fish"
 		zblok.desc = "a not quite biblical flood"
 		zblok.color = ranCyan()
-		zblok.img = etc[44]
+		zblok.img = gs.Render.Etc[44]
 	case 27: //CHERRY
 		zblok.name = "cherry"
 		zblok.desc = "coin jackpot - random coin amount added"
 		zblok.color = rl.White
-		zblok.img = etc[43]
+		zblok.img = gs.Render.Etc[43]
 	case 26: //SOCKS
 		zblok.name = "moldy socks"
 		zblok.desc = "leaves a trail of damaging footprints"
 		zblok.color = rl.White
-		zblok.img = etc[42]
+		zblok.img = gs.Render.Etc[42]
 	case 25: //UMBRELLA
 		zblok.name = "umbrella"
 		zblok.desc = "rain when you don't need it"
 		zblok.color = rl.White
-		zblok.img = etc[40]
+		zblok.img = gs.Render.Etc[40]
 	case 24: //ANCHOR
 		zblok.name = "anchor"
 		zblok.desc = "enemies pause for 2 seconds on entering room"
 		zblok.color = rl.White
-		zblok.img = etc[39]
+		zblok.img = gs.Render.Etc[39]
 	case 23: //RECHARGE
 		zblok.name = "recharge"
 		zblok.desc = "only works with armor - recharges 1 armor every 2 rooms"
 		zblok.color = rl.White
-		zblok.img = etc[12]
+		zblok.img = gs.Render.Etc[12]
 	case 22: //ARMOR
 		zblok.name = "armor"
 		zblok.desc = "protection that can be recharged"
 		zblok.color = ranCyan()
-		zblok.img = etc[38]
+		zblok.img = gs.Render.Etc[38]
 	case 21: //HP RING
 		zblok.name = "health ring"
 		zblok.desc = "adds another hp heart"
 		zblok.color = rl.White
-		zblok.img = etc[37]
+		zblok.img = gs.Render.Etc[37]
 	case 20: //CHAIN LIGHTNING
 		zblok.name = "chain lightning"
 		zblok.desc = "chance to damage all enemies on screen"
 		zblok.color = rl.White
-		zblok.img = etc[36]
+		zblok.img = gs.Render.Etc[36]
 	case 19: //ORBITAL
 		zblok.name = "orbital"
 		zblok.desc = "erratic revolving orbs that damage enemies"
 		zblok.color = rl.White
-		zblok.img = etc[35]
+		zblok.img = gs.Render.Etc[35]
 	case 18: //ATTACK DAMAGE
 		zblok.name = "attack damage"
 		zblok.desc = "increases damage of sword swing"
 		zblok.color = rl.White
-		zblok.img = etc[34]
+		zblok.img = gs.Render.Etc[34]
 	case 17: //ATTACK RANGE
 		zblok.name = "attack range"
 		zblok.desc = "increases range of sword swing"
 		zblok.color = rl.White
-		zblok.img = etc[33]
+		zblok.img = gs.Render.Etc[33]
 	case 16: //TELEPORT
 		zblok.name = "teleport"
 		zblok.desc = "transport to another room - destroyed on use"
 		zblok.color = rl.White
-		zblok.img = etc[32]
+		zblok.img = gs.Render.Etc[32]
 	case 15: //COFFEE
 		zblok.name = "coffee"
 		zblok.desc = "move faster - collect more = faster movement"
 		zblok.color = rl.White
-		zblok.img = etc[31]
+		zblok.img = gs.Render.Etc[31]
 	case 14: //INVISIBLE
 		zblok.name = "invisible"
 		zblok.desc = "enemies will not follow you"
 		zblok.color = rl.White
-		zblok.img = etc[30]
+		zblok.img = gs.Render.Etc[30]
 	case 13: //FIRE TRAIL
 		zblok.name = "firetrail"
 		zblok.desc = "trail of fire - does not effect flying enemies"
 		zblok.color = ranOrange()
-		zblok.img = etc[29]
+		zblok.img = gs.Render.Etc[29]
 	case 12: //FIREBALL
 		zblok.name = "fireball"
 		zblok.desc = "fires on attack - collect more = more fireballs"
 		zblok.color = ranOrange()
-		zblok.img = fireballPlayer.recTL
+		zblok.img = gs.Render.FireballPlayer.recTL
 	case 11: //MAP
 		zblok.name = "map"
 		zblok.desc = "reveals location of exit room"
 		zblok.color = ranGrey()
-		zblok.img = etc[28]
+		zblok.img = gs.Render.Etc[28]
 	case 10: //WALLET
 		zblok.name = "wallet"
 		zblok.desc = "purchase one shop item free - destroyed on use"
 		zblok.color = rl.Brown
-		zblok.img = etc[11]
+		zblok.img = gs.Render.Etc[11]
 	case 9: //MEDI KIT
 		zblok.name = "medi kit"
 		zblok.desc = "resurrect from death - destroyed on use"
 		zblok.color = rl.White
-		zblok.img = etc[10]
+		zblok.img = gs.Render.Etc[10]
 	case 8: //PLANT COMPANION
 		zblok.name = "mr planty"
 		zblok.desc = "a companion to assist"
 		zblok.color = rl.White
-		zblok.img = etc[9]
+		zblok.img = gs.Render.Etc[9]
 	case 7: //APPLE
 		zblok.name = "apple"
 		zblok.desc = "prevents poisoning - destroyed on use"
 		zblok.color = rl.White
-		zblok.img = etc[8]
+		zblok.img = gs.Render.Etc[8]
 	case 6: //KEY
 		zblok.name = "key"
 		zblok.desc = "open locked chests"
 		zblok.color = rl.White
-		zblok.img = etc[7]
+		zblok.img = gs.Render.Etc[7]
 	case 5: //ESCAPE VINE
 		zblok.name = "vine"
 		zblok.desc = "automatically escape room at low hp - destroyed on use"
 		zblok.color = rl.DarkGreen
-		zblok.img = etc[6]
+		zblok.img = gs.Render.Etc[6]
 	case 4: //BOUNCE PROJECTILE
 		zblok.name = "bounce"
 		zblok.desc = "projectiles bounce > collect more = more bounces"
 		zblok.color = rl.Yellow
-		zblok.img = etc[5]
+		zblok.img = gs.Render.Etc[5]
 	case 3: //SANTA
 		zblok.name = "santa"
 		zblok.desc = "snow when you don't need it"
 		zblok.color = rl.White
-		zblok.img = etc[4]
+		zblok.img = gs.Render.Etc[4]
 	case 2: //THROWING AXE
 		zblok.name = "throwing axe"
 		zblok.desc = "fires at interval > collect more = faster fire rate"
 		zblok.color = rl.SkyBlue
-		zblok.img = etc[3]
+		zblok.img = gs.Render.Etc[3]
 	case 1: //HP POTION
 		zblok.name = "health potion"
 		zblok.desc = "automatically used when health < 2"
 		zblok.color = rl.Red
-		zblok.img = etc[1]
+		zblok.img = gs.Render.Etc[1]
 
 	}
 
-	level[roomNum].etc = append(level[roomNum].etc, zblok)
+	gs.Level.Level[gs.Level.RoomNum].etc = append(gs.Level.Level[gs.Level.RoomNum].etc, zblok)
 
 }
 func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
 
 	//CHECK FOR SAME ADD TO INVEN
 	sold := false
-	if len(inven) > 0 {
+	if len(gs.Player.Inven) > 0 {
 		foundsame := false
-		for a := 0; a < len(inven); a++ {
-			if level[roomNum].etc[blokNum].name == inven[a].name {
+		for a := 0; a < len(gs.Player.Inven); a++ {
+			if gs.Level.Level[gs.Level.RoomNum].etc[blokNum].name == gs.Player.Inven[a].name {
 
-				switch level[roomNum].etc[blokNum].name {
+				switch gs.Level.Level[gs.Level.RoomNum].etc[blokNum].name {
 				case "mr carrot":
-					pl.coins++
+					gs.Player.Pl.coins++
 					txtSold("mr carrot")
 					sold = true
 				case "fireworks":
-					pl.coins++
+					gs.Player.Pl.coins++
 					txtSold("fireworks")
 					sold = true
 				case "air strike":
-					pl.coins++
+					gs.Player.Pl.coins++
 					txtSold("air strike")
 					sold = true
 				case "mr alien":
-					pl.coins++
+					gs.Player.Pl.coins++
 					txtSold("mr alien")
 					sold = true
 				case "peace":
-					pl.coins++
+					gs.Player.Pl.coins++
 					txtSold("peace")
 					sold = true
 				case "birthday cake":
-					if mods.cakeN < max.cake {
-						inven[a].numof++
+					if gs.Player.Mods.cakeN < gs.Player.Max.cake {
+						gs.Player.Inven[a].numof++
 						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
-						pl.coins++
+						gs.Player.Pl.coins++
 						txtSold("birthday cake")
 						sold = true
 					}
 				case "fish":
-					pl.coins++
+					gs.Player.Pl.coins++
 					txtSold("fish")
 					sold = true
 				case "cherry":
-					if mods.cherryN < max.cherry {
-						inven[a].numof++
+					if gs.Player.Mods.cherryN < gs.Player.Max.cherry {
+						gs.Player.Inven[a].numof++
 						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
-						pl.coins++
+						gs.Player.Pl.coins++
 						txtSold("cherry")
 						sold = true
 					}
 				case "socks":
-					pl.coins++
+					gs.Player.Pl.coins++
 					txtSold("socks")
 					sold = true
 				case "umbrella":
-					pl.coins++
+					gs.Player.Pl.coins++
 					txtSold("umbrella")
 					sold = true
 				case "anchor":
-					pl.coins++
+					gs.Player.Pl.coins++
 					txtSold("anchor")
 					sold = true
 				case "recharge":
-					pl.coins++
+					gs.Player.Pl.coins++
 					txtSold("recharge")
 					sold = true
 				case "armor":
-					if mods.armorN < max.armor {
-						inven[a].numof++
-						if pl.armor < pl.armorMax {
-							pl.armor++
+					if gs.Player.Mods.armorN < gs.Player.Max.armor {
+						gs.Player.Inven[a].numof++
+						if gs.Player.Pl.armor < gs.Player.Pl.armorMax {
+							gs.Player.Pl.armor++
 						}
 						rl.PlaySound(gs.Audio.Sfx[8])
-					} else if mods.armorN == max.armor && pl.armor < pl.armorMax {
-						pl.armor++
+					} else if gs.Player.Mods.armorN == gs.Player.Max.armor && gs.Player.Pl.armor < gs.Player.Pl.armorMax {
+						gs.Player.Pl.armor++
 					} else {
-						pl.coins++
+						gs.Player.Pl.coins++
 						txtSold("armor")
 						sold = true
 					}
 				case "health ring":
-					if mods.hpringN < max.hpring {
-						inven[a].numof++
+					if gs.Player.Mods.hpringN < gs.Player.Max.hpring {
+						gs.Player.Inven[a].numof++
 						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
-						pl.coins++
+						gs.Player.Pl.coins++
 						txtSold("health ring")
 						sold = true
 					}
 				case "chain lightning":
-					pl.coins++
+					gs.Player.Pl.coins++
 					txtSold("chain lightning")
 					sold = true
 				case "orbital":
-					if mods.orbitalN < max.orbital {
-						inven[a].numof++
+					if gs.Player.Mods.orbitalN < gs.Player.Max.orbital {
+						gs.Player.Inven[a].numof++
 						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
-						pl.coins++
+						gs.Player.Pl.coins++
 						txtSold("orbital")
 						sold = true
 					}
 				case "attack damage":
-					if mods.atkdmgN < max.atkdmg {
-						inven[a].numof++
+					if gs.Player.Mods.atkdmgN < gs.Player.Max.atkdmg {
+						gs.Player.Inven[a].numof++
 						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
-						pl.coins++
+						gs.Player.Pl.coins++
 						txtSold("attack damage")
 						sold = true
 					}
 				case "attack range":
-					if mods.atkrangeN < max.atkrange {
-						inven[a].numof++
+					if gs.Player.Mods.atkrangeN < gs.Player.Max.atkrange {
+						gs.Player.Inven[a].numof++
 						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
-						pl.coins++
+						gs.Player.Pl.coins++
 						txtSold("attack range")
 						sold = true
 					}
 				case "coffee":
-					if mods.coffeeN < max.coffee {
-						inven[a].numof++
+					if gs.Player.Mods.coffeeN < gs.Player.Max.coffee {
+						gs.Player.Inven[a].numof++
 						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
-						pl.coins++
+						gs.Player.Pl.coins++
 						txtSold("coffee")
 						sold = true
 					}
 				case "invisible":
-					pl.coins++
+					gs.Player.Pl.coins++
 					txtSold("invisible")
 					sold = true
 				case "health potion":
-					if mods.hppotionN < max.hppotion {
-						inven[a].numof++
+					if gs.Player.Mods.hppotionN < gs.Player.Max.hppotion {
+						gs.Player.Inven[a].numof++
 						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
-						pl.coins++
+						gs.Player.Pl.coins++
 						txtSold("health potion")
 						sold = true
 					}
 				case "firetrail":
-					if mods.firetrailN < max.firetrail {
-						inven[a].numof++
+					if gs.Player.Mods.firetrailN < gs.Player.Max.firetrail {
+						gs.Player.Inven[a].numof++
 						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
-						pl.coins++
+						gs.Player.Pl.coins++
 						txtSold("firetrail")
 						sold = true
 					}
 				case "map":
-					pl.coins++
+					gs.Player.Pl.coins++
 					txtSold("map")
 					sold = true
 				case "wallet":
-					pl.coins++
+					gs.Player.Pl.coins++
 					txtSold("wallet")
 					sold = true
 				case "medi kit":
-					pl.coins++
+					gs.Player.Pl.coins++
 					txtSold("medi kit")
 					sold = true
 				case "mr planty":
-					pl.coins++
+					gs.Player.Pl.coins++
 					txtSold("mr planty")
 					sold = true
 				case "apple":
-					if mods.appleN < max.apple {
-						inven[a].numof++
+					if gs.Player.Mods.appleN < gs.Player.Max.apple {
+						gs.Player.Inven[a].numof++
 						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
-						pl.coins++
+						gs.Player.Pl.coins++
 						txtSold("apple")
 						sold = true
 					}
 				case "key":
-					if mods.keyN < max.key {
-						inven[a].numof++
+					if gs.Player.Mods.keyN < gs.Player.Max.key {
+						gs.Player.Inven[a].numof++
 						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
-						pl.coins++
+						gs.Player.Pl.coins++
 						txtSold("key")
 						sold = true
 					}
 				case "vine":
-					pl.coins++
+					gs.Player.Pl.coins++
 					txtSold("vine")
 					sold = true
 				case "bounce":
-					if mods.bounceN < max.bounce {
-						inven[a].numof++
+					if gs.Player.Mods.bounceN < gs.Player.Max.bounce {
+						gs.Player.Inven[a].numof++
 						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
-						pl.coins++
+						gs.Player.Pl.coins++
 						txtSold("bounce")
 						sold = true
 					}
 				case "fireball":
-					if mods.fireballN < max.fireball {
-						inven[a].numof++
+					if gs.Player.Mods.fireballN < gs.Player.Max.fireball {
+						gs.Player.Inven[a].numof++
 						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
-						pl.coins++
+						gs.Player.Pl.coins++
 						txtSold("fireball")
 						sold = true
 					}
 				case "santa":
-					pl.coins++
+					gs.Player.Pl.coins++
 					txtSold("santa")
 					sold = true
 				case "throwing axe":
-					if mods.axeN < max.axe {
-						inven[a].numof++
+					if gs.Player.Mods.axeN < gs.Player.Max.axe {
+						gs.Player.Inven[a].numof++
 						rl.PlaySound(gs.Audio.Sfx[8])
 					} else {
-						pl.coins++
+						gs.Player.Pl.coins++
 						txtSold("axe")
 						sold = true
 					}
@@ -5806,179 +5700,179 @@ func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
 				foundsame = true
 			}
 		}
-		if !foundsame && level[roomNum].etc[blokNum].name != "teleport" {
-			inven = append(inven, level[roomNum].etc[blokNum])
+		if !foundsame && gs.Level.Level[gs.Level.RoomNum].etc[blokNum].name != "teleport" {
+			gs.Player.Inven = append(gs.Player.Inven, gs.Level.Level[gs.Level.RoomNum].etc[blokNum])
 			rl.PlaySound(gs.Audio.Sfx[8])
 		}
 	} else {
-		if level[roomNum].etc[blokNum].name != "teleport" {
-			inven = append(inven, level[roomNum].etc[blokNum])
+		if gs.Level.Level[gs.Level.RoomNum].etc[blokNum].name != "teleport" {
+			gs.Player.Inven = append(gs.Player.Inven, gs.Level.Level[gs.Level.RoomNum].etc[blokNum])
 			rl.PlaySound(gs.Audio.Sfx[8])
 		}
 	}
 
 	//UP MODS
 	if !sold {
-		switch level[roomNum].etc[blokNum].name {
+		switch gs.Level.Level[gs.Level.RoomNum].etc[blokNum].name {
 		case "mario":
 			makemario()
-			pause = true
+			gs.Core.Pause = true
 			gs.Mario.MarioOn = true
 		case "mr carrot":
-			if !mods.alien && !mods.planty {
-				mods.carrot = true
-				gs.Companions.MrCarrot.rec = rl.NewRectangle(pl.cnt.X-gs.Companions.MrCarrot.rec.Width/2, pl.cnt.Y-gs.Companions.MrCarrot.rec.Width/2, gs.Companions.MrCarrot.rec.Width, gs.Companions.MrCarrot.rec.Width)
+			if !gs.Player.Mods.alien && !gs.Player.Mods.planty {
+				gs.Player.Mods.carrot = true
+				gs.Companions.MrCarrot.rec = rl.NewRectangle(gs.Player.Pl.cnt.X-gs.Companions.MrCarrot.rec.Width/2, gs.Player.Pl.cnt.Y-gs.Companions.MrCarrot.rec.Width/2, gs.Companions.MrCarrot.rec.Width, gs.Companions.MrCarrot.rec.Width)
 			} else {
 				txtCompanion()
 			}
 		case "fireworks":
-			mods.fireworks = true
+			gs.Player.Mods.fireworks = true
 		case "air strike":
-			mods.airstrike = true
-			airstrikeT = gs.Core.Fps * rI32(3, 8)
+			gs.Player.Mods.airstrike = true
+			gs.FX.AirstrikeT = gs.Core.Fps * rI32(3, 8)
 		case "mr alien":
-			if !mods.carrot && !mods.planty {
-				mods.alien = true
-				gs.Companions.MrAlien.rec = rl.NewRectangle(pl.cnt.X-gs.Companions.MrAlien.rec.Width/2, pl.cnt.Y-gs.Companions.MrAlien.rec.Width/2, gs.Companions.MrAlien.rec.Width, gs.Companions.MrAlien.rec.Width)
+			if !gs.Player.Mods.carrot && !gs.Player.Mods.planty {
+				gs.Player.Mods.alien = true
+				gs.Companions.MrAlien.rec = rl.NewRectangle(gs.Player.Pl.cnt.X-gs.Companions.MrAlien.rec.Width/2, gs.Player.Pl.cnt.Y-gs.Companions.MrAlien.rec.Width/2, gs.Companions.MrAlien.rec.Width, gs.Companions.MrAlien.rec.Width)
 			} else {
 				txtCompanion()
 			}
 
 		case "peace":
-			mods.peace = true
+			gs.Player.Mods.peace = true
 		case "birthday cake":
-			if mods.cakeN < max.cake {
-				mods.cakeN++
+			if gs.Player.Mods.cakeN < gs.Player.Max.cake {
+				gs.Player.Mods.cakeN++
 				birthdaycake()
 			}
 		case "fish":
-			mods.flood = true
-			floodRec = rl.NewRectangle(0, scrHF32+bsU, scrWF32, scrHF32)
+			gs.Player.Mods.flood = true
+			gs.FX.FloodRec = rl.NewRectangle(0, gs.Core.ScrHF32+bsU, gs.Core.ScrWF32, gs.Core.ScrHF32)
 			makefish()
 		case "cherry":
-			if mods.cherryN < max.cherry {
-				mods.cherryN++
+			if gs.Player.Mods.cherryN < gs.Player.Max.cherry {
+				gs.Player.Mods.cherryN++
 				num2 := rInt(1, 6)
-				pl.coins += num2
+				gs.Player.Pl.coins += num2
 				txtAddCoinMulti()
 			}
 		case "moldy socks":
-			mods.socks = true
+			gs.Player.Mods.socks = true
 		case "umbrella":
-			mods.umbrella = true
+			gs.Player.Mods.umbrella = true
 		case "anchor":
-			mods.anchor = true
+			gs.Player.Mods.anchor = true
 		case "recharge":
-			mods.recharge = true
+			gs.Player.Mods.recharge = true
 		case "armor":
-			if mods.armorN < max.armor {
-				mods.armorN++
-				pl.armorMax++
-				pl.armor++
+			if gs.Player.Mods.armorN < gs.Player.Max.armor {
+				gs.Player.Mods.armorN++
+				gs.Player.Pl.armorMax++
+				gs.Player.Pl.armor++
 			}
 		case "health ring":
-			if mods.hpringN < max.hpring {
-				mods.hpringN++
-				pl.hpmax++
-				if pl.hp < pl.hpmax {
-					pl.hp++
+			if gs.Player.Mods.hpringN < gs.Player.Max.hpring {
+				gs.Player.Mods.hpringN++
+				gs.Player.Pl.hpmax++
+				if gs.Player.Pl.hp < gs.Player.Pl.hpmax {
+					gs.Player.Pl.hp++
 				}
 			}
 		case "chain lightning":
-			mods.chainlightning = true
+			gs.Player.Mods.chainlightning = true
 		case "orbital":
-			mods.orbital = true
-			if mods.orbitalN < max.orbital {
-				mods.orbitalN++
-				if mods.orbitalN == 1 {
-					pl.orbital1 = rl.NewVector2(pl.cnt.X+bsU4, pl.cnt.Y+bsU4)
+			gs.Player.Mods.orbital = true
+			if gs.Player.Mods.orbitalN < gs.Player.Max.orbital {
+				gs.Player.Mods.orbitalN++
+				if gs.Player.Mods.orbitalN == 1 {
+					gs.Player.Pl.orbital1 = rl.NewVector2(gs.Player.Pl.cnt.X+bsU4, gs.Player.Pl.cnt.Y+bsU4)
 				}
-				if mods.orbitalN == 2 {
-					pl.orbital2 = rl.NewVector2(pl.cnt.X-bsU7, pl.cnt.Y-bsU7)
+				if gs.Player.Mods.orbitalN == 2 {
+					gs.Player.Pl.orbital2 = rl.NewVector2(gs.Player.Pl.cnt.X-bsU7, gs.Player.Pl.cnt.Y-bsU7)
 				}
 			}
 		case "attack damage":
-			if mods.atkdmgN < max.atkdmg {
-				mods.atkdmgN++
+			if gs.Player.Mods.atkdmgN < gs.Player.Max.atkdmg {
+				gs.Player.Mods.atkdmgN++
 			}
-			pl.atkDMG++
+			gs.Player.Pl.atkDMG++
 		case "attack range":
-			if mods.atkrangeN < max.atkrange {
-				mods.atkrangeN++
+			if gs.Player.Mods.atkrangeN < gs.Player.Max.atkrange {
+				gs.Player.Mods.atkrangeN++
 			}
-			pl.atkrec.X -= bsU
-			pl.atkrec.Y -= bsU
-			pl.atkrec.Width += bsU2
-			pl.atkrec.Height += bsU2
+			gs.Player.Pl.atkrec.X -= bsU
+			gs.Player.Pl.atkrec.Y -= bsU
+			gs.Player.Pl.atkrec.Width += bsU2
+			gs.Player.Pl.atkrec.Height += bsU2
 		case "teleport":
-			pl.hppause = gs.Core.Fps * 5
+			gs.Player.Pl.hppause = gs.Core.Fps * 5
 			maketeleport()
-			teleportRoomNum = rInt(0, len(level))
-			teleporton = true
+			gs.Player.TeleportRoomNum = rInt(0, len(gs.Level.Level))
+			gs.Player.TeleportOn = true
 			rl.PlaySound(gs.Audio.Sfx[9])
 		case "coffee":
-			if mods.coffeeN < max.coffee {
-				mods.coffeeN++
-				pl.vel++
+			if gs.Player.Mods.coffeeN < gs.Player.Max.coffee {
+				gs.Player.Mods.coffeeN++
+				gs.Player.Pl.vel++
 			}
 		case "invisible":
-			mods.invisible = true
+			gs.Player.Mods.invisible = true
 		case "health potion":
-			mods.hppotion = true
-			if mods.hppotionN < max.hppotion {
-				mods.hppotionN++
+			gs.Player.Mods.hppotion = true
+			if gs.Player.Mods.hppotionN < gs.Player.Max.hppotion {
+				gs.Player.Mods.hppotionN++
 			}
 		case "firetrail":
-			mods.firetrail = true
-			if mods.firetrailN < max.firetrail {
-				mods.firetrailN++
+			gs.Player.Mods.firetrail = true
+			if gs.Player.Mods.firetrailN < gs.Player.Max.firetrail {
+				gs.Player.Mods.firetrailN++
 			}
 		case "bounce":
-			if mods.bounceN < max.bounce {
-				mods.bounceN++
+			if gs.Player.Mods.bounceN < gs.Player.Max.bounce {
+				gs.Player.Mods.bounceN++
 			}
 		case "map":
-			mods.exitmap = true
+			gs.Player.Mods.exitmap = true
 		case "wallet":
-			mods.wallet = true
+			gs.Player.Mods.wallet = true
 		case "medi kit":
-			mods.medikit = true
+			gs.Player.Mods.medikit = true
 		case "mr planty":
-			if !mods.alien && !mods.carrot {
-				mods.planty = true
-				gs.Companions.MrPlanty.rec = rl.NewRectangle(pl.cnt.X-gs.Companions.MrPlanty.rec.Width/2, pl.cnt.Y-gs.Companions.MrPlanty.rec.Width/2, gs.Companions.MrPlanty.rec.Width, gs.Companions.MrPlanty.rec.Width)
+			if !gs.Player.Mods.alien && !gs.Player.Mods.carrot {
+				gs.Player.Mods.planty = true
+				gs.Companions.MrPlanty.rec = rl.NewRectangle(gs.Player.Pl.cnt.X-gs.Companions.MrPlanty.rec.Width/2, gs.Player.Pl.cnt.Y-gs.Companions.MrPlanty.rec.Width/2, gs.Companions.MrPlanty.rec.Width, gs.Companions.MrPlanty.rec.Width)
 			} else {
 				txtCompanion()
 			}
 
 		case "apple":
-			mods.apple = true
-			if mods.appleN < max.apple {
-				mods.appleN++
+			gs.Player.Mods.apple = true
+			if gs.Player.Mods.appleN < gs.Player.Max.apple {
+				gs.Player.Mods.appleN++
 			}
 		case "key":
-			mods.key = true
-			if mods.keyN < max.key {
-				mods.keyN++
+			gs.Player.Mods.key = true
+			if gs.Player.Mods.keyN < gs.Player.Max.key {
+				gs.Player.Mods.keyN++
 			}
 		case "vine":
-			mods.vine = true
+			gs.Player.Mods.vine = true
 		case "fireball":
-			mods.fireball = true
-			if mods.fireballN < max.fireball {
-				mods.fireballN++
+			gs.Player.Mods.fireball = true
+			if gs.Player.Mods.fireballN < gs.Player.Max.fireball {
+				gs.Player.Mods.fireballN++
 			}
 		case "santa":
-			mods.santa = true
-			mods.santaT = rI32(7, 21) * gs.Core.Fps
+			gs.Player.Mods.santa = true
+			gs.Player.Mods.santaT = rI32(7, 21) * gs.Core.Fps
 		case "throwing axe":
-			mods.axe = true
-			if mods.axeN < max.axe {
-				mods.axeN++
-				mods.axeT = (int32(max.axe) * gs.Core.Fps) - (int32(mods.axeN) * gs.Core.Fps)
+			gs.Player.Mods.axe = true
+			if gs.Player.Mods.axeN < gs.Player.Max.axe {
+				gs.Player.Mods.axeN++
+				gs.Player.Mods.axeT = (int32(gs.Player.Max.axe) * gs.Core.Fps) - (int32(gs.Player.Mods.axeN) * gs.Core.Fps)
 			}
-			if mods.axeT < gs.Core.Fps {
-				mods.axeT = gs.Core.Fps
+			if gs.Player.Mods.axeT < gs.Core.Fps {
+				gs.Player.Mods.axeT = gs.Core.Fps
 			}
 
 		}
@@ -5993,47 +5887,47 @@ func birthdaycake() { //MARK:BIRTHDAY CAKE
 		choose := rInt(1, 6)
 		switch choose {
 		case 1:
-			if pl.hp < pl.hpmax {
-				pl.hp = pl.hpmax
+			if gs.Player.Pl.hp < gs.Player.Pl.hpmax {
+				gs.Player.Pl.hp = gs.Player.Pl.hpmax
 				found = true
 			}
 		case 2:
-			if pl.hpmax < 10 {
-				pl.hpmax++
+			if gs.Player.Pl.hpmax < 10 {
+				gs.Player.Pl.hpmax++
 				found = true
 			}
 		case 3:
-			if mods.armorN == 0 {
-				if mods.armorN < max.armor {
-					mods.armorN++
-					pl.armorMax++
-					pl.armor++
+			if gs.Player.Mods.armorN == 0 {
+				if gs.Player.Mods.armorN < gs.Player.Max.armor {
+					gs.Player.Mods.armorN++
+					gs.Player.Pl.armorMax++
+					gs.Player.Pl.armor++
 					found = true
 				}
 			}
 		case 4:
-			if mods.armorN > 0 && mods.armorN < max.armor {
-				mods.armorN++
-				pl.armorMax++
-				pl.armor++
+			if gs.Player.Mods.armorN > 0 && gs.Player.Mods.armorN < gs.Player.Max.armor {
+				gs.Player.Mods.armorN++
+				gs.Player.Pl.armorMax++
+				gs.Player.Pl.armor++
 				found = true
 			}
 		case 5:
-			if pl.armor > 0 && pl.armor < pl.armorMax {
-				pl.armor = pl.armorMax
+			if gs.Player.Pl.armor > 0 && gs.Player.Pl.armor < gs.Player.Pl.armorMax {
+				gs.Player.Pl.armor = gs.Player.Pl.armorMax
 				found = true
 			}
 		case 6:
 			num2 := rInt(1, 6)
-			pl.coins += num2
+			gs.Player.Pl.coins += num2
 			txtAddCoinMulti()
 			found = true
 		case 7:
-			if pl.poison {
-				pl.poisonT = 0
-				pl.poisonCollisT = 0
-				if pl.hp < pl.hpmax {
-					pl.hp++
+			if gs.Player.Pl.poison {
+				gs.Player.Pl.poisonT = 0
+				gs.Player.Pl.poisonCollisT = 0
+				if gs.Player.Pl.hp < gs.Player.Pl.hpmax {
+					gs.Player.Pl.hp++
 				}
 			}
 		}
@@ -6061,15 +5955,15 @@ func txtHere(txt string, rec rl.Rectangle) { //MARK:TEXT HERE
 	ztxt.y = y
 	ztxt.onoff = true
 
-	gametxt = append(gametxt, ztxt)
+	gs.UI.GameTxt = append(gs.UI.GameTxt, ztxt)
 
 }
 func delInven(name string) { //MARK:DEL INVEN
 	clear := false
-	for a := 0; a < len(inven); a++ {
-		if name == inven[a].name {
-			inven[a].numof--
-			if inven[a].numof == 0 {
+	for a := 0; a < len(gs.Player.Inven); a++ {
+		if name == gs.Player.Inven[a].name {
+			gs.Player.Inven[a].numof--
+			if gs.Player.Inven[a].numof == 0 {
 				clear = true
 			}
 		}
@@ -6098,7 +5992,7 @@ func onoff(x32, y32 int32, siz float32, name bool) bool { //MARK: ON/OFF
 
 	rl.DrawRectangleLinesEx(rec, 1, rl.White)
 
-	if rl.CheckCollisionPointRec(mousev2cam, rec) {
+	if rl.CheckCollisionPointRec(gs.Core.Mousev2cam, rec) {
 
 		if rl.IsMouseButtonPressed(rl.MouseLeftButton) {
 			name = !name
@@ -6113,60 +6007,60 @@ func clearinven(name string) { //MARK:CLEAR INVEN
 	num := 0
 	clear := false
 
-	for a := 0; a < len(inven); a++ {
-		if inven[a].name == name {
+	for a := 0; a < len(gs.Player.Inven); a++ {
+		if gs.Player.Inven[a].name == name {
 			num = a
 			clear = true
 		}
 	}
 	if clear {
-		inven = remBlok(inven, num)
+		gs.Player.Inven = remBlok(gs.Player.Inven, num)
 	}
 
 }
 func escapeplayer() { //MARK:ESCAPE PLAYER
 
-	if pl.cnt.Y > levRecInner.Y && !escaped {
-		pl.cnt.Y -= bsU / 4
-		if pl.cnt.X > cnt.X {
-			pl.cnt.X -= bsU / 4
-		} else if pl.cnt.X < cnt.X {
-			pl.cnt.X += bsU / 4
+	if gs.Player.Pl.cnt.Y > gs.Level.LevRecInner.Y && !gs.Player.Escaped {
+		gs.Player.Pl.cnt.Y -= bsU / 4
+		if gs.Player.Pl.cnt.X > gs.Core.Cnt.X {
+			gs.Player.Pl.cnt.X -= bsU / 4
+		} else if gs.Player.Pl.cnt.X < gs.Core.Cnt.X {
+			gs.Player.Pl.cnt.X += bsU / 4
 		}
 
 		upPlayerRec()
-		if pl.cnt.Y <= levRecInner.Y {
-			escaped = true
+		if gs.Player.Pl.cnt.Y <= gs.Level.LevRecInner.Y {
+			gs.Player.Escaped = true
 			upRoomChange()
-			pl.hp = 2
+			gs.Player.Pl.hp = 2
 		}
 
 	}
 
-	if escaped {
-		if !escapeRoomFound {
+	if gs.Player.Escaped {
+		if !gs.Player.EscapeRoomFound {
 			choose := 0
 			for {
-				choose = rInt(0, len(level))
-				if choose != roomNum {
+				choose = rInt(0, len(gs.Level.Level))
+				if choose != gs.Level.RoomNum {
 					break
 				}
 			}
-			roomNum = choose
-			escapeRoomFound = true
+			gs.Level.RoomNum = choose
+			gs.Player.EscapeRoomFound = true
 		}
-		if pl.cnt.Y < levRecInner.Y+bsU3 {
-			pl.cnt.Y += bsU / 4
+		if gs.Player.Pl.cnt.Y < gs.Level.LevRecInner.Y+bsU3 {
+			gs.Player.Pl.cnt.Y += bsU / 4
 		}
-		if pl.cnt.X > cnt.X {
-			pl.cnt.X -= bsU / 4
-		} else if pl.cnt.X < cnt.X {
-			pl.cnt.X += bsU / 4
+		if gs.Player.Pl.cnt.X > gs.Core.Cnt.X {
+			gs.Player.Pl.cnt.X -= bsU / 4
+		} else if gs.Player.Pl.cnt.X < gs.Core.Cnt.X {
+			gs.Player.Pl.cnt.X += bsU / 4
 		}
 		upPlayerRec()
 
-		if pl.cnt.Y >= levRecInner.Y+bsU3 {
-			pl.escape = false
+		if gs.Player.Pl.cnt.Y >= gs.Level.LevRecInner.Y+bsU3 {
+			gs.Player.Pl.escape = false
 		}
 	}
 
@@ -6174,17 +6068,17 @@ func escapeplayer() { //MARK:ESCAPE PLAYER
 func cleanlevel() { //MARK:CLEAN LEVEL
 
 	//EMPTY ETC BLOKS
-	for a := 0; a < len(level); a++ {
+	for a := 0; a < len(gs.Level.Level); a++ {
 
 		var blokstoClear []int
-		for b := 0; b < len(level[a].etc); b++ {
-			if level[a].etc[b].name == "" {
+		for b := 0; b < len(gs.Level.Level[a].etc); b++ {
+			if gs.Level.Level[a].etc[b].name == "" {
 				blokstoClear = append(blokstoClear, b)
 			}
 		}
 		if len(blokstoClear) > 0 {
 			for b := 0; b < len(blokstoClear); b++ {
-				level[a].etc = remBlok(level[a].etc, blokstoClear[b])
+				gs.Level.Level[a].etc = remBlok(gs.Level.Level[a].etc, blokstoClear[b])
 			}
 		}
 
@@ -6193,84 +6087,84 @@ func cleanlevel() { //MARK:CLEAN LEVEL
 	//START ROOM CENTER BLOK CLEAR
 	num := 0
 	clear := false
-	checkrec := rl.NewRectangle(cnt.X-bsU4, cnt.Y-bsU4, bsU8, bsU8)
-	if len(level[0].innerBloks) > 0 {
-		for a := 0; a < len(level[0].innerBloks); a++ {
-			if rl.CheckCollisionRecs(checkrec, level[0].innerBloks[a].rec) {
+	checkrec := rl.NewRectangle(gs.Core.Cnt.X-bsU4, gs.Core.Cnt.Y-bsU4, bsU8, bsU8)
+	if len(gs.Level.Level[0].innerBloks) > 0 {
+		for a := 0; a < len(gs.Level.Level[0].innerBloks); a++ {
+			if rl.CheckCollisionRecs(checkrec, gs.Level.Level[0].innerBloks[a].rec) {
 				num = a
 				clear = true
 			}
 		}
 	}
 	if clear {
-		level[0].innerBloks = remBlok(level[0].innerBloks, num)
+		gs.Level.Level[0].innerBloks = remBlok(gs.Level.Level[0].innerBloks, num)
 	}
 
 	//CLEAR ETC CENTER
-	for i := 0; i < len(level[0].etc); i++ {
-		checkrec := rl.NewRectangle(cnt.X-bsU2, cnt.Y-bsU2, bsU4, bsU4)
-		if rl.CheckCollisionRecs(checkrec, level[0].etc[i].rec) {
-			level[0].etc[i].onoff = false
+	for i := 0; i < len(gs.Level.Level[0].etc); i++ {
+		checkrec := rl.NewRectangle(gs.Core.Cnt.X-bsU2, gs.Core.Cnt.Y-bsU2, bsU4, bsU4)
+		if rl.CheckCollisionRecs(checkrec, gs.Level.Level[0].etc[i].rec) {
+			gs.Level.Level[0].etc[i].onoff = false
 		}
 	}
 
 	//CLEAR MOVE BLOCKS CENTER
-	for i := 0; i < len(level[0].movBloks); i++ {
-		checkrec := rl.NewRectangle(cnt.X-bsU2, cnt.Y-bsU2, bsU4, bsU4)
-		if rl.CheckCollisionRecs(checkrec, level[0].movBloks[i].rec) {
-			level[0].movBloks[i].rec.X -= bsU4
+	for i := 0; i < len(gs.Level.Level[0].movBloks); i++ {
+		checkrec := rl.NewRectangle(gs.Core.Cnt.X-bsU2, gs.Core.Cnt.Y-bsU2, bsU4, bsU4)
+		if rl.CheckCollisionRecs(checkrec, gs.Level.Level[0].movBloks[i].rec) {
+			gs.Level.Level[0].movBloks[i].rec.X -= bsU4
 		}
 	}
 
 }
 func hitPL(numEnProj, numType int) { //MARK:HIT PLAYER
 
-	if pl.hppause == 0 && pl.peaceT == 0 && startdmgT == 0 {
-		pl.hppause = gs.Core.Fps * 2
-		hpHitY = 0
-		hpHitF = 1
+	if gs.Player.Pl.hppause == 0 && gs.Player.Pl.peaceT == 0 && gs.Player.StartdmgT == 0 {
+		gs.Player.Pl.hppause = gs.Core.Fps * 2
+		gs.Player.HpHitY = 0
+		gs.Player.HpHitF = 1
 
-		if pl.armor > 0 {
-			pl.armor--
-			pl.armorHit = true
+		if gs.Player.Pl.armor > 0 {
+			gs.Player.Pl.armor--
+			gs.Player.Pl.armorHit = true
 		} else {
 			switch numType {
 			case 2: // BURN POISON ENEMY COLLIS WATER
 				if !gs.UI.Invincible {
-					pl.hp--
+					gs.Player.Pl.hp--
 
 				}
 			case 1: //ENEMY PROJECTILE
 				if !gs.UI.Invincible {
-					pl.hp -= enProj[numEnProj].dmg
+					gs.Player.Pl.hp -= gs.Enemies.EnProj[numEnProj].dmg
 
 				}
 			}
 			zblok := xblok{}
-			zblok.rec = pl.rec
-			zblok.cnt = pl.cnt
-			zblok.img = splats[rInt(0, len(splats))]
+			zblok.rec = gs.Player.Pl.rec
+			zblok.cnt = gs.Player.Pl.cnt
+			zblok.img = gs.Render.Splats[rInt(0, len(gs.Render.Splats))]
 			zblok.color = ranRed()
 			zblok.fade = 0.5
 			zblok.onoff = true
 			zblok.name = "playerblood"
-			level[roomNum].etc = append(level[roomNum].etc, zblok)
-			if pl.hp <= 0 && !gs.UI.Invincible {
-				pl.hp = 0
-				if mods.medikit {
-					pl.hp = pl.hpmax
-					pl.revived = true
-					pl.hppause = gs.Core.Fps * 3
-					reviveY = 0
-					reviveF = 1
-					mods.medikit = false
+			gs.Level.Level[gs.Level.RoomNum].etc = append(gs.Level.Level[gs.Level.RoomNum].etc, zblok)
+			if gs.Player.Pl.hp <= 0 && !gs.UI.Invincible {
+				gs.Player.Pl.hp = 0
+				if gs.Player.Mods.medikit {
+					gs.Player.Pl.hp = gs.Player.Pl.hpmax
+					gs.Player.Pl.revived = true
+					gs.Player.Pl.hppause = gs.Core.Fps * 3
+					gs.Player.ReviveY = 0
+					gs.Player.ReviveF = 1
+					gs.Player.Mods.medikit = false
 					clearinven("medi kit")
 				} else {
-					diedscrT = gs.Core.Fps * 3
-					pause = true
-					died = true
-					diedRec = rl.NewRectangle(cnt.X-bsU, cnt.Y-bsU, bsU2, bsU2)
-					diedIMG = splats[rInt(0, len(splats))]
+					gs.Level.DiedscrT = gs.Core.Fps * 3
+					gs.Core.Pause = true
+					gs.Player.Died = true
+					gs.Player.DiedRec = rl.NewRectangle(gs.Core.Cnt.X-bsU, gs.Core.Cnt.Y-bsU, bsU2, bsU2)
+					gs.Player.DiedIMG = gs.Render.Splats[rInt(0, len(gs.Render.Splats))]
 				}
 
 			}
@@ -6282,21 +6176,21 @@ func hitPL(numEnProj, numType int) { //MARK:HIT PLAYER
 }
 
 func addkill(num int) { //MARK:ADD KILL
-	switch level[roomNum].enemies[num].name {
+	switch gs.Level.Level[gs.Level.RoomNum].enemies[num].name {
 	case "rabbit1":
-		kills.bunnies++
+		gs.Player.Kills.bunnies++
 	case "bat":
-		kills.bats++
+		gs.Player.Kills.bats++
 	case "mushroom":
-		kills.mushrooms++
+		gs.Player.Kills.mushrooms++
 	case "ghost":
-		kills.ghosts++
+		gs.Player.Kills.ghosts++
 	case "spikehog":
-		kills.spikehogs++
+		gs.Player.Kills.spikehogs++
 	case "rock":
-		kills.rocks++
+		gs.Player.Kills.rocks++
 	case "slime":
-		kills.slimes++
+		gs.Player.Kills.slimes++
 	}
 	rl.PlaySound(gs.Audio.Sfx[7])
 }
@@ -6306,13 +6200,13 @@ func txtSold(name string) { //MARK:TEXT SOLD
 	ztxt.onoff = true
 	ztxt.col = rl.White
 	ztxt.fade = 1
-	ztxt.y = int32(levY+levW) - bsU5i32
-	ztxt.x = int32(levX+levW) + bsUi32
+	ztxt.y = int32(gs.Level.LevY+gs.Level.LevW) - bsU5i32
+	ztxt.x = int32(gs.Level.LevX+gs.Level.LevW) + bsUi32
 
 	ztxt.txt = name + " max"
 	ztxt.txt2 = "extra sold"
 
-	txtSoldlist = append(txtSoldlist, ztxt)
+	gs.UI.TxtSoldList = append(gs.UI.TxtSoldList, ztxt)
 
 }
 func txtCompanion() { //MARK:TEXT COMPANION
@@ -6320,13 +6214,13 @@ func txtCompanion() { //MARK:TEXT COMPANION
 	ztxt.onoff = true
 	ztxt.col = rl.White
 	ztxt.fade = 1
-	ztxt.y = int32(levY+levW) - bsU5i32
-	ztxt.x = int32(levX+levW) + bsUi32
+	ztxt.y = int32(gs.Level.LevY+gs.Level.LevW) - bsU5i32
+	ztxt.x = int32(gs.Level.LevX+gs.Level.LevW) + bsUi32
 
 	ztxt.txt = "1 companion"
 	ztxt.txt2 = "allowed"
 
-	txtSoldlist = append(txtSoldlist, ztxt)
+	gs.UI.TxtSoldList = append(gs.UI.TxtSoldList, ztxt)
 }
 func txtAddCoin() { //MARK:TEXT ADD 1 COIN
 	rl.PlaySound(gs.Audio.Sfx[18])
@@ -6334,13 +6228,13 @@ func txtAddCoin() { //MARK:TEXT ADD 1 COIN
 	ztxt.onoff = true
 	ztxt.col = rl.White
 	ztxt.fade = 1
-	ztxt.y = int32(levY+levW) - bsU5i32
-	ztxt.x = int32(levX+levW) + bsUi32
+	ztxt.y = int32(gs.Level.LevY+gs.Level.LevW) - bsU5i32
+	ztxt.x = int32(gs.Level.LevX+gs.Level.LevW) + bsUi32
 
 	ztxt.txt = "+1 coin"
 
-	txtSoldlist = append(txtSoldlist, ztxt)
-	pl.coins++
+	gs.UI.TxtSoldList = append(gs.UI.TxtSoldList, ztxt)
+	gs.Player.Pl.coins++
 
 }
 func txtAddCoinMulti() { //MARK:TEXT ADD MULTIPLE COINS
@@ -6349,20 +6243,20 @@ func txtAddCoinMulti() { //MARK:TEXT ADD MULTIPLE COINS
 	ztxt.onoff = true
 	ztxt.col = rl.White
 	ztxt.fade = 1
-	ztxt.y = int32(levY+levW) - bsU5i32
-	ztxt.x = int32(levX+levW) + bsUi32
+	ztxt.y = int32(gs.Level.LevY+gs.Level.LevW) - bsU5i32
+	ztxt.x = int32(gs.Level.LevX+gs.Level.LevW) + bsUi32
 
 	ztxt.txt = "jackpot"
 
-	txtSoldlist = append(txtSoldlist, ztxt)
-	pl.coins++
+	gs.UI.TxtSoldList = append(gs.UI.TxtSoldList, ztxt)
+	gs.Player.Pl.coins++
 
 }
 
 // MARK: UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP
 func up() { //MARK:UP
 
-	if !pause {
+	if !gs.Core.Pause {
 		uplevel()
 		upplayer()
 		timers()
@@ -6376,43 +6270,43 @@ func up() { //MARK:UP
 	if gs.UI.OptionT > 0 {
 		gs.UI.OptionT--
 	}
-	if startdmgT > 0 {
-		startdmgT--
+	if gs.Player.StartdmgT > 0 {
+		gs.Player.StartdmgT--
 	}
 
 	inp()
-	mouseV2 = rl.GetMousePosition()
-	mousev2cam = rl.GetScreenToWorld2D(mouseV2, cam2)
+	gs.Core.MouseV2 = rl.GetMousePosition()
+	gs.Core.Mousev2cam = rl.GetScreenToWorld2D(gs.Core.MouseV2, gs.Render.Cam2)
 
 	if gs.Audio.MusicOn {
 		upaudio()
 	}
 
-	if fadeblinkon {
-		if fadeblink < 0.5 {
-			fadeblink += 0.05
+	if gs.UI.FadeBlinkOn {
+		if gs.UI.FadeBlink < 0.5 {
+			gs.UI.FadeBlink += 0.05
 		} else {
-			fadeblinkon = false
+			gs.UI.FadeBlinkOn = false
 		}
 	} else {
-		if fadeblink > 0.1 {
-			fadeblink -= 0.05
+		if gs.UI.FadeBlink > 0.1 {
+			gs.UI.FadeBlink -= 0.05
 		} else {
-			fadeblinkon = true
+			gs.UI.FadeBlinkOn = true
 		}
 	}
 
-	if fadeblinkon2 {
-		if fadeblink2 < 0.3 {
-			fadeblink2 += 0.03
+	if gs.UI.FadeBlinkOn2 {
+		if gs.UI.FadeBlink2 < 0.3 {
+			gs.UI.FadeBlink2 += 0.03
 		} else {
-			fadeblinkon2 = false
+			gs.UI.FadeBlinkOn2 = false
 		}
 	} else {
-		if fadeblink2 > 0.1 {
-			fadeblink2 -= 0.03
+		if gs.UI.FadeBlink2 > 0.1 {
+			gs.UI.FadeBlink2 -= 0.03
 		} else {
-			fadeblinkon2 = true
+			gs.UI.FadeBlinkOn2 = true
 		}
 	}
 
@@ -6434,74 +6328,74 @@ func upvolume() { //MARK:UP VOLUME
 func upPlayerMods() { //MARK:UP PLAYER MODS
 
 	//AIR STRIKE
-	if mods.airstrike {
-		airstrikeT--
-		if airstrikeT <= 0 {
-			airstrikeT = gs.Core.Fps * rI32(3, 8)
+	if gs.Player.Mods.airstrike {
+		gs.FX.AirstrikeT--
+		if gs.FX.AirstrikeT <= 0 {
+			gs.FX.AirstrikeT = gs.Core.Fps * rI32(3, 8)
 			makeairstrike()
 		}
 
 	}
 
 	//FLOOD
-	if mods.flood {
+	if gs.Player.Mods.flood {
 		if gs.Mario.MarioOn {
-			floodRec.Y = scrHF32 + bsU
-		} else if levelnum == 6 {
+			gs.FX.FloodRec.Y = gs.Core.ScrHF32 + bsU
+		} else if gs.Level.Levelnum == 6 {
 			gs.Mario.MarioOn = false
 		} else {
-			levrecV2WorldtoScreen := rl.GetWorldToScreen2D(rl.NewVector2(levRecInner.X, levRecInner.Y), cam2)
-			if floodRec.Y > levrecV2WorldtoScreen.Y+bsU12 {
-				floodRec.Y -= 4
+			levrecV2WorldtoScreen := rl.GetWorldToScreen2D(rl.NewVector2(gs.Level.LevRecInner.X, gs.Level.LevRecInner.Y), gs.Render.Cam2)
+			if gs.FX.FloodRec.Y > levrecV2WorldtoScreen.Y+bsU12 {
+				gs.FX.FloodRec.Y -= 4
 			} else {
-				if fishLR {
-					fishV2.X -= 5
-					if fishV2.X < -fishSiz {
-						fishLR = false
-						fish1 = fishR.recTL
-						fishV2.Y = rF32(scrHF32/3, scrHF32)
+				if gs.FX.FishLR {
+					gs.FX.FishV2.X -= 5
+					if gs.FX.FishV2.X < -gs.FX.FishSiz {
+						gs.FX.FishLR = false
+						gs.FX.Fish1 = gs.Render.FishR.recTL
+						gs.FX.FishV2.Y = rF32(gs.Core.ScrHF32/3, gs.Core.ScrHF32)
 					}
 				} else {
-					fishV2.X += 7
-					if fishV2.X > scrWF32 {
-						fishLR = true
-						fish1 = fishL.recTL
-						fishV2.Y = rF32(scrHF32/3, scrHF32)
+					gs.FX.FishV2.X += 7
+					if gs.FX.FishV2.X > gs.Core.ScrWF32 {
+						gs.FX.FishLR = true
+						gs.FX.Fish1 = gs.Render.FishL.recTL
+						gs.FX.FishV2.Y = rF32(gs.Core.ScrHF32/3, gs.Core.ScrHF32)
 					}
 				}
-				if fish2LR {
-					fish2V2.X += 4
-					if fish2V2.X > scrWF32 {
-						fish2LR = false
-						fish2 = fishL.recTL
-						fish2V2.Y = rF32(scrHF32/3, scrHF32)
+				if gs.FX.Fish2LR {
+					gs.FX.Fish2V2.X += 4
+					if gs.FX.Fish2V2.X > gs.Core.ScrWF32 {
+						gs.FX.Fish2LR = false
+						gs.FX.Fish2 = gs.Render.FishL.recTL
+						gs.FX.Fish2V2.Y = rF32(gs.Core.ScrHF32/3, gs.Core.ScrHF32)
 					}
 				} else {
-					fish2V2.X -= 7
-					if fish2V2.X <= 0 {
-						fish2LR = true
-						fish2 = fishR.recTL
-						fish2V2.Y = rF32(scrHF32/3, scrHF32)
+					gs.FX.Fish2V2.X -= 7
+					if gs.FX.Fish2V2.X <= 0 {
+						gs.FX.Fish2LR = true
+						gs.FX.Fish2 = gs.Render.FishR.recTL
+						gs.FX.Fish2V2.Y = rF32(gs.Core.ScrHF32/3, gs.Core.ScrHF32)
 					}
 				}
 			}
 		}
 	}
 	//SOCKS
-	if mods.socks {
+	if gs.Player.Mods.socks {
 		sockstimer := 30
-		if frames%sockstimer == 0 {
+		if gs.Core.Frames%sockstimer == 0 {
 			zblok := makeBlokGenNoRecNoCntr()
 			zblok.fade = 0.7
 			zblok.color = ranGreen()
-			zblok.cnt = pl.cnt
+			zblok.cnt = gs.Player.Pl.cnt
 			siz := bsU2
 			zblok.rec = rl.NewRectangle(zblok.cnt.X-siz/2, zblok.cnt.Y, siz, siz)
 			zblok.cnt = makeCnt(zblok)
 			zblok.drec = makeDrec(zblok.rec)
-			zblok.img = etc[52]
+			zblok.img = gs.Render.Etc[52]
 			zblok.name = "footprints"
-			switch pl.direc {
+			switch gs.Player.Pl.direc {
 			case 2:
 				zblok.ro = 90
 			case 3:
@@ -6509,76 +6403,76 @@ func upPlayerMods() { //MARK:UP PLAYER MODS
 			case 4:
 				zblok.ro = 270
 			}
-			level[roomNum].etc = append(level[roomNum].etc, zblok)
+			gs.Level.Level[gs.Level.RoomNum].etc = append(gs.Level.Level[gs.Level.RoomNum].etc, zblok)
 		}
 	}
 
 	//FIRETRAIL
-	if mods.firetrail {
+	if gs.Player.Mods.firetrail {
 
 		flametimer := 60
-		if mods.firetrailN == 2 {
+		if gs.Player.Mods.firetrailN == 2 {
 			flametimer = 30
-		} else if mods.firetrailN == 3 {
+		} else if gs.Player.Mods.firetrailN == 3 {
 			flametimer = 15
 		}
 
-		if frames%flametimer == 0 {
+		if gs.Core.Frames%flametimer == 0 {
 			zblok := makeBlokGenNoRecNoCntr()
 			zblok.color = ranOrange()
-			zblok.cnt = pl.cnt
+			zblok.cnt = gs.Player.Pl.cnt
 			siz := bsU2
 			zblok.rec = rl.NewRectangle(zblok.cnt.X-siz/2, zblok.cnt.Y, siz, siz)
-			zblok.img = firetrailanim.recTL
+			zblok.img = gs.Render.Firetrailanim.recTL
 			zblok.name = "flamefiretrail"
-			level[roomNum].etc = append(level[roomNum].etc, zblok)
+			gs.Level.Level[gs.Level.RoomNum].etc = append(gs.Level.Level[gs.Level.RoomNum].etc, zblok)
 		}
 
 	}
 
 	//HP POTION
-	if mods.hppotion && pl.hppotionT == 0 {
-		if pl.hp <= 2 {
-			pl.hppotionT = gs.Core.Fps
-			pl.hp = pl.hpmax
-			mods.hppotionN--
-			pl.hppause = gs.Core.Fps * 3
-			if mods.hppotionN <= 0 {
-				mods.hppotion = false
+	if gs.Player.Mods.hppotion && gs.Player.Pl.hppotionT == 0 {
+		if gs.Player.Pl.hp <= 2 {
+			gs.Player.Pl.hppotionT = gs.Core.Fps
+			gs.Player.Pl.hp = gs.Player.Pl.hpmax
+			gs.Player.Mods.hppotionN--
+			gs.Player.Pl.hppause = gs.Core.Fps * 3
+			if gs.Player.Mods.hppotionN <= 0 {
+				gs.Player.Mods.hppotion = false
 				clearinven("health potion")
 			}
 		}
 	}
 
 	//ESCAPE VINE
-	if pl.hp == 1 && mods.vine && levelnum != 6 {
+	if gs.Player.Pl.hp == 1 && gs.Player.Mods.vine && gs.Level.Levelnum != 6 {
 		rl.PlaySound(gs.Audio.Sfx[27])
-		mods.vine = false
+		gs.Player.Mods.vine = false
 		clearinven("vine")
-		escaped = false
-		escapeRoomFound = false
-		pl.escape = true
-		pl.hppause = gs.Core.Fps * 5
+		gs.Player.Escaped = false
+		gs.Player.EscapeRoomFound = false
+		gs.Player.Pl.escape = true
+		gs.Player.Pl.hppause = gs.Core.Fps * 5
 	}
 
 	//SANTA
-	if mods.santa {
-		mods.santaT--
-		if mods.santaT <= 0 {
-			if mods.snowon {
-				mods.snowon = false
+	if gs.Player.Mods.santa {
+		gs.Player.Mods.santaT--
+		if gs.Player.Mods.santaT <= 0 {
+			if gs.Player.Mods.snowon {
+				gs.Player.Mods.snowon = false
 			} else {
 				makesnow()
-				mods.snowon = true
+				gs.Player.Mods.snowon = true
 			}
-			mods.santaT = rI32(7, 21) * gs.Core.Fps
+			gs.Player.Mods.santaT = rI32(7, 21) * gs.Core.Fps
 		}
 	}
 	//AXE
-	if mods.axe {
-		mods.axeT2--
-		if mods.axeT2 <= 0 {
-			mods.axeT2 = mods.axeT
+	if gs.Player.Mods.axe {
+		gs.Player.Mods.axeT2--
+		if gs.Player.Mods.axeT2 <= 0 {
+			gs.Player.Mods.axeT2 = gs.Player.Mods.axeT
 			makeProjectile("axe")
 		}
 	}
@@ -6587,34 +6481,34 @@ func upPlayerMods() { //MARK:UP PLAYER MODS
 
 func upRoomChange() { //MARK:UP ROOM CHANGE
 
-	plProj = nil
-	enProj = nil
-	fx = nil
+	gs.Player.PlProj = nil
+	gs.Enemies.EnProj = nil
+	gs.FX.Fx = nil
 
 	//FLOOD
-	if mods.flood {
-		pl.underWater = false
-		floodRec = rl.NewRectangle(0, scrHF32+bsU, scrWF32, scrHF32)
+	if gs.Player.Mods.flood {
+		gs.Player.Pl.underWater = false
+		gs.FX.FloodRec = rl.NewRectangle(0, gs.Core.ScrHF32+bsU, gs.Core.ScrWF32, gs.Core.ScrHF32)
 		makefish()
 	}
 	//ARMOR RECHARGE
-	if mods.recharge && mods.armorN > 0 {
-		pl.rechargeN++
-		if pl.rechargeN == 2 {
-			pl.rechargeN = 0
-			if pl.armor < pl.armorMax {
-				pl.armor++
+	if gs.Player.Mods.recharge && gs.Player.Mods.armorN > 0 {
+		gs.Player.Pl.rechargeN++
+		if gs.Player.Pl.rechargeN == 2 {
+			gs.Player.Pl.rechargeN = 0
+			if gs.Player.Pl.armor < gs.Player.Pl.armorMax {
+				gs.Player.Pl.armor++
 			}
 		}
 	}
 
 	//PEACE PAUSE
-	if mods.peace {
-		pl.peaceT = gs.Core.Fps * 2
+	if gs.Player.Mods.peace {
+		gs.Player.Pl.peaceT = gs.Core.Fps * 2
 	}
 	//ANCHOR PAUSE
-	if mods.anchor {
-		anchorT = gs.Core.Fps * 2
+	if gs.Player.Mods.anchor {
+		gs.Level.AnchorT = gs.Core.Fps * 2
 	}
 
 }
@@ -6627,84 +6521,84 @@ func uplevel() { //MARK:UP LEVEL
 func upplayer() { //MARK:UP PLAYER
 
 	//TIMERS
-	if mods.flood {
+	if gs.Player.Mods.flood {
 
-		v2 := rl.GetScreenToWorld2D(rl.NewVector2(floodRec.Y, floodRec.Y), cam2)
-		if pl.crec.Y > v2.Y {
-			pl.underWater = true
-			pl.waterT++
-			if pl.waterT == gs.Core.Fps*3 {
+		v2 := rl.GetScreenToWorld2D(rl.NewVector2(gs.FX.FloodRec.Y, gs.FX.FloodRec.Y), gs.Render.Cam2)
+		if gs.Player.Pl.crec.Y > v2.Y {
+			gs.Player.Pl.underWater = true
+			gs.Player.Pl.waterT++
+			if gs.Player.Pl.waterT == gs.Core.Fps*3 {
 				hitPL(0, 2)
-				pl.waterT = 0
+				gs.Player.Pl.waterT = 0
 			}
 		} else {
-			pl.waterT = 0
-			pl.underWater = false
-			waterY = 0
+			gs.Player.Pl.waterT = 0
+			gs.Player.Pl.underWater = false
+			gs.Player.WaterY = 0
 		}
 	}
-	if pl.peaceT > 0 {
-		pl.peaceT--
+	if gs.Player.Pl.peaceT > 0 {
+		gs.Player.Pl.peaceT--
 	}
-	if pl.hppotionT > 0 {
-		pl.hppotionT--
+	if gs.Player.Pl.hppotionT > 0 {
+		gs.Player.Pl.hppotionT--
 	}
-	if pl.hppause > 0 {
-		pl.hppause--
-		if pl.hppause == 1 && pl.revived {
-			pl.revived = false
+	if gs.Player.Pl.hppause > 0 {
+		gs.Player.Pl.hppause--
+		if gs.Player.Pl.hppause == 1 && gs.Player.Pl.revived {
+			gs.Player.Pl.revived = false
 		}
-		if pl.hppause == 1 && pl.armorHit {
-			pl.armorHit = false
+		if gs.Player.Pl.hppause == 1 && gs.Player.Pl.armorHit {
+			gs.Player.Pl.armorHit = false
 		}
 	}
-	if pl.poisonCollisT > 0 {
-		pl.poisonCollisT--
+	if gs.Player.Pl.poisonCollisT > 0 {
+		gs.Player.Pl.poisonCollisT--
 	}
 
-	if pl.poison {
-		pl.poisonT--
-		if pl.poisonT == 0 {
+	if gs.Player.Pl.poison {
+		gs.Player.Pl.poisonT--
+		if gs.Player.Pl.poisonT == 0 {
 			hitPL(0, 2)
-			pl.poisonCount--
-			if pl.poisonCount == 0 {
-				pl.poisonT = 0
-				pl.poison = false
+			gs.Player.Pl.poisonCount--
+			if gs.Player.Pl.poisonCount == 0 {
+				gs.Player.Pl.poisonT = 0
+				gs.Player.Pl.poison = false
 			} else {
-				pl.poisonT = gs.Core.Fps * 3
+				gs.Player.Pl.poisonT = gs.Core.Fps * 3
 			}
 		}
 	}
 
 	//ESCAPE
-	if pl.escape {
+	if gs.Player.Pl.escape {
 		escapeplayer()
 	}
 
 	//SLIDE
-	if pl.slide {
-		switch pl.slideDIR {
+	if gs.Player.Pl.slide {
+		switch gs.Player.Pl.slideDIR {
 		case 1:
 			if checkplayermove(1) {
-				pl.cnt.Y -= pl.vel * 2
+				gs.Player.Pl.cnt.Y -= gs.Player.Pl.vel * 2
 			}
 		case 2:
 			if checkplayermove(2) {
-				pl.cnt.X += pl.vel * 2
+				gs.Player.Pl.cnt.X += gs.Player.Pl.vel * 2
 			}
 		case 3:
 			if checkplayermove(3) {
-				pl.cnt.Y += pl.vel * 2
+				gs.Player.Pl.cnt.Y += gs.Player.Pl.vel * 2
 			}
 		case 4:
 			if checkplayermove(4) {
-				pl.cnt.X -= pl.vel * 2
+				gs.Player.Pl.cnt.X -= gs.Player.Pl.vel * 2
 			}
 		}
 		upPlayerRec()
-		pl.slideT--
-		if pl.slideT <= 0 {
-			pl.slide = false
+		gs.Player.Pl.slideT--
+		if gs.Player.Pl.slideT <= 0 {
+			gs.Player.Pl.slide = false
 		}
 	}
 
@@ -6712,114 +6606,114 @@ func upplayer() { //MARK:UP PLAYER
 	upPlayerMods()
 
 	//UP IMG
-	switch pl.direc {
+	switch gs.Player.Pl.direc {
 	case 1:
-		pl.img.Y = knight[1].Y
+		gs.Player.Pl.img.Y = gs.Render.Knight[1].Y
 	case 2:
-		pl.img.Y = knight[0].Y
+		gs.Player.Pl.img.Y = gs.Render.Knight[0].Y
 	case 3:
-		pl.img.Y = knight[3].Y
+		gs.Player.Pl.img.Y = gs.Render.Knight[3].Y
 	case 4:
-		pl.img.Y = knight[2].Y
+		gs.Player.Pl.img.Y = gs.Render.Knight[2].Y
 	}
 
-	if !pl.move && !pl.atk {
-		pl.img.X = pl.imgWalkX
-	} else if pl.move && !pl.atk {
-		if frames%4 == 0 {
-			pl.img.X += pl.sizImg
+	if !gs.Player.Pl.move && !gs.Player.Pl.atk {
+		gs.Player.Pl.img.X = gs.Player.Pl.imgWalkX
+	} else if gs.Player.Pl.move && !gs.Player.Pl.atk {
+		if gs.Core.Frames%4 == 0 {
+			gs.Player.Pl.img.X += gs.Player.Pl.sizImg
 		}
-		if pl.img.X > pl.imgWalkX+(float32(pl.framesWalk-1)*pl.sizImg) {
-			pl.img.X = pl.imgWalkX
+		if gs.Player.Pl.img.X > gs.Player.Pl.imgWalkX+(float32(gs.Player.Pl.framesWalk-1)*gs.Player.Pl.sizImg) {
+			gs.Player.Pl.img.X = gs.Player.Pl.imgWalkX
 		}
-	} else if !pl.move && pl.atk {
-		if frames%4 == 0 {
-			pl.img.X += pl.sizImg
+	} else if !gs.Player.Pl.move && gs.Player.Pl.atk {
+		if gs.Core.Frames%4 == 0 {
+			gs.Player.Pl.img.X += gs.Player.Pl.sizImg
 		}
-		if pl.img.X > pl.imgAtkX+(float32(pl.framesAtk-1)*pl.sizImg) {
-			pl.img.X = pl.imgAtkX
+		if gs.Player.Pl.img.X > gs.Player.Pl.imgAtkX+(float32(gs.Player.Pl.framesAtk-1)*gs.Player.Pl.sizImg) {
+			gs.Player.Pl.img.X = gs.Player.Pl.imgAtkX
 		}
 	}
 
 	//FIND NEXT ROOM ON MOVEMENT
-	if !roomChanged {
-		if !rl.CheckCollisionPointRec(pl.cnt, levRec) {
-			roomChanged = true
-			roomChangedTimer = gs.Core.Fps / 2
+	if !gs.Level.RoomChanged {
+		if !rl.CheckCollisionPointRec(gs.Player.Pl.cnt, gs.Level.LevRec) {
+			gs.Level.RoomChanged = true
+			gs.Level.RoomChangedTimer = gs.Core.Fps / 2
 			upRoomChange()
-			cntCompanion := pl.cnt
-			if pl.cnt.X <= levX {
-				for a := 0; a < len(level[roomNum].doorSides); a++ {
-					if level[roomNum].doorSides[a] == 4 {
-						roomNum = level[roomNum].nextRooms[a]
-						level[roomNum].visited = true
+			cntCompanion := gs.Player.Pl.cnt
+			if gs.Player.Pl.cnt.X <= gs.Level.LevX {
+				for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].doorSides); a++ {
+					if gs.Level.Level[gs.Level.RoomNum].doorSides[a] == 4 {
+						gs.Level.RoomNum = gs.Level.Level[gs.Level.RoomNum].nextRooms[a]
+						gs.Level.Level[gs.Level.RoomNum].visited = true
 						break
 					}
 				}
-				pl.cnt.X = levRecInner.X + levRecInner.Width - bsU
-				cntCompanion = pl.cnt
+				gs.Player.Pl.cnt.X = gs.Level.LevRecInner.X + gs.Level.LevRecInner.Width - bsU
+				cntCompanion = gs.Player.Pl.cnt
 				cntCompanion.X -= bsU2
-			} else if pl.cnt.X >= levX+levW {
-				for a := 0; a < len(level[roomNum].doorSides); a++ {
-					if level[roomNum].doorSides[a] == 2 {
-						roomNum = level[roomNum].nextRooms[a]
-						level[roomNum].visited = true
+			} else if gs.Player.Pl.cnt.X >= gs.Level.LevX+gs.Level.LevW {
+				for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].doorSides); a++ {
+					if gs.Level.Level[gs.Level.RoomNum].doorSides[a] == 2 {
+						gs.Level.RoomNum = gs.Level.Level[gs.Level.RoomNum].nextRooms[a]
+						gs.Level.Level[gs.Level.RoomNum].visited = true
 						break
 					}
 				}
-				pl.cnt.X = levRecInner.X + bsU
-				cntCompanion = pl.cnt
+				gs.Player.Pl.cnt.X = gs.Level.LevRecInner.X + bsU
+				cntCompanion = gs.Player.Pl.cnt
 				cntCompanion.X += bsU2
-			} else if pl.cnt.Y <= levY {
-				for a := 0; a < len(level[roomNum].doorSides); a++ {
-					if level[roomNum].doorSides[a] == 1 {
-						roomNum = level[roomNum].nextRooms[a]
-						level[roomNum].visited = true
+			} else if gs.Player.Pl.cnt.Y <= gs.Level.LevY {
+				for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].doorSides); a++ {
+					if gs.Level.Level[gs.Level.RoomNum].doorSides[a] == 1 {
+						gs.Level.RoomNum = gs.Level.Level[gs.Level.RoomNum].nextRooms[a]
+						gs.Level.Level[gs.Level.RoomNum].visited = true
 						break
 					}
 				}
-				pl.cnt.Y = levRecInner.Y + levRecInner.Width - bsU
-				cntCompanion = pl.cnt
+				gs.Player.Pl.cnt.Y = gs.Level.LevRecInner.Y + gs.Level.LevRecInner.Width - bsU
+				cntCompanion = gs.Player.Pl.cnt
 				cntCompanion.Y -= bsU2
-			} else if pl.cnt.Y >= levY+levW {
-				for a := 0; a < len(level[roomNum].doorSides); a++ {
-					if level[roomNum].doorSides[a] == 3 {
-						roomNum = level[roomNum].nextRooms[a]
-						level[roomNum].visited = true
+			} else if gs.Player.Pl.cnt.Y >= gs.Level.LevY+gs.Level.LevW {
+				for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].doorSides); a++ {
+					if gs.Level.Level[gs.Level.RoomNum].doorSides[a] == 3 {
+						gs.Level.RoomNum = gs.Level.Level[gs.Level.RoomNum].nextRooms[a]
+						gs.Level.Level[gs.Level.RoomNum].visited = true
 						break
 					}
 				}
-				pl.cnt.Y = levRecInner.Y + bsU
-				cntCompanion = pl.cnt
+				gs.Player.Pl.cnt.Y = gs.Level.LevRecInner.Y + bsU
+				cntCompanion = gs.Player.Pl.cnt
 				cntCompanion.Y += bsU2
 			}
 
-			if mods.carrot {
+			if gs.Player.Mods.carrot {
 				gs.Companions.MrCarrot.rec = rl.NewRectangle(cntCompanion.X-gs.Companions.MrCarrot.rec.Width/2, cntCompanion.Y-gs.Companions.MrCarrot.rec.Width/2, gs.Companions.MrCarrot.rec.Width, gs.Companions.MrCarrot.rec.Width)
 			}
-			if mods.alien {
+			if gs.Player.Mods.alien {
 				gs.Companions.MrAlien.rec = rl.NewRectangle(cntCompanion.X-gs.Companions.MrAlien.rec.Width/2, cntCompanion.Y-gs.Companions.MrAlien.rec.Width/2, gs.Companions.MrAlien.rec.Width, gs.Companions.MrAlien.rec.Width)
 			}
-			if mods.planty {
+			if gs.Player.Mods.planty {
 				gs.Companions.MrPlanty.rec = rl.NewRectangle(cntCompanion.X-gs.Companions.MrPlanty.rec.Width/2, cntCompanion.Y-gs.Companions.MrPlanty.rec.Width/2, gs.Companions.MrPlanty.rec.Width, gs.Companions.MrPlanty.rec.Width)
 			}
 		}
 	}
 
 	//TIMERS
-	if pl.atkTimer > 0 {
-		pl.atkTimer--
-		if pl.atkTimer == 1 {
-			pl.img.X = pl.imgWalkX
-			pl.atk = false
+	if gs.Player.Pl.atkTimer > 0 {
+		gs.Player.Pl.atkTimer--
+		if gs.Player.Pl.atkTimer == 1 {
+			gs.Player.Pl.img.X = gs.Player.Pl.imgWalkX
+			gs.Player.Pl.atk = false
 		}
 	}
 }
 func upPlayerRec() { //MARK:UP PLAYER REC CENTER CHANGED
-	pl.rec = rl.NewRectangle(pl.cnt.X-pl.rec.Width/2, pl.cnt.Y-pl.rec.Width/2, pl.rec.Width, pl.rec.Width)
-	pl.crec = rl.NewRectangle(pl.cnt.X-pl.crec.Width/2, pl.cnt.Y-pl.crec.Height/2, pl.crec.Width, pl.crec.Height)
-	pl.arec = rl.NewRectangle(pl.cnt.X-pl.arec.Width/2, pl.cnt.Y-pl.arec.Height/2, pl.arec.Width, pl.arec.Height)
-	pl.atkrec = rl.NewRectangle(pl.cnt.X-pl.atkrec.Width/2, pl.cnt.Y-pl.atkrec.Height/2, pl.atkrec.Width, pl.atkrec.Height)
+	gs.Player.Pl.rec = rl.NewRectangle(gs.Player.Pl.cnt.X-gs.Player.Pl.rec.Width/2, gs.Player.Pl.cnt.Y-gs.Player.Pl.rec.Width/2, gs.Player.Pl.rec.Width, gs.Player.Pl.rec.Width)
+	gs.Player.Pl.crec = rl.NewRectangle(gs.Player.Pl.cnt.X-gs.Player.Pl.crec.Width/2, gs.Player.Pl.cnt.Y-gs.Player.Pl.crec.Height/2, gs.Player.Pl.crec.Width, gs.Player.Pl.crec.Height)
+	gs.Player.Pl.arec = rl.NewRectangle(gs.Player.Pl.cnt.X-gs.Player.Pl.arec.Width/2, gs.Player.Pl.cnt.Y-gs.Player.Pl.arec.Height/2, gs.Player.Pl.arec.Width, gs.Player.Pl.arec.Height)
+	gs.Player.Pl.atkrec = rl.NewRectangle(gs.Player.Pl.cnt.X-gs.Player.Pl.atkrec.Width/2, gs.Player.Pl.cnt.Y-gs.Player.Pl.atkrec.Height/2, gs.Player.Pl.atkrec.Width, gs.Player.Pl.atkrec.Height)
 }
 
 // MARK:MAKE MAKE MAKE MAKE MAKE MAKE MAKE MAKE MAKE MAKE MAKE MAKE MAKE MAKE MAKE MAKE MAKE MAKE
@@ -6866,15 +6760,15 @@ func makeaudio() { //MARK:MAKE AUDIO
 }
 func makechestitem(num int) { //MARK:MAKE CHEST ITEM
 
-	newcnt := level[roomNum].etc[num].cnt
+	newcnt := gs.Level.Level[gs.Level.RoomNum].etc[num].cnt
 	newcnt.Y -= bsU2
 	zblok := makeBlokGeneric(bsU+bsU/2, newcnt)
-	choose := rInt(0, len(gems))
+	choose := rInt(0, len(gs.Render.Gems))
 	zblok.onoff = true
 	zblok.numof = 1
 	zblok.name = "gem"
 	zblok.color = rl.White
-	zblok.img = gems[choose]
+	zblok.img = gs.Render.Gems[choose]
 	switch choose {
 	case 0:
 		zblok.numCoins = 5
@@ -6894,7 +6788,7 @@ func makechestitem(num int) { //MARK:MAKE CHEST ITEM
 		zblok.numCoins = 12
 	}
 
-	level[roomNum].etc = append(level[roomNum].etc, zblok)
+	gs.Level.Level[gs.Level.RoomNum].etc = append(gs.Level.Level[gs.Level.RoomNum].etc, zblok)
 }
 func maketimes() { //MARK: MAKE TIMES
 
@@ -6938,14 +6832,14 @@ func makesettings() { //MARK: MAKE SETTINGS
 		gs.UI.ArtifactsOn = false
 	}
 	if txtSettings[3] == "1" {
-		shaderon = true
+		gs.Render.ShaderOn = true
 	} else {
-		shaderon = false
+		gs.Render.ShaderOn = false
 	}
 	if txtSettings[4] == "1" {
-		platkrecon = true
+		gs.Player.PlatkrecOn = true
 	} else {
-		platkrecon = false
+		gs.Player.PlatkrecOn = false
 	}
 	if txtSettings[5] == "1" {
 		gs.UI.Invincible = true
@@ -6965,9 +6859,9 @@ func makesettings() { //MARK: MAKE SETTINGS
 		gs.Audio.MusicOn = false
 	}
 	if txtSettings[10] == "1" {
-		hardcore = true
+		gs.Level.Hardcore = true
 	} else {
-		hardcore = false
+		gs.Level.Hardcore = false
 	}
 
 	//BG MUSIC
@@ -6986,20 +6880,20 @@ func makeshop() { //MARK: MAKE SHOP
 
 	//SHOP IMG
 	for {
-		shopRoomNum = rInt(0, len(level))
+		gs.Level.ShopRoomNum = rInt(0, len(gs.Level.Level))
 
 		zblok := xblok{}
 		zblok.name = "shop"
 		zblok.solid = true
 		zblok.onoff = true
-		zblok.img = etc[14]
-		zblok.cnt = cnt
+		zblok.img = gs.Render.Etc[14]
+		zblok.cnt = gs.Core.Cnt
 		zblok.cnt.Y -= bsU8
 
 		siz := bsU8
 
 		canadd := true
-		zblok.rec, canadd = findRecPoswithSpacing(siz, bsU4, shopRoomNum)
+		zblok.rec, canadd = findRecPoswithSpacing(siz, bsU4, gs.Level.ShopRoomNum)
 		zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Width/2)
 		zblok.crec = zblok.rec
 		zblok.crec.X += zblok.crec.Width / 8
@@ -7032,7 +6926,7 @@ func makeshop() { //MARK: MAKE SHOP
 
 		countbreak--
 		if canadd || countbreak == 0 {
-			level[shopRoomNum].etc = append(level[shopRoomNum].etc, zblok)
+			gs.Level.Level[gs.Level.ShopRoomNum].etc = append(gs.Level.Level[gs.Level.ShopRoomNum].etc, zblok)
 			break
 		}
 	}
@@ -7052,77 +6946,77 @@ func makeshop() { //MARK: MAKE SHOP
 			zblok.name = "fireworks"
 			zblok.desc = "shoot fireworks when activating powerup block"
 			zblok.color = rl.White
-			zblok.img = etc[49]
+			zblok.img = gs.Render.Etc[49]
 		case 14: //PEACE
 			zblok.name = "peace"
 			zblok.desc = "take no damage for 2 seconds on entering room"
 			zblok.color = rl.White
-			zblok.img = etc[46]
+			zblok.img = gs.Render.Etc[46]
 		case 13: //ANCHOR
 			zblok.name = "anchor"
 			zblok.desc = "enemies pause for 2 seconds on entering room"
 			zblok.color = rl.White
-			zblok.img = etc[39]
+			zblok.img = gs.Render.Etc[39]
 		case 12: //RECHARGE
 			zblok.name = "recharge"
 			zblok.desc = "only works with armor - recharges 1 armor every 2 rooms"
 			zblok.color = rl.White
-			zblok.img = etc[12]
+			zblok.img = gs.Render.Etc[12]
 		case 11: //ORBITAL
 			zblok.name = "orbital"
 			zblok.desc = "erratic revolving orbs that damage enemies"
 			zblok.color = rl.White
-			zblok.img = etc[35]
+			zblok.img = gs.Render.Etc[35]
 		case 10: //COFFEE
 			zblok.name = "coffee"
 			zblok.desc = "move faster - collect more = faster movement"
 			zblok.color = rl.White
-			zblok.img = etc[31]
+			zblok.img = gs.Render.Etc[31]
 		case 9: //INVISIBLE
 			zblok.name = "invisible"
 			zblok.desc = "enemies will not follow you"
 			zblok.color = rl.White
-			zblok.img = etc[30]
+			zblok.img = gs.Render.Etc[30]
 		case 8: //FIRE TRAIL
 			zblok.name = "firetrail"
 			zblok.desc = "trail of fire - does not effect flying enemies"
 			zblok.color = ranOrange()
-			zblok.img = etc[29]
+			zblok.img = gs.Render.Etc[29]
 		case 7: //FIREBALL
 			zblok.name = "fireball"
 			zblok.desc = "fires on attack - collect more = more fireballs"
 			zblok.color = ranOrange()
-			zblok.img = fireballPlayer.recTL
+			zblok.img = gs.Render.FireballPlayer.recTL
 		case 6: //MAP
 			zblok.name = "map"
 			zblok.desc = "reveals location of exit room"
 			zblok.color = ranGrey()
-			zblok.img = etc[28]
+			zblok.img = gs.Render.Etc[28]
 		case 5: //APPLE
 			zblok.name = "apple"
 			zblok.desc = "prevents poisoning - destroyed on use"
 			zblok.color = rl.White
-			zblok.img = etc[8]
+			zblok.img = gs.Render.Etc[8]
 		case 4: //SKELETON KEY
 			zblok.name = "key"
 			zblok.desc = "open locked things"
 			zblok.color = rl.White
-			zblok.img = etc[7]
+			zblok.img = gs.Render.Etc[7]
 		case 3: //BOUNCE PROJECTILE
 			zblok.name = "bounce"
 			zblok.desc = "projectiles bounce > collect more = more bounces"
 			zblok.color = rl.Yellow
-			zblok.img = etc[5]
+			zblok.img = gs.Render.Etc[5]
 		case 2: //THROWING AXE
 			zblok.name = "throwing axe"
 			zblok.desc = "fires at interval > collect more = faster fire rate"
 			zblok.color = rl.SkyBlue
-			zblok.img = etc[3]
+			zblok.img = gs.Render.Etc[3]
 		case 1: //HP POTION
 			zblok.name = "health potion"
 			zblok.desc = "automatically used when health < 2"
 			zblok.color = rl.Red
-			zblok.img = etc[1]
+			zblok.img = gs.Render.Etc[1]
 		}
 
 		if len(gs.Shop.ShopItems) > 0 {
@@ -7166,10 +7060,10 @@ func makeProjectileEnemy(num int, cnt rl.Vector2) { //MARK:MAKE PROJECTILE ENEMY
 		zproj.col = ranCyan()
 		zproj.dmg = 1
 		zproj.fade = 1
-		zproj.img = etc[19]
+		zproj.img = gs.Render.Etc[19]
 		zproj.onoff = true
 
-		enProj = append(enProj, zproj)
+		gs.Enemies.EnProj = append(gs.Enemies.EnProj, zproj)
 
 	case 9: //BOSS ATK 3
 		siz := bsU3
@@ -7184,9 +7078,9 @@ func makeProjectileEnemy(num int, cnt rl.Vector2) { //MARK:MAKE PROJECTILE ENEMY
 		zproj.col = rl.White
 		zproj.dmg = 1
 		zproj.fade = 1
-		zproj.img = etc[57]
+		zproj.img = gs.Render.Etc[57]
 		zproj.onoff = true
-		enProj = append(enProj, zproj)
+		gs.Enemies.EnProj = append(gs.Enemies.EnProj, zproj)
 
 	case 8: //BOSS ATK 2
 		siz := bsU3
@@ -7200,30 +7094,30 @@ func makeProjectileEnemy(num int, cnt rl.Vector2) { //MARK:MAKE PROJECTILE ENEMY
 		zproj.col = rl.White
 		zproj.dmg = 1
 		zproj.fade = 1
-		zproj.img = boss2anim.recTL
+		zproj.img = gs.Render.Boss2anim.recTL
 		zproj.onoff = true
-		enProj = append(enProj, zproj)
+		gs.Enemies.EnProj = append(gs.Enemies.EnProj, zproj)
 		zproj.velx = rF32(-zproj.vel, zproj.vel)
 		zproj.vely = rF32(-zproj.vel, zproj.vel)
-		enProj = append(enProj, zproj)
+		gs.Enemies.EnProj = append(gs.Enemies.EnProj, zproj)
 		zproj.velx = rF32(-zproj.vel, zproj.vel)
 		zproj.vely = rF32(-zproj.vel, zproj.vel)
-		enProj = append(enProj, zproj)
+		gs.Enemies.EnProj = append(gs.Enemies.EnProj, zproj)
 		zproj.velx = rF32(-zproj.vel, zproj.vel)
 		zproj.vely = rF32(-zproj.vel, zproj.vel)
-		enProj = append(enProj, zproj)
+		gs.Enemies.EnProj = append(gs.Enemies.EnProj, zproj)
 		zproj.velx = rF32(-zproj.vel, zproj.vel)
 		zproj.vely = rF32(-zproj.vel, zproj.vel)
-		enProj = append(enProj, zproj)
+		gs.Enemies.EnProj = append(gs.Enemies.EnProj, zproj)
 		zproj.velx = rF32(-zproj.vel, zproj.vel)
 		zproj.vely = rF32(-zproj.vel, zproj.vel)
-		enProj = append(enProj, zproj)
+		gs.Enemies.EnProj = append(gs.Enemies.EnProj, zproj)
 		zproj.velx = rF32(-zproj.vel, zproj.vel)
 		zproj.vely = rF32(-zproj.vel, zproj.vel)
-		enProj = append(enProj, zproj)
+		gs.Enemies.EnProj = append(gs.Enemies.EnProj, zproj)
 		zproj.velx = rF32(-zproj.vel, zproj.vel)
 		zproj.vely = rF32(-zproj.vel, zproj.vel)
-		enProj = append(enProj, zproj)
+		gs.Enemies.EnProj = append(gs.Enemies.EnProj, zproj)
 
 	case 7: //BOSS ATK 1
 		siz := bsU3
@@ -7242,18 +7136,18 @@ func makeProjectileEnemy(num int, cnt rl.Vector2) { //MARK:MAKE PROJECTILE ENEMY
 		zproj.col = rl.White
 		zproj.dmg = 1
 		zproj.fade = 1
-		zproj.img = boss1anim.recTL
+		zproj.img = gs.Render.Boss1anim.recTL
 		zproj.onoff = true
-		enProj = append(enProj, zproj)
+		gs.Enemies.EnProj = append(gs.Enemies.EnProj, zproj)
 		zproj.velx = rF32(-zproj.vel, zproj.vel)
 		zproj.vely = rF32(-zproj.vel, zproj.vel)
-		enProj = append(enProj, zproj)
+		gs.Enemies.EnProj = append(gs.Enemies.EnProj, zproj)
 		zproj.velx = rF32(-zproj.vel, zproj.vel)
 		zproj.vely = rF32(-zproj.vel, zproj.vel)
-		enProj = append(enProj, zproj)
+		gs.Enemies.EnProj = append(gs.Enemies.EnProj, zproj)
 		zproj.velx = rF32(-zproj.vel, zproj.vel)
 		zproj.vely = rF32(-zproj.vel, zproj.vel)
-		enProj = append(enProj, zproj)
+		gs.Enemies.EnProj = append(gs.Enemies.EnProj, zproj)
 
 	case 2, 3, 4, 5: //SWITCH ARROWS
 
@@ -7281,45 +7175,45 @@ func makeProjectileEnemy(num int, cnt rl.Vector2) { //MARK:MAKE PROJECTILE ENEMY
 		zproj.col = ranOrange()
 		zproj.dmg = 1
 		zproj.fade = 1
-		zproj.img = etc[24]
+		zproj.img = gs.Render.Etc[24]
 		zproj.onoff = true
 
-		enProj = append(enProj, zproj)
+		gs.Enemies.EnProj = append(gs.Enemies.EnProj, zproj)
 
 	}
 
 }
 func makeendlevel() { //MARK: MAKE END LEVEL
 
-	level = nil
+	gs.Level.Level = nil
 
-	roomNum = 0
+	gs.Level.RoomNum = 0
 
 	//MAKE LEVEL ROOMS
 
-	bossnum = rInt(0, len(bosses))
+	gs.Level.Bossnum = rInt(0, len(gs.Level.Bosses))
 
 	countedBorderBlocks := false
 
-	floorT := floortiles[rInt(0, len(floortiles))]
-	wallT = walltiles[rInt(0, len(walltiles))]
+	floorT := gs.Render.Floortiles[rInt(0, len(gs.Render.Floortiles))]
+	gs.Level.WallT = gs.Render.Walltiles[rInt(0, len(gs.Render.Walltiles))]
 
 	zroom := xroom{}
 	zroom.floorT = floorT
-	zroom.wallT = wallT
+	zroom.wallT = gs.Level.WallT
 
 	//BOUNDARY WALLS
-	x := levX
-	y := levY
+	x := gs.Level.LevX
+	y := gs.Level.LevY
 
-	for x < levX+levW {
+	for x < gs.Level.LevX+gs.Level.LevW {
 		if !countedBorderBlocks {
-			levBorderBlokNum++
+			gs.Level.LevBorderBlokNum++
 		}
 		zblok := xblok{}
 		zblok.fade = 1
 		zblok.img = zroom.wallT
-		switch levelnum {
+		switch gs.Level.Levelnum {
 		case 1:
 			zblok.color = ranBlue()
 		case 2:
@@ -7333,10 +7227,10 @@ func makeendlevel() { //MARK: MAKE END LEVEL
 		case 6:
 			zblok.color = ranRed()
 		}
-		zblok.rec = rl.NewRectangle(x, y, borderWallBlokSiz, borderWallBlokSiz)
+		zblok.rec = rl.NewRectangle(x, y, gs.Level.BorderWallBlokSiz, gs.Level.BorderWallBlokSiz)
 		zroom.walls = append(zroom.walls, zblok)
-		zblok.rec.Y = levY + levW - borderWallBlokSiz
-		switch levelnum {
+		zblok.rec.Y = gs.Level.LevY + gs.Level.LevW - gs.Level.BorderWallBlokSiz
+		switch gs.Level.Levelnum {
 		case 1:
 			zblok.color = ranBlue()
 		case 2:
@@ -7351,18 +7245,18 @@ func makeendlevel() { //MARK: MAKE END LEVEL
 			zblok.color = ranRed()
 		}
 		zroom.walls = append(zroom.walls, zblok)
-		x += borderWallBlokSiz
+		x += gs.Level.BorderWallBlokSiz
 	}
 	if !countedBorderBlocks {
 		countedBorderBlocks = true
 	}
-	x = levX
-	y = levY + borderWallBlokSiz
-	for y < levY+levW-borderWallBlokSiz {
+	x = gs.Level.LevX
+	y = gs.Level.LevY + gs.Level.BorderWallBlokSiz
+	for y < gs.Level.LevY+gs.Level.LevW-gs.Level.BorderWallBlokSiz {
 		zblok := xblok{}
 		zblok.fade = 1
 		zblok.img = zroom.wallT
-		switch levelnum {
+		switch gs.Level.Levelnum {
 		case 1:
 			zblok.color = ranBlue()
 		case 2:
@@ -7376,10 +7270,10 @@ func makeendlevel() { //MARK: MAKE END LEVEL
 		case 6:
 			zblok.color = ranRed()
 		}
-		zblok.rec = rl.NewRectangle(x, y, borderWallBlokSiz, borderWallBlokSiz)
+		zblok.rec = rl.NewRectangle(x, y, gs.Level.BorderWallBlokSiz, gs.Level.BorderWallBlokSiz)
 		zroom.walls = append(zroom.walls, zblok)
-		zblok.rec.X = levX + levW - borderWallBlokSiz
-		switch levelnum {
+		zblok.rec.X = gs.Level.LevX + gs.Level.LevW - gs.Level.BorderWallBlokSiz
+		switch gs.Level.Levelnum {
 		case 1:
 			zblok.color = ranBlue()
 		case 2:
@@ -7394,19 +7288,19 @@ func makeendlevel() { //MARK: MAKE END LEVEL
 			zblok.color = ranRed()
 		}
 		zroom.walls = append(zroom.walls, zblok)
-		y += borderWallBlokSiz
+		y += gs.Level.BorderWallBlokSiz
 	}
 
 	//FLOOR
-	x = levX
-	y = levY
+	x = gs.Level.LevX
+	y = gs.Level.LevY
 	siz := bsU3
 	zblok := xblok{}
 	zblok.img = zroom.floorT
 	for {
 		zblok.rec = rl.NewRectangle(x, y, siz, siz)
 		zblok.fade = rF32(0.1, 0.25)
-		switch levelnum {
+		switch gs.Level.Levelnum {
 		case 1:
 			zblok.color = ranRed()
 		case 2:
@@ -7423,16 +7317,16 @@ func makeendlevel() { //MARK: MAKE END LEVEL
 		zroom.floor = append(zroom.floor, zblok)
 
 		x += siz
-		if x >= levX+levW {
-			x = levX
+		if x >= gs.Level.LevX+gs.Level.LevW {
+			x = gs.Level.LevX
 			y += siz
 		}
-		if y >= levY+levW {
+		if y >= gs.Level.LevY+gs.Level.LevW {
 			break
 		}
 	}
 
-	level = append(level, zroom)
+	gs.Level.Level = append(gs.Level.Level, zroom)
 
 	//SWITCHES
 	if flipcoin() {
@@ -7448,12 +7342,12 @@ func makeendlevel() { //MARK: MAKE END LEVEL
 		zblok.onoffswitch = flipcoin()
 		zblok.color = rl.SkyBlue
 		if zblok.onoffswitch {
-			zblok.img = etc[21]
+			zblok.img = gs.Render.Etc[21]
 		} else {
-			zblok.img = etc[22]
+			zblok.img = gs.Render.Etc[22]
 		}
 		if canadd {
-			level[0].etc = append(level[0].etc, zblok)
+			gs.Level.Level[0].etc = append(gs.Level.Level[0].etc, zblok)
 		}
 	}
 	if flipcoin() {
@@ -7469,12 +7363,12 @@ func makeendlevel() { //MARK: MAKE END LEVEL
 		zblok.onoffswitch = flipcoin()
 		zblok.color = rl.SkyBlue
 		if zblok.onoffswitch {
-			zblok.img = etc[21]
+			zblok.img = gs.Render.Etc[21]
 		} else {
-			zblok.img = etc[22]
+			zblok.img = gs.Render.Etc[22]
 		}
 		if canadd {
-			level[0].etc = append(level[0].etc, zblok)
+			gs.Level.Level[0].etc = append(gs.Level.Level[0].etc, zblok)
 		}
 	}
 
@@ -7489,9 +7383,9 @@ func makeendlevel() { //MARK: MAKE END LEVEL
 		zblok.name = "skull"
 		zblok.fade = rF32(0.3, 0.6)
 		zblok.color = ranGrey()
-		zblok.img = skulls[rInt(0, len(skulls))]
+		zblok.img = gs.Render.Skulls[rInt(0, len(gs.Render.Skulls))]
 		if canadd {
-			level[0].etc = append(level[0].etc, zblok)
+			gs.Level.Level[0].etc = append(gs.Level.Level[0].etc, zblok)
 			num--
 		}
 		if num <= 0 {
@@ -7510,9 +7404,9 @@ func makeendlevel() { //MARK: MAKE END LEVEL
 		zblok.onoff = true
 		zblok.name = "oilbarrel"
 		zblok.color = rl.DarkGreen
-		zblok.img = etc[20]
+		zblok.img = gs.Render.Etc[20]
 		if canadd {
-			level[0].etc = append(level[0].etc, zblok)
+			gs.Level.Level[0].etc = append(gs.Level.Level[0].etc, zblok)
 			num--
 		}
 
@@ -7529,17 +7423,17 @@ func makeendlevel() { //MARK: MAKE END LEVEL
 	makespikes()
 
 	//REMOVE BLOKS COLLIDING WITH BOSS REC
-	checkrec := rl.NewRectangle(cnt.X-bsU4, levRecInner.Y+bsU2, bsU8, bsU8)
+	checkrec := rl.NewRectangle(gs.Core.Cnt.X-bsU4, gs.Level.LevRecInner.Y+bsU2, bsU8, bsU8)
 	numcollis := 0
 	found := false
-	for i := 0; i < len(level[0].innerBloks); i++ {
-		if rl.CheckCollisionRecs(checkrec, level[0].innerBloks[i].rec) {
+	for i := 0; i < len(gs.Level.Level[0].innerBloks); i++ {
+		if rl.CheckCollisionRecs(checkrec, gs.Level.Level[0].innerBloks[i].rec) {
 			numcollis = i
 			found = true
 		}
 	}
 	if found {
-		level[0].innerBloks = remBlok(level[0].innerBloks, numcollis)
+		gs.Level.Level[0].innerBloks = remBlok(gs.Level.Level[0].innerBloks, numcollis)
 	}
 
 	cleanlevel()
@@ -7547,33 +7441,33 @@ func makeendlevel() { //MARK: MAKE END LEVEL
 }
 func makelevel() { //MARK:MAKE LEVEL
 
-	level = nil
+	gs.Level.Level = nil
 
 	//MAKE LEVEL ROOMS
 	numRooms := rInt(7, 13)
 	orignumRooms := numRooms
 	countedBorderBlocks := false
 
-	floorT := floortiles[rInt(0, len(floortiles))]
-	wallT = walltiles[rInt(0, len(walltiles))]
+	floorT := gs.Render.Floortiles[rInt(0, len(gs.Render.Floortiles))]
+	gs.Level.WallT = gs.Render.Walltiles[rInt(0, len(gs.Render.Walltiles))]
 
 	for numRooms > 0 {
 		zroom := xroom{}
 		zroom.floorT = floorT
-		zroom.wallT = wallT
+		zroom.wallT = gs.Level.WallT
 
 		//BOUNDARY WALLS
-		x := levX
-		y := levY
+		x := gs.Level.LevX
+		y := gs.Level.LevY
 
-		for x < levX+levW {
+		for x < gs.Level.LevX+gs.Level.LevW {
 			if !countedBorderBlocks {
-				levBorderBlokNum++
+				gs.Level.LevBorderBlokNum++
 			}
 			zblok := xblok{}
 			zblok.fade = 1
 			zblok.img = zroom.wallT
-			switch levelnum {
+			switch gs.Level.Levelnum {
 			case 1:
 				zblok.color = ranBlue()
 			case 2:
@@ -7585,10 +7479,10 @@ func makelevel() { //MARK:MAKE LEVEL
 			case 5:
 				zblok.color = ranCol()
 			}
-			zblok.rec = rl.NewRectangle(x, y, borderWallBlokSiz, borderWallBlokSiz)
+			zblok.rec = rl.NewRectangle(x, y, gs.Level.BorderWallBlokSiz, gs.Level.BorderWallBlokSiz)
 			zroom.walls = append(zroom.walls, zblok)
-			zblok.rec.Y = levY + levW - borderWallBlokSiz
-			switch levelnum {
+			zblok.rec.Y = gs.Level.LevY + gs.Level.LevW - gs.Level.BorderWallBlokSiz
+			switch gs.Level.Levelnum {
 			case 1:
 				zblok.color = ranBlue()
 			case 2:
@@ -7601,18 +7495,18 @@ func makelevel() { //MARK:MAKE LEVEL
 				zblok.color = ranCol()
 			}
 			zroom.walls = append(zroom.walls, zblok)
-			x += borderWallBlokSiz
+			x += gs.Level.BorderWallBlokSiz
 		}
 		if !countedBorderBlocks {
 			countedBorderBlocks = true
 		}
-		x = levX
-		y = levY + borderWallBlokSiz
-		for y < levY+levW-borderWallBlokSiz {
+		x = gs.Level.LevX
+		y = gs.Level.LevY + gs.Level.BorderWallBlokSiz
+		for y < gs.Level.LevY+gs.Level.LevW-gs.Level.BorderWallBlokSiz {
 			zblok := xblok{}
 			zblok.fade = 1
 			zblok.img = zroom.wallT
-			switch levelnum {
+			switch gs.Level.Levelnum {
 			case 1:
 				zblok.color = ranBlue()
 			case 2:
@@ -7624,10 +7518,10 @@ func makelevel() { //MARK:MAKE LEVEL
 			case 5:
 				zblok.color = ranCol()
 			}
-			zblok.rec = rl.NewRectangle(x, y, borderWallBlokSiz, borderWallBlokSiz)
+			zblok.rec = rl.NewRectangle(x, y, gs.Level.BorderWallBlokSiz, gs.Level.BorderWallBlokSiz)
 			zroom.walls = append(zroom.walls, zblok)
-			zblok.rec.X = levX + levW - borderWallBlokSiz
-			switch levelnum {
+			zblok.rec.X = gs.Level.LevX + gs.Level.LevW - gs.Level.BorderWallBlokSiz
+			switch gs.Level.Levelnum {
 			case 1:
 				zblok.color = ranBlue()
 			case 2:
@@ -7640,19 +7534,19 @@ func makelevel() { //MARK:MAKE LEVEL
 				zblok.color = ranCol()
 			}
 			zroom.walls = append(zroom.walls, zblok)
-			y += borderWallBlokSiz
+			y += gs.Level.BorderWallBlokSiz
 		}
 
 		//FLOOR
-		x = levX
-		y = levY
+		x = gs.Level.LevX
+		y = gs.Level.LevY
 		siz := bsU3
 		zblok := xblok{}
 		zblok.img = zroom.floorT
 		for {
 			zblok.rec = rl.NewRectangle(x, y, siz, siz)
 			zblok.fade = rF32(0.1, 0.25)
-			switch levelnum {
+			switch gs.Level.Levelnum {
 			case 1:
 				zblok.color = ranRed()
 			case 2:
@@ -7667,33 +7561,33 @@ func makelevel() { //MARK:MAKE LEVEL
 			zroom.floor = append(zroom.floor, zblok)
 
 			x += siz
-			if x >= levX+levW {
-				x = levX
+			if x >= gs.Level.LevX+gs.Level.LevW {
+				x = gs.Level.LevX
 				y += siz
 			}
-			if y >= levY+levW {
+			if y >= gs.Level.LevY+gs.Level.LevW {
 				break
 			}
 		}
 
-		level = append(level, zroom)
+		gs.Level.Level = append(gs.Level.Level, zroom)
 
 		numRooms--
 	}
 	numRooms = orignumRooms
 
 	//MAKE LEVEL MAP
-	levMap = nil
+	gs.Level.LevMap = nil
 	mapRecSize := float32(96)
-	rec := rl.NewRectangle(cnt.X-mapRecSize/2, cnt.Y-mapRecSize/2, mapRecSize, mapRecSize)
-	levMap = append(levMap, rec)
+	rec := rl.NewRectangle(gs.Core.Cnt.X-mapRecSize/2, gs.Core.Cnt.Y-mapRecSize/2, mapRecSize, mapRecSize)
+	gs.Level.LevMap = append(gs.Level.LevMap, rec)
 	numRooms--
 	countbreak := 0
 	for numRooms > 0 {
 
-		choose := levMap[0]
-		if len(levMap) > 1 {
-			choose = levMap[rInt(0, len(levMap))]
+		choose := gs.Level.LevMap[0]
+		if len(gs.Level.LevMap) > 1 {
+			choose = gs.Level.LevMap[rInt(0, len(gs.Level.LevMap))]
 		}
 
 		side := rInt(1, 5)
@@ -7710,8 +7604,8 @@ func makelevel() { //MARK:MAKE LEVEL
 		}
 
 		canadd := true
-		for a := 0; a < len(levMap); a++ {
-			if rl.CheckCollisionPointRec(checkV2, levMap[a]) {
+		for a := 0; a < len(gs.Level.LevMap); a++ {
+			if rl.CheckCollisionPointRec(checkV2, gs.Level.LevMap[a]) {
 				canadd = false
 			}
 		}
@@ -7732,7 +7626,7 @@ func makelevel() { //MARK:MAKE LEVEL
 				rec.X -= mapRecSize
 			}
 
-			levMap = append(levMap, rec)
+			gs.Level.LevMap = append(gs.Level.LevMap, rec)
 			numRooms--
 		} else {
 			countbreak++
@@ -7744,46 +7638,46 @@ func makelevel() { //MARK:MAKE LEVEL
 	}
 
 	//FIND DOORS
-	for a := 0; a < len(levMap); a++ {
+	for a := 0; a < len(gs.Level.LevMap); a++ {
 
-		checkV2 := rl.NewVector2(levMap[a].X+levMap[a].Width/2, levMap[a].Y+levMap[a].Width/2)
+		checkV2 := rl.NewVector2(gs.Level.LevMap[a].X+gs.Level.LevMap[a].Width/2, gs.Level.LevMap[a].Y+gs.Level.LevMap[a].Width/2)
 		ocheckV2 := checkV2
-		checkV2.Y -= levMap[a].Width
-		for b := 0; b < len(levMap); b++ {
+		checkV2.Y -= gs.Level.LevMap[a].Width
+		for b := 0; b < len(gs.Level.LevMap); b++ {
 			if a != b {
-				if rl.CheckCollisionPointRec(checkV2, levMap[b]) {
-					level[a].doorSides = append(level[a].doorSides, 1)
-					level[a].nextRooms = append(level[a].nextRooms, b)
+				if rl.CheckCollisionPointRec(checkV2, gs.Level.LevMap[b]) {
+					gs.Level.Level[a].doorSides = append(gs.Level.Level[a].doorSides, 1)
+					gs.Level.Level[a].nextRooms = append(gs.Level.Level[a].nextRooms, b)
 				}
 			}
 		}
 		checkV2 = ocheckV2
-		checkV2.X += levMap[a].Width
-		for b := 0; b < len(levMap); b++ {
+		checkV2.X += gs.Level.LevMap[a].Width
+		for b := 0; b < len(gs.Level.LevMap); b++ {
 			if a != b {
-				if rl.CheckCollisionPointRec(checkV2, levMap[b]) {
-					level[a].doorSides = append(level[a].doorSides, 2)
-					level[a].nextRooms = append(level[a].nextRooms, b)
+				if rl.CheckCollisionPointRec(checkV2, gs.Level.LevMap[b]) {
+					gs.Level.Level[a].doorSides = append(gs.Level.Level[a].doorSides, 2)
+					gs.Level.Level[a].nextRooms = append(gs.Level.Level[a].nextRooms, b)
 				}
 			}
 		}
 		checkV2 = ocheckV2
-		checkV2.Y += levMap[a].Width
-		for b := 0; b < len(levMap); b++ {
+		checkV2.Y += gs.Level.LevMap[a].Width
+		for b := 0; b < len(gs.Level.LevMap); b++ {
 			if a != b {
-				if rl.CheckCollisionPointRec(checkV2, levMap[b]) {
-					level[a].doorSides = append(level[a].doorSides, 3)
-					level[a].nextRooms = append(level[a].nextRooms, b)
+				if rl.CheckCollisionPointRec(checkV2, gs.Level.LevMap[b]) {
+					gs.Level.Level[a].doorSides = append(gs.Level.Level[a].doorSides, 3)
+					gs.Level.Level[a].nextRooms = append(gs.Level.Level[a].nextRooms, b)
 				}
 			}
 		}
 		checkV2 = ocheckV2
-		checkV2.X -= levMap[a].Width
-		for b := 0; b < len(levMap); b++ {
+		checkV2.X -= gs.Level.LevMap[a].Width
+		for b := 0; b < len(gs.Level.LevMap); b++ {
 			if a != b {
-				if rl.CheckCollisionPointRec(checkV2, levMap[b]) {
-					level[a].doorSides = append(level[a].doorSides, 4)
-					level[a].nextRooms = append(level[a].nextRooms, b)
+				if rl.CheckCollisionPointRec(checkV2, gs.Level.LevMap[b]) {
+					gs.Level.Level[a].doorSides = append(gs.Level.Level[a].doorSides, 4)
+					gs.Level.Level[a].nextRooms = append(gs.Level.Level[a].nextRooms, b)
 				}
 			}
 		}
@@ -7791,169 +7685,169 @@ func makelevel() { //MARK:MAKE LEVEL
 	}
 
 	//REMOVE DOOR BLOKS
-	for a := 0; a < len(level); a++ {
+	for a := 0; a < len(gs.Level.Level); a++ {
 
-		for b := 0; b < len(level[a].doorSides); b++ {
+		for b := 0; b < len(gs.Level.Level[a].doorSides); b++ {
 
-			if level[a].doorSides[b] == 1 {
-				checkV2 := rl.NewVector2(levX+levW/2, levY+borderWallBlokSiz/2)
+			if gs.Level.Level[a].doorSides[b] == 1 {
+				checkV2 := rl.NewVector2(gs.Level.LevX+gs.Level.LevW/2, gs.Level.LevY+gs.Level.BorderWallBlokSiz/2)
 				checkV2L1 := checkV2
-				checkV2L1.X -= borderWallBlokSiz
+				checkV2L1.X -= gs.Level.BorderWallBlokSiz
 				checkV2L2 := checkV2L1
-				checkV2L2.X -= borderWallBlokSiz
+				checkV2L2.X -= gs.Level.BorderWallBlokSiz
 				checkV2R1 := checkV2
-				checkV2R1.X += borderWallBlokSiz
+				checkV2R1.X += gs.Level.BorderWallBlokSiz
 				checkV2R2 := checkV2R1
-				checkV2R2.X += borderWallBlokSiz
+				checkV2R2.X += gs.Level.BorderWallBlokSiz
 
-				exitRec := rl.NewRectangle(checkV2L2.X-borderWallBlokSiz/2, checkV2L2.Y-borderWallBlokSiz/2, borderWallBlokSiz*5, bsU5)
-				level[a].doorExitRecs = append(level[a].doorExitRecs, exitRec)
+				exitRec := rl.NewRectangle(checkV2L2.X-gs.Level.BorderWallBlokSiz/2, checkV2L2.Y-gs.Level.BorderWallBlokSiz/2, gs.Level.BorderWallBlokSiz*5, bsU5)
+				gs.Level.Level[a].doorExitRecs = append(gs.Level.Level[a].doorExitRecs, exitRec)
 
-				for c := 0; c < len(level[a].walls); c++ {
-					if rl.CheckCollisionPointRec(checkV2, level[a].walls[c].rec) {
-						level[a].walls = remBlok(level[a].walls, c)
+				for c := 0; c < len(gs.Level.Level[a].walls); c++ {
+					if rl.CheckCollisionPointRec(checkV2, gs.Level.Level[a].walls[c].rec) {
+						gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
 					}
 				}
-				for c := 0; c < len(level[a].walls); c++ {
-					if rl.CheckCollisionPointRec(checkV2L1, level[a].walls[c].rec) {
-						level[a].walls = remBlok(level[a].walls, c)
+				for c := 0; c < len(gs.Level.Level[a].walls); c++ {
+					if rl.CheckCollisionPointRec(checkV2L1, gs.Level.Level[a].walls[c].rec) {
+						gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
 					}
 				}
-				for c := 0; c < len(level[a].walls); c++ {
-					if rl.CheckCollisionPointRec(checkV2L2, level[a].walls[c].rec) {
-						level[a].walls = remBlok(level[a].walls, c)
+				for c := 0; c < len(gs.Level.Level[a].walls); c++ {
+					if rl.CheckCollisionPointRec(checkV2L2, gs.Level.Level[a].walls[c].rec) {
+						gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
 					}
 				}
-				for c := 0; c < len(level[a].walls); c++ {
-					if rl.CheckCollisionPointRec(checkV2R1, level[a].walls[c].rec) {
-						level[a].walls = remBlok(level[a].walls, c)
+				for c := 0; c < len(gs.Level.Level[a].walls); c++ {
+					if rl.CheckCollisionPointRec(checkV2R1, gs.Level.Level[a].walls[c].rec) {
+						gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
 					}
 				}
-				for c := 0; c < len(level[a].walls); c++ {
-					if rl.CheckCollisionPointRec(checkV2R2, level[a].walls[c].rec) {
-						level[a].walls = remBlok(level[a].walls, c)
+				for c := 0; c < len(gs.Level.Level[a].walls); c++ {
+					if rl.CheckCollisionPointRec(checkV2R2, gs.Level.Level[a].walls[c].rec) {
+						gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
 					}
 				}
 			}
-			if level[a].doorSides[b] == 2 {
-				checkV2 := rl.NewVector2(levX+levW-borderWallBlokSiz/2, levY+levW/2)
+			if gs.Level.Level[a].doorSides[b] == 2 {
+				checkV2 := rl.NewVector2(gs.Level.LevX+gs.Level.LevW-gs.Level.BorderWallBlokSiz/2, gs.Level.LevY+gs.Level.LevW/2)
 				checkV2L1 := checkV2
-				checkV2L1.Y -= borderWallBlokSiz
+				checkV2L1.Y -= gs.Level.BorderWallBlokSiz
 				checkV2L2 := checkV2L1
-				checkV2L2.Y -= borderWallBlokSiz
+				checkV2L2.Y -= gs.Level.BorderWallBlokSiz
 				checkV2R1 := checkV2
-				checkV2R1.Y += borderWallBlokSiz
+				checkV2R1.Y += gs.Level.BorderWallBlokSiz
 				checkV2R2 := checkV2R1
-				checkV2R2.Y += borderWallBlokSiz
+				checkV2R2.Y += gs.Level.BorderWallBlokSiz
 
-				exitRec := rl.NewRectangle((checkV2L2.X+borderWallBlokSiz/2)-bsU5, checkV2L2.Y-borderWallBlokSiz/2, bsU5, borderWallBlokSiz*5)
-				level[a].doorExitRecs = append(level[a].doorExitRecs, exitRec)
+				exitRec := rl.NewRectangle((checkV2L2.X+gs.Level.BorderWallBlokSiz/2)-bsU5, checkV2L2.Y-gs.Level.BorderWallBlokSiz/2, bsU5, gs.Level.BorderWallBlokSiz*5)
+				gs.Level.Level[a].doorExitRecs = append(gs.Level.Level[a].doorExitRecs, exitRec)
 
-				for c := 0; c < len(level[a].walls); c++ {
-					if rl.CheckCollisionPointRec(checkV2, level[a].walls[c].rec) {
-						level[a].walls = remBlok(level[a].walls, c)
+				for c := 0; c < len(gs.Level.Level[a].walls); c++ {
+					if rl.CheckCollisionPointRec(checkV2, gs.Level.Level[a].walls[c].rec) {
+						gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
 					}
 				}
-				for c := 0; c < len(level[a].walls); c++ {
-					if rl.CheckCollisionPointRec(checkV2L1, level[a].walls[c].rec) {
-						level[a].walls = remBlok(level[a].walls, c)
+				for c := 0; c < len(gs.Level.Level[a].walls); c++ {
+					if rl.CheckCollisionPointRec(checkV2L1, gs.Level.Level[a].walls[c].rec) {
+						gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
 					}
 				}
-				for c := 0; c < len(level[a].walls); c++ {
-					if rl.CheckCollisionPointRec(checkV2L2, level[a].walls[c].rec) {
-						level[a].walls = remBlok(level[a].walls, c)
+				for c := 0; c < len(gs.Level.Level[a].walls); c++ {
+					if rl.CheckCollisionPointRec(checkV2L2, gs.Level.Level[a].walls[c].rec) {
+						gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
 					}
 				}
-				for c := 0; c < len(level[a].walls); c++ {
-					if rl.CheckCollisionPointRec(checkV2R1, level[a].walls[c].rec) {
-						level[a].walls = remBlok(level[a].walls, c)
+				for c := 0; c < len(gs.Level.Level[a].walls); c++ {
+					if rl.CheckCollisionPointRec(checkV2R1, gs.Level.Level[a].walls[c].rec) {
+						gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
 					}
 				}
-				for c := 0; c < len(level[a].walls); c++ {
-					if rl.CheckCollisionPointRec(checkV2R2, level[a].walls[c].rec) {
-						level[a].walls = remBlok(level[a].walls, c)
-					}
-				}
-			}
-
-			if level[a].doorSides[b] == 3 {
-				checkV2 := rl.NewVector2(levX+levW/2, levY+levW-borderWallBlokSiz/2)
-				checkV2L1 := checkV2
-				checkV2L1.X -= borderWallBlokSiz
-				checkV2L2 := checkV2L1
-				checkV2L2.X -= borderWallBlokSiz
-				checkV2R1 := checkV2
-				checkV2R1.X += borderWallBlokSiz
-				checkV2R2 := checkV2R1
-				checkV2R2.X += borderWallBlokSiz
-
-				exitRec := rl.NewRectangle(checkV2L2.X-borderWallBlokSiz/2, (checkV2L2.Y+borderWallBlokSiz/2)-bsU5, borderWallBlokSiz*5, bsU5)
-				level[a].doorExitRecs = append(level[a].doorExitRecs, exitRec)
-
-				for c := 0; c < len(level[a].walls); c++ {
-					if rl.CheckCollisionPointRec(checkV2, level[a].walls[c].rec) {
-						level[a].walls = remBlok(level[a].walls, c)
-					}
-				}
-				for c := 0; c < len(level[a].walls); c++ {
-					if rl.CheckCollisionPointRec(checkV2L1, level[a].walls[c].rec) {
-						level[a].walls = remBlok(level[a].walls, c)
-					}
-				}
-				for c := 0; c < len(level[a].walls); c++ {
-					if rl.CheckCollisionPointRec(checkV2L2, level[a].walls[c].rec) {
-						level[a].walls = remBlok(level[a].walls, c)
-					}
-				}
-				for c := 0; c < len(level[a].walls); c++ {
-					if rl.CheckCollisionPointRec(checkV2R1, level[a].walls[c].rec) {
-						level[a].walls = remBlok(level[a].walls, c)
-					}
-				}
-				for c := 0; c < len(level[a].walls); c++ {
-					if rl.CheckCollisionPointRec(checkV2R2, level[a].walls[c].rec) {
-						level[a].walls = remBlok(level[a].walls, c)
+				for c := 0; c < len(gs.Level.Level[a].walls); c++ {
+					if rl.CheckCollisionPointRec(checkV2R2, gs.Level.Level[a].walls[c].rec) {
+						gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
 					}
 				}
 			}
 
-			if level[a].doorSides[b] == 4 {
-				checkV2 := rl.NewVector2(levX+borderWallBlokSiz/2, levY+levW/2)
+			if gs.Level.Level[a].doorSides[b] == 3 {
+				checkV2 := rl.NewVector2(gs.Level.LevX+gs.Level.LevW/2, gs.Level.LevY+gs.Level.LevW-gs.Level.BorderWallBlokSiz/2)
 				checkV2L1 := checkV2
-				checkV2L1.Y -= borderWallBlokSiz
+				checkV2L1.X -= gs.Level.BorderWallBlokSiz
 				checkV2L2 := checkV2L1
-				checkV2L2.Y -= borderWallBlokSiz
+				checkV2L2.X -= gs.Level.BorderWallBlokSiz
 				checkV2R1 := checkV2
-				checkV2R1.Y += borderWallBlokSiz
+				checkV2R1.X += gs.Level.BorderWallBlokSiz
 				checkV2R2 := checkV2R1
-				checkV2R2.Y += borderWallBlokSiz
+				checkV2R2.X += gs.Level.BorderWallBlokSiz
 
-				exitRec := rl.NewRectangle((checkV2L2.X - borderWallBlokSiz/2), checkV2L2.Y-borderWallBlokSiz/2, bsU5, borderWallBlokSiz*5)
-				level[a].doorExitRecs = append(level[a].doorExitRecs, exitRec)
+				exitRec := rl.NewRectangle(checkV2L2.X-gs.Level.BorderWallBlokSiz/2, (checkV2L2.Y+gs.Level.BorderWallBlokSiz/2)-bsU5, gs.Level.BorderWallBlokSiz*5, bsU5)
+				gs.Level.Level[a].doorExitRecs = append(gs.Level.Level[a].doorExitRecs, exitRec)
 
-				for c := 0; c < len(level[a].walls); c++ {
-					if rl.CheckCollisionPointRec(checkV2, level[a].walls[c].rec) {
-						level[a].walls = remBlok(level[a].walls, c)
+				for c := 0; c < len(gs.Level.Level[a].walls); c++ {
+					if rl.CheckCollisionPointRec(checkV2, gs.Level.Level[a].walls[c].rec) {
+						gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
 					}
 				}
-				for c := 0; c < len(level[a].walls); c++ {
-					if rl.CheckCollisionPointRec(checkV2L1, level[a].walls[c].rec) {
-						level[a].walls = remBlok(level[a].walls, c)
+				for c := 0; c < len(gs.Level.Level[a].walls); c++ {
+					if rl.CheckCollisionPointRec(checkV2L1, gs.Level.Level[a].walls[c].rec) {
+						gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
 					}
 				}
-				for c := 0; c < len(level[a].walls); c++ {
-					if rl.CheckCollisionPointRec(checkV2L2, level[a].walls[c].rec) {
-						level[a].walls = remBlok(level[a].walls, c)
+				for c := 0; c < len(gs.Level.Level[a].walls); c++ {
+					if rl.CheckCollisionPointRec(checkV2L2, gs.Level.Level[a].walls[c].rec) {
+						gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
 					}
 				}
-				for c := 0; c < len(level[a].walls); c++ {
-					if rl.CheckCollisionPointRec(checkV2R1, level[a].walls[c].rec) {
-						level[a].walls = remBlok(level[a].walls, c)
+				for c := 0; c < len(gs.Level.Level[a].walls); c++ {
+					if rl.CheckCollisionPointRec(checkV2R1, gs.Level.Level[a].walls[c].rec) {
+						gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
 					}
 				}
-				for c := 0; c < len(level[a].walls); c++ {
-					if rl.CheckCollisionPointRec(checkV2R2, level[a].walls[c].rec) {
-						level[a].walls = remBlok(level[a].walls, c)
+				for c := 0; c < len(gs.Level.Level[a].walls); c++ {
+					if rl.CheckCollisionPointRec(checkV2R2, gs.Level.Level[a].walls[c].rec) {
+						gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
+					}
+				}
+			}
+
+			if gs.Level.Level[a].doorSides[b] == 4 {
+				checkV2 := rl.NewVector2(gs.Level.LevX+gs.Level.BorderWallBlokSiz/2, gs.Level.LevY+gs.Level.LevW/2)
+				checkV2L1 := checkV2
+				checkV2L1.Y -= gs.Level.BorderWallBlokSiz
+				checkV2L2 := checkV2L1
+				checkV2L2.Y -= gs.Level.BorderWallBlokSiz
+				checkV2R1 := checkV2
+				checkV2R1.Y += gs.Level.BorderWallBlokSiz
+				checkV2R2 := checkV2R1
+				checkV2R2.Y += gs.Level.BorderWallBlokSiz
+
+				exitRec := rl.NewRectangle((checkV2L2.X - gs.Level.BorderWallBlokSiz/2), checkV2L2.Y-gs.Level.BorderWallBlokSiz/2, bsU5, gs.Level.BorderWallBlokSiz*5)
+				gs.Level.Level[a].doorExitRecs = append(gs.Level.Level[a].doorExitRecs, exitRec)
+
+				for c := 0; c < len(gs.Level.Level[a].walls); c++ {
+					if rl.CheckCollisionPointRec(checkV2, gs.Level.Level[a].walls[c].rec) {
+						gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
+					}
+				}
+				for c := 0; c < len(gs.Level.Level[a].walls); c++ {
+					if rl.CheckCollisionPointRec(checkV2L1, gs.Level.Level[a].walls[c].rec) {
+						gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
+					}
+				}
+				for c := 0; c < len(gs.Level.Level[a].walls); c++ {
+					if rl.CheckCollisionPointRec(checkV2L2, gs.Level.Level[a].walls[c].rec) {
+						gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
+					}
+				}
+				for c := 0; c < len(gs.Level.Level[a].walls); c++ {
+					if rl.CheckCollisionPointRec(checkV2R1, gs.Level.Level[a].walls[c].rec) {
+						gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
+					}
+				}
+				for c := 0; c < len(gs.Level.Level[a].walls); c++ {
+					if rl.CheckCollisionPointRec(checkV2R2, gs.Level.Level[a].walls[c].rec) {
+						gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
 					}
 				}
 			}
@@ -7962,7 +7856,7 @@ func makelevel() { //MARK:MAKE LEVEL
 
 	}
 
-	level[0].visited = true
+	gs.Level.Level[0].visited = true
 
 	makeInnerBloks()
 	makemovebloks()
@@ -7970,14 +7864,14 @@ func makelevel() { //MARK:MAKE LEVEL
 	makeshop()
 	makeetc()
 
-	if levelnum > 3 {
+	if gs.Level.Levelnum > 3 {
 		makeblades()
 		maketurrets()
 	}
-	if levelnum > 2 {
+	if gs.Level.Levelnum > 2 {
 		makespears()
 	}
-	if levelnum > 1 {
+	if gs.Level.Levelnum > 1 {
 		makespikes()
 	}
 
@@ -7990,60 +7884,60 @@ func makelevel() { //MARK:MAKE LEVEL
 }
 func makenewlevel() { //MARK:MAKE NEW LEVEL
 
-	nextlevelscreen = true
-	levelnum++
+	gs.Level.NextLevelScreen = true
+	gs.Level.Levelnum++
 
-	for a := 0; a < len(level); a++ {
-		level[a].etc = nil
-		level[a].enemies = nil
-		level[a].doorExitRecs = nil
-		level[a].doorSides = nil
-		level[a].floor = nil
-		level[a].innerBloks = nil
-		level[a].movBloks = nil
-		level[a].nextRooms = nil
-		level[a].spikes = nil
-		level[a].visited = false
-		level[a].walls = nil
+	for a := 0; a < len(gs.Level.Level); a++ {
+		gs.Level.Level[a].etc = nil
+		gs.Level.Level[a].enemies = nil
+		gs.Level.Level[a].doorExitRecs = nil
+		gs.Level.Level[a].doorSides = nil
+		gs.Level.Level[a].floor = nil
+		gs.Level.Level[a].innerBloks = nil
+		gs.Level.Level[a].movBloks = nil
+		gs.Level.Level[a].nextRooms = nil
+		gs.Level.Level[a].spikes = nil
+		gs.Level.Level[a].visited = false
+		gs.Level.Level[a].walls = nil
 	}
 
-	level = nil
-	fx = nil
-	plProj = nil
-	enProj = nil
-	floodRec.Y = scrHF32 + bsU
+	gs.Level.Level = nil
+	gs.FX.Fx = nil
+	gs.Player.PlProj = nil
+	gs.Enemies.EnProj = nil
+	gs.FX.FloodRec.Y = gs.Core.ScrHF32 + bsU
 
-	if levelnum == 6 {
-		mods.planty = false
-		mods.carrot = false
-		mods.alien = false
-		mods.vine = false
-		mods.airstrike = false
+	if gs.Level.Levelnum == 6 {
+		gs.Player.Mods.planty = false
+		gs.Player.Mods.carrot = false
+		gs.Player.Mods.alien = false
+		gs.Player.Mods.vine = false
+		gs.Player.Mods.airstrike = false
 		makeendlevel()
 	} else {
 		makelevel()
 	}
-	nextlevelT = gs.Core.Fps
+	gs.Level.NextlevelT = gs.Core.Fps
 
-	pl.cnt = cnt
-	cntCompanion := pl.cnt
+	gs.Player.Pl.cnt = gs.Core.Cnt
+	cntCompanion := gs.Player.Pl.cnt
 
-	if mods.carrot {
+	if gs.Player.Mods.carrot {
 		gs.Companions.MrCarrot.rec = rl.NewRectangle(cntCompanion.X-gs.Companions.MrCarrot.rec.Width/2, cntCompanion.Y-gs.Companions.MrCarrot.rec.Width/2, gs.Companions.MrCarrot.rec.Width, gs.Companions.MrCarrot.rec.Width)
 	}
-	if mods.alien {
+	if gs.Player.Mods.alien {
 		gs.Companions.MrAlien.rec = rl.NewRectangle(cntCompanion.X-gs.Companions.MrAlien.rec.Width/2, cntCompanion.Y-gs.Companions.MrAlien.rec.Width/2, gs.Companions.MrAlien.rec.Width, gs.Companions.MrAlien.rec.Width)
 	}
-	if mods.planty {
+	if gs.Player.Mods.planty {
 		gs.Companions.MrPlanty.rec = rl.NewRectangle(cntCompanion.X-gs.Companions.MrPlanty.rec.Width/2, cntCompanion.Y-gs.Companions.MrPlanty.rec.Width/2, gs.Companions.MrPlanty.rec.Width, gs.Companions.MrPlanty.rec.Width)
 	}
 
-	roomNum = 0
+	gs.Level.RoomNum = 0
 
 }
 func makeInnerBloks() { //MARK: MAKE INNER BLOKS
 
-	for a := 0; a < len(level); a++ {
+	for a := 0; a < len(gs.Level.Level); a++ {
 
 		num := rInt(3, 7)
 
@@ -8054,8 +7948,8 @@ func makeInnerBloks() { //MARK: MAKE INNER BLOKS
 				zblok := xblok{}
 				tl := findRanRecLoc(siz, siz, a)
 				zblok.rec = rl.NewRectangle(tl.X, tl.Y, siz, siz)
-				zblok.img = wallT
-				switch levelnum {
+				zblok.img = gs.Level.WallT
+				switch gs.Level.Levelnum {
 				case 1:
 					zblok.color = ranBlue()
 				case 2:
@@ -8074,12 +7968,12 @@ func makeInnerBloks() { //MARK: MAKE INNER BLOKS
 				zblok.solid = true
 
 				canadd := true
-				for b := 0; b < len(level[a].innerBloks); b++ {
-					if rl.CheckCollisionRecs(zblok.rec, level[a].innerBloks[b].rec) {
+				for b := 0; b < len(gs.Level.Level[a].innerBloks); b++ {
+					if rl.CheckCollisionRecs(zblok.rec, gs.Level.Level[a].innerBloks[b].rec) {
 						canadd = false
 					}
 					if a == 0 {
-						checkrec := rl.NewRectangle(cnt.X-bsU4, cnt.Y-bsU4, bsU8, bsU8)
+						checkrec := rl.NewRectangle(gs.Core.Cnt.X-bsU4, gs.Core.Cnt.Y-bsU4, bsU8, bsU8)
 						if rl.CheckCollisionRecs(zblok.rec, checkrec) {
 							canadd = false
 						}
@@ -8088,7 +7982,7 @@ func makeInnerBloks() { //MARK: MAKE INNER BLOKS
 				countbreak--
 
 				if canadd || countbreak == 0 {
-					level[a].innerBloks = append(level[a].innerBloks, zblok)
+					gs.Level.Level[a].innerBloks = append(gs.Level.Level[a].innerBloks, zblok)
 					break
 				}
 			}
@@ -8106,18 +8000,18 @@ func makemario() { //MARK:MAKE MARIO
 	gs.Mario.MarioT = gs.Core.Fps * 5
 
 	//IMG
-	gs.Mario.MarioImg = knight[0]
+	gs.Mario.MarioImg = gs.Render.Knight[0]
 
 	//BORDER REC
-	gs.Mario.MarioScreenRec = rl.NewRectangle(cnt.X-scrWF32/(cam2.Zoom*2), cnt.Y-scrHF32/(cam2.Zoom*2), scrWF32/cam2.Zoom, scrHF32/cam2.Zoom)
+	gs.Mario.MarioScreenRec = rl.NewRectangle(gs.Core.Cnt.X-gs.Core.ScrWF32/(gs.Render.Cam2.Zoom*2), gs.Core.Cnt.Y-gs.Core.ScrHF32/(gs.Render.Cam2.Zoom*2), gs.Core.ScrWF32/gs.Render.Cam2.Zoom, gs.Core.ScrHF32/gs.Render.Cam2.Zoom)
 
 	//BACK PATTERN
-	gs.Mario.PatternRec = patterns[rInt(0, len(patterns))]
+	gs.Mario.PatternRec = gs.Render.Patterns[rInt(0, len(gs.Render.Patterns))]
 
 	//FLOOR
 	siz := bsU4
 	x := float32(0)
-	y := levRecInner.Y + levRec.Width - (siz + bsU)
+	y := gs.Level.LevRecInner.Y + gs.Level.LevRec.Width - (siz + bsU)
 	for {
 		gs.Mario.MarioRecs = append(gs.Mario.MarioRecs, rl.NewRectangle(x, y, siz, siz))
 		gs.Mario.MarioCols = append(gs.Mario.MarioCols, ranBrown())
@@ -8126,13 +8020,13 @@ func makemario() { //MARK:MAKE MARIO
 			gs.Mario.MarioCoinOnOff = append(gs.Mario.MarioCoinOnOff, true)
 		}
 		x += siz
-		if x >= scrWF32 {
+		if x >= gs.Core.ScrWF32 {
 			break
 		}
 	}
 
 	//PLAYER REC
-	gs.Mario.MarioPL = rl.NewRectangle(scrWF32/2, y-siz, siz, siz)
+	gs.Mario.MarioPL = rl.NewRectangle(gs.Core.ScrWF32/2, y-siz, siz, siz)
 	gs.Mario.MarioV2L = rl.NewVector2(gs.Mario.MarioPL.X, gs.Mario.MarioPL.Y+gs.Mario.MarioPL.Width+2)
 	gs.Mario.MarioV2R = rl.NewVector2(gs.Mario.MarioPL.X+gs.Mario.MarioPL.Width, gs.Mario.MarioPL.Y+gs.Mario.MarioPL.Width+2)
 
@@ -8191,197 +8085,197 @@ func makemario() { //MARK:MAKE MARIO
 }
 func makeairstrike() { //MARK:MAKE AIR STRIKE
 
-	airstrikeV2 = nil
-	airstrikeDir = rInt(1, 5)
-	//airstrikeDir = 4
+	gs.FX.AirstrikeV2 = nil
+	gs.FX.AirstrikeDir = rInt(1, 5)
+	//gs.FX.AirstrikeDir = 4
 
-	switch airstrikeDir {
+	switch gs.FX.AirstrikeDir {
 	case 1:
-		v2 := rl.NewVector2(rF32(levRecInner.X+bsU4, levRecInner.X+levRecInner.Width-bsU8), levRecInner.Y-bsU4)
-		airstrikeV2 = append(airstrikeV2, v2)
+		v2 := rl.NewVector2(rF32(gs.Level.LevRecInner.X+bsU4, gs.Level.LevRecInner.X+gs.Level.LevRecInner.Width-bsU8), gs.Level.LevRecInner.Y-bsU4)
+		gs.FX.AirstrikeV2 = append(gs.FX.AirstrikeV2, v2)
 		v2.Y -= bsU4
 		v2.X -= bsU4
-		airstrikeV2 = append(airstrikeV2, v2)
+		gs.FX.AirstrikeV2 = append(gs.FX.AirstrikeV2, v2)
 		v2.X += bsU8
-		airstrikeV2 = append(airstrikeV2, v2)
+		gs.FX.AirstrikeV2 = append(gs.FX.AirstrikeV2, v2)
 	case 2:
-		v2 := rl.NewVector2(levRecInner.X+levRecInner.Width+bsU4, rF32(levRecInner.Y+bsU4, levRecInner.Y+levRecInner.Width-bsU8))
-		airstrikeV2 = append(airstrikeV2, v2)
+		v2 := rl.NewVector2(gs.Level.LevRecInner.X+gs.Level.LevRecInner.Width+bsU4, rF32(gs.Level.LevRecInner.Y+bsU4, gs.Level.LevRecInner.Y+gs.Level.LevRecInner.Width-bsU8))
+		gs.FX.AirstrikeV2 = append(gs.FX.AirstrikeV2, v2)
 		v2.Y -= bsU4
 		v2.X += bsU4
-		airstrikeV2 = append(airstrikeV2, v2)
+		gs.FX.AirstrikeV2 = append(gs.FX.AirstrikeV2, v2)
 		v2.Y += bsU8
-		airstrikeV2 = append(airstrikeV2, v2)
+		gs.FX.AirstrikeV2 = append(gs.FX.AirstrikeV2, v2)
 	case 3:
-		v2 := rl.NewVector2(rF32(levRecInner.X+bsU4, levRecInner.X+levRecInner.Width-bsU8), levRecInner.Y+levRecInner.Width+bsU4)
-		airstrikeV2 = append(airstrikeV2, v2)
+		v2 := rl.NewVector2(rF32(gs.Level.LevRecInner.X+bsU4, gs.Level.LevRecInner.X+gs.Level.LevRecInner.Width-bsU8), gs.Level.LevRecInner.Y+gs.Level.LevRecInner.Width+bsU4)
+		gs.FX.AirstrikeV2 = append(gs.FX.AirstrikeV2, v2)
 		v2.Y += bsU4
 		v2.X -= bsU4
-		airstrikeV2 = append(airstrikeV2, v2)
+		gs.FX.AirstrikeV2 = append(gs.FX.AirstrikeV2, v2)
 		v2.X += bsU8
-		airstrikeV2 = append(airstrikeV2, v2)
+		gs.FX.AirstrikeV2 = append(gs.FX.AirstrikeV2, v2)
 	case 4:
-		v2 := rl.NewVector2(levRecInner.X-bsU4, rF32(levRecInner.Y+bsU4, levRecInner.Y+levRecInner.Width-bsU8))
-		airstrikeV2 = append(airstrikeV2, v2)
+		v2 := rl.NewVector2(gs.Level.LevRecInner.X-bsU4, rF32(gs.Level.LevRecInner.Y+bsU4, gs.Level.LevRecInner.Y+gs.Level.LevRecInner.Width-bsU8))
+		gs.FX.AirstrikeV2 = append(gs.FX.AirstrikeV2, v2)
 		v2.Y -= bsU4
 		v2.X -= bsU4
-		airstrikeV2 = append(airstrikeV2, v2)
+		gs.FX.AirstrikeV2 = append(gs.FX.AirstrikeV2, v2)
 		v2.Y += bsU8
-		airstrikeV2 = append(airstrikeV2, v2)
+		gs.FX.AirstrikeV2 = append(gs.FX.AirstrikeV2, v2)
 	}
 
-	airstrikebombT = rI32(int(gs.Core.Fps/4), int(gs.Core.Fps*2))
-	airstrikeOn = true
+	gs.FX.AirstrikebombT = rI32(int(gs.Core.Fps/4), int(gs.Core.Fps*2))
+	gs.FX.AirstrikeOn = true
 }
 func makefish() { //MARK:MAKE FISH
 
-	fishV2 = rl.Vector2{}
-	fish2V2 = rl.Vector2{}
+	gs.FX.FishV2 = rl.Vector2{}
+	gs.FX.Fish2V2 = rl.Vector2{}
 
-	fishSiz = rF32(bsU4, bsU7)
-	fishSiz2 = rF32(bsU4, bsU7)
+	gs.FX.FishSiz = rF32(bsU4, bsU7)
+	gs.FX.FishSiz2 = rF32(bsU4, bsU7)
 
-	fishV2.X = -fishSiz
-	fish2V2.X = scrWF32 + fishSiz2
+	gs.FX.FishV2.X = -gs.FX.FishSiz
+	gs.FX.Fish2V2.X = gs.Core.ScrWF32 + gs.FX.FishSiz2
 
-	fishV2.Y = rF32(scrHF32/3, scrHF32)
-	fish2V2.Y = rF32(scrHF32/3, scrHF32)
+	gs.FX.FishV2.Y = rF32(gs.Core.ScrHF32/3, gs.Core.ScrHF32)
+	gs.FX.Fish2V2.Y = rF32(gs.Core.ScrHF32/3, gs.Core.ScrHF32)
 
-	fishRec = rl.NewRectangle(fishV2.X, fishV2.Y, fishSiz, fishSiz)
-	fishRec2 = rl.NewRectangle(fish2V2.X, fish2V2.Y, fishSiz2, fishSiz2)
+	gs.FX.FishRec = rl.NewRectangle(gs.FX.FishV2.X, gs.FX.FishV2.Y, gs.FX.FishSiz, gs.FX.FishSiz)
+	gs.FX.FishRec2 = rl.NewRectangle(gs.FX.Fish2V2.X, gs.FX.Fish2V2.Y, gs.FX.FishSiz2, gs.FX.FishSiz2)
 
-	fish1 = fishR.recTL
-	fish2 = fishL.recTL
+	gs.FX.Fish1 = gs.Render.FishR.recTL
+	gs.FX.Fish2 = gs.Render.FishL.recTL
 
 }
 func makeplayer() { //MARK:MAKE PLAYER
 
-	pl.atkDMG = 1
-	pl.cnt = cnt
-	pl.hp = 5
-	pl.hpmax = 5
-	pl.vel = 4
-	pl.siz = 72
-	pl.rec = rl.NewRectangle(pl.cnt.X-pl.siz/2, pl.cnt.Y-pl.siz/2, pl.siz, pl.siz)
-	pl.crec = pl.rec
-	pl.arec = pl.rec
-	pl.atkrec = pl.rec
-	pl.atkrec.X -= bsU
-	pl.atkrec.Y -= bsU
-	pl.atkrec.Width += bsU2
-	pl.atkrec.Height += bsU2
-	pl.crec.X += pl.crec.Width / 3
-	pl.crec.Y += pl.crec.Height / 3
-	pl.crec.Width = pl.crec.Width / 3
-	pl.crec.Height = pl.crec.Height / 2
-	pl.framesAtk = 6
-	pl.framesWalk = 8
-	pl.sizImg = 32
-	pl.img = knight[0]
-	pl.ori = rl.NewVector2(pl.rec.Width/2, pl.rec.Height/2)
-	pl.orbimg1 = orbitalanim.recTL
-	pl.orbimg2 = pl.orbimg1
+	gs.Player.Pl.atkDMG = 1
+	gs.Player.Pl.cnt = gs.Core.Cnt
+	gs.Player.Pl.hp = 5
+	gs.Player.Pl.hpmax = 5
+	gs.Player.Pl.vel = 4
+	gs.Player.Pl.siz = 72
+	gs.Player.Pl.rec = rl.NewRectangle(gs.Player.Pl.cnt.X-gs.Player.Pl.siz/2, gs.Player.Pl.cnt.Y-gs.Player.Pl.siz/2, gs.Player.Pl.siz, gs.Player.Pl.siz)
+	gs.Player.Pl.crec = gs.Player.Pl.rec
+	gs.Player.Pl.arec = gs.Player.Pl.rec
+	gs.Player.Pl.atkrec = gs.Player.Pl.rec
+	gs.Player.Pl.atkrec.X -= bsU
+	gs.Player.Pl.atkrec.Y -= bsU
+	gs.Player.Pl.atkrec.Width += bsU2
+	gs.Player.Pl.atkrec.Height += bsU2
+	gs.Player.Pl.crec.X += gs.Player.Pl.crec.Width / 3
+	gs.Player.Pl.crec.Y += gs.Player.Pl.crec.Height / 3
+	gs.Player.Pl.crec.Width = gs.Player.Pl.crec.Width / 3
+	gs.Player.Pl.crec.Height = gs.Player.Pl.crec.Height / 2
+	gs.Player.Pl.framesAtk = 6
+	gs.Player.Pl.framesWalk = 8
+	gs.Player.Pl.sizImg = 32
+	gs.Player.Pl.img = gs.Render.Knight[0]
+	gs.Player.Pl.ori = rl.NewVector2(gs.Player.Pl.rec.Width/2, gs.Player.Pl.rec.Height/2)
+	gs.Player.Pl.orbimg1 = gs.Render.Orbitalanim.recTL
+	gs.Player.Pl.orbimg2 = gs.Player.Pl.orbimg1
 
-	max.axe = 10
-	max.fireball = 8
-	max.bounce = 4
-	max.key = 3
-	max.apple = 3
-	max.firetrail = 3
-	max.hppotion = 3
-	max.coffee = 5
-	max.atkrange = 3
-	max.atkdmg = 2
-	max.orbital = 2
-	max.hpring = 3
-	max.armor = 3
-	max.cherry = 99
-	max.cake = 99
+	gs.Player.Max.axe = 10
+	gs.Player.Max.fireball = 8
+	gs.Player.Max.bounce = 4
+	gs.Player.Max.key = 3
+	gs.Player.Max.apple = 3
+	gs.Player.Max.firetrail = 3
+	gs.Player.Max.hppotion = 3
+	gs.Player.Max.coffee = 5
+	gs.Player.Max.atkrange = 3
+	gs.Player.Max.atkdmg = 2
+	gs.Player.Max.orbital = 2
+	gs.Player.Max.hpring = 3
+	gs.Player.Max.armor = 3
+	gs.Player.Max.cherry = 99
+	gs.Player.Max.cake = 99
 
 }
 func makeEnemyTypes() { //MARK: MAKE ENEMY TYPES
 
 	siz := bsU4
 
-	enSpikes.img = rl.NewRectangle(0, 404, 44, 44)
-	enSpikes.fade = 1
-	enSpikes.col = rl.White
-	enSpikes.xImg = 0
-	enSpikes.frameNum = 15
-	enSpikes.vel = bsU / 5
-	enSpikes.name = "spikehog"
-	enSpikes.hp = 5
-	enSpikes.hpmax = enSpikes.hp
-	enSpikes.rec = rl.NewRectangle(0, 0, siz, siz)
+	gs.Enemies.EnSpikes.img = rl.NewRectangle(0, 404, 44, 44)
+	gs.Enemies.EnSpikes.fade = 1
+	gs.Enemies.EnSpikes.col = rl.White
+	gs.Enemies.EnSpikes.xImg = 0
+	gs.Enemies.EnSpikes.frameNum = 15
+	gs.Enemies.EnSpikes.vel = bsU / 5
+	gs.Enemies.EnSpikes.name = "spikehog"
+	gs.Enemies.EnSpikes.hp = 5
+	gs.Enemies.EnSpikes.hpmax = gs.Enemies.EnSpikes.hp
+	gs.Enemies.EnSpikes.rec = rl.NewRectangle(0, 0, siz, siz)
 
-	enGhost.imgl = rl.NewRectangle(4, 506, 44, 44)
-	enGhost.imgr = rl.NewRectangle(454, 506, 44, 44)
-	enGhost.img = enGhost.imgr
-	enGhost.col = rl.White
-	enGhost.fade = 1
-	enGhost.xImg = 4
-	enGhost.xImg2 = 454
-	enGhost.frameNum = 9
-	enGhost.vel = bsU / 5
-	enGhost.name = "ghost"
-	enGhost.hp = 4
-	enGhost.hpmax = enGhost.hp
-	enGhost.rec = rl.NewRectangle(0, 0, siz, siz)
+	gs.Enemies.EnGhost.imgl = rl.NewRectangle(4, 506, 44, 44)
+	gs.Enemies.EnGhost.imgr = rl.NewRectangle(454, 506, 44, 44)
+	gs.Enemies.EnGhost.img = gs.Enemies.EnGhost.imgr
+	gs.Enemies.EnGhost.col = rl.White
+	gs.Enemies.EnGhost.fade = 1
+	gs.Enemies.EnGhost.xImg = 4
+	gs.Enemies.EnGhost.xImg2 = 454
+	gs.Enemies.EnGhost.frameNum = 9
+	gs.Enemies.EnGhost.vel = bsU / 5
+	gs.Enemies.EnGhost.name = "ghost"
+	gs.Enemies.EnGhost.hp = 4
+	gs.Enemies.EnGhost.hpmax = gs.Enemies.EnGhost.hp
+	gs.Enemies.EnGhost.rec = rl.NewRectangle(0, 0, siz, siz)
 
-	enSlime.imgl = rl.NewRectangle(4, 556, 44, 44)
-	enSlime.imgr = rl.NewRectangle(458, 556, 44, 44)
-	enSlime.img = enSlime.imgr
-	enSlime.col = rl.White
-	enSlime.fade = 1
-	enSlime.xImg = 4
-	enSlime.xImg2 = 458
-	enSlime.frameNum = 9
-	enSlime.vel = bsU / 5
-	enSlime.name = "slime"
-	enSlime.hp = 5
-	enSlime.hpmax = enSlime.hp
-	enSlime.rec = rl.NewRectangle(0, 0, siz, siz)
+	gs.Enemies.EnSlime.imgl = rl.NewRectangle(4, 556, 44, 44)
+	gs.Enemies.EnSlime.imgr = rl.NewRectangle(458, 556, 44, 44)
+	gs.Enemies.EnSlime.img = gs.Enemies.EnSlime.imgr
+	gs.Enemies.EnSlime.col = rl.White
+	gs.Enemies.EnSlime.fade = 1
+	gs.Enemies.EnSlime.xImg = 4
+	gs.Enemies.EnSlime.xImg2 = 458
+	gs.Enemies.EnSlime.frameNum = 9
+	gs.Enemies.EnSlime.vel = bsU / 5
+	gs.Enemies.EnSlime.name = "slime"
+	gs.Enemies.EnSlime.hp = 5
+	gs.Enemies.EnSlime.hpmax = gs.Enemies.EnSlime.hp
+	gs.Enemies.EnSlime.rec = rl.NewRectangle(0, 0, siz, siz)
 
-	enRock.imgl = rl.NewRectangle(4, 608, 22, 22)
-	enRock.imgr = rl.NewRectangle(318, 608, 22, 22)
-	enRock.img = enRock.imgr
-	enRock.col = rl.White
-	enRock.fade = 1
-	enRock.xImg = 4
-	enRock.xImg2 = 318
-	enRock.frameNum = 13
-	enRock.vel = bsU / 4
-	enRock.name = "rock"
-	enRock.hp = 3
-	enRock.hpmax = enRock.hp
-	enRock.rec = rl.NewRectangle(0, 0, bsU3, bsU3)
+	gs.Enemies.EnRock.imgl = rl.NewRectangle(4, 608, 22, 22)
+	gs.Enemies.EnRock.imgr = rl.NewRectangle(318, 608, 22, 22)
+	gs.Enemies.EnRock.img = gs.Enemies.EnRock.imgr
+	gs.Enemies.EnRock.col = rl.White
+	gs.Enemies.EnRock.fade = 1
+	gs.Enemies.EnRock.xImg = 4
+	gs.Enemies.EnRock.xImg2 = 318
+	gs.Enemies.EnRock.frameNum = 13
+	gs.Enemies.EnRock.vel = bsU / 4
+	gs.Enemies.EnRock.name = "rock"
+	gs.Enemies.EnRock.hp = 3
+	gs.Enemies.EnRock.hpmax = gs.Enemies.EnRock.hp
+	gs.Enemies.EnRock.rec = rl.NewRectangle(0, 0, bsU3, bsU3)
 
-	enMushroom.imgl = rl.NewRectangle(4, 634, 32, 32)
-	enMushroom.imgr = rl.NewRectangle(4, 668, 32, 32)
-	enMushroom.img = enMushroom.imgr
-	enMushroom.col = rl.White
-	enMushroom.fade = 1
-	enMushroom.xImg = 4
-	enMushroom.xImg2 = 4
-	enMushroom.frameNum = 13
-	enMushroom.vel = bsU / 5
-	enMushroom.name = "mushroom"
-	enMushroom.hp = 5
-	enMushroom.hpmax = enMushroom.hp
-	enMushroom.rec = rl.NewRectangle(0, 0, siz, siz)
+	gs.Enemies.EnMushroom.imgl = rl.NewRectangle(4, 634, 32, 32)
+	gs.Enemies.EnMushroom.imgr = rl.NewRectangle(4, 668, 32, 32)
+	gs.Enemies.EnMushroom.img = gs.Enemies.EnMushroom.imgr
+	gs.Enemies.EnMushroom.col = rl.White
+	gs.Enemies.EnMushroom.fade = 1
+	gs.Enemies.EnMushroom.xImg = 4
+	gs.Enemies.EnMushroom.xImg2 = 4
+	gs.Enemies.EnMushroom.frameNum = 13
+	gs.Enemies.EnMushroom.vel = bsU / 5
+	gs.Enemies.EnMushroom.name = "mushroom"
+	gs.Enemies.EnMushroom.hp = 5
+	gs.Enemies.EnMushroom.hpmax = gs.Enemies.EnMushroom.hp
+	gs.Enemies.EnMushroom.rec = rl.NewRectangle(0, 0, siz, siz)
 
 }
 func makeChainLightning() { //MARK:MAKE CHAIN LIGHTNING
 
-	chainV2 = nil
-	if len(level[roomNum].enemies) > 1 {
-		for a := 0; a < len(level[roomNum].enemies); a++ {
-			if level[roomNum].enemies[a].cnt.X > levRecInner.X && level[roomNum].enemies[a].cnt.Y > levRecInner.Y {
-				chainV2 = append(chainV2, level[roomNum].enemies[a].cnt)
+	gs.FX.ChainV2 = nil
+	if len(gs.Level.Level[gs.Level.RoomNum].enemies) > 1 {
+		for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].enemies); a++ {
+			if gs.Level.Level[gs.Level.RoomNum].enemies[a].cnt.X > gs.Level.LevRecInner.X && gs.Level.Level[gs.Level.RoomNum].enemies[a].cnt.Y > gs.Level.LevRecInner.Y {
+				gs.FX.ChainV2 = append(gs.FX.ChainV2, gs.Level.Level[gs.Level.RoomNum].enemies[a].cnt)
 			}
 		}
-		chainLightTimer = gs.Core.Fps / 3
-		chainLightOn = true
+		gs.FX.ChainLightTimer = gs.Core.Fps / 3
+		gs.FX.ChainLightOn = true
 		rl.PlaySound(gs.Audio.Sfx[11])
 	}
 }
@@ -8392,65 +8286,65 @@ func makeenemies() { //MARK:MAKE ENEMIES
 	zen := xenemy{}
 	siz := bsU2
 
-	for a := 0; a < len(level); a++ {
+	for a := 0; a < len(gs.Level.Level); a++ {
 
-		if levelnum > 4 {
+		if gs.Level.Levelnum > 4 {
 			if flipcoin() { //MUSHROOM
 				zen = xenemy{}
-				zen = enMushroom
+				zen = gs.Enemies.EnMushroom
 				zen.T1 = rI32(int(gs.Core.Fps*2), int(gs.Core.Fps*5))
 				canadd := true
-				zen.rec, canadd = findRecPos(enMushroom.rec.Width, a)
+				zen.rec, canadd = findRecPos(gs.Enemies.EnMushroom.rec.Width, a)
 				zen.crec = zen.rec
 				zen.crec.Y += zen.crec.Height / 2
 				zen.crec.Height -= zen.crec.Height / 2
 				zen.velX = rF32(-zen.vel, zen.vel)
 				zen.velY = rF32(-zen.vel, zen.vel)
 				if canadd {
-					level[a].enemies = append(level[a].enemies, zen)
+					gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
 				}
 			}
-			if hardcore {
+			if gs.Level.Hardcore {
 				if flipcoin() { //MUSHROOM
 					zen = xenemy{}
-					zen = enMushroom
+					zen = gs.Enemies.EnMushroom
 					zen.T1 = rI32(int(gs.Core.Fps*2), int(gs.Core.Fps*5))
 					canadd := true
-					zen.rec, canadd = findRecPos(enMushroom.rec.Width, a)
+					zen.rec, canadd = findRecPos(gs.Enemies.EnMushroom.rec.Width, a)
 					zen.crec = zen.rec
 					zen.crec.Y += zen.crec.Height / 2
 					zen.crec.Height -= zen.crec.Height / 2
 					zen.velX = rF32(-zen.vel, zen.vel)
 					zen.velY = rF32(-zen.vel, zen.vel)
 					if canadd {
-						level[a].enemies = append(level[a].enemies, zen)
+						gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
 					}
 				}
 				if flipcoin() { //MUSHROOM
 					zen = xenemy{}
-					zen = enMushroom
+					zen = gs.Enemies.EnMushroom
 					zen.T1 = rI32(int(gs.Core.Fps*2), int(gs.Core.Fps*5))
 					canadd := true
-					zen.rec, canadd = findRecPos(enMushroom.rec.Width, a)
+					zen.rec, canadd = findRecPos(gs.Enemies.EnMushroom.rec.Width, a)
 					zen.crec = zen.rec
 					zen.crec.Y += zen.crec.Height / 2
 					zen.crec.Height -= zen.crec.Height / 2
 					zen.velX = rF32(-zen.vel, zen.vel)
 					zen.velY = rF32(-zen.vel, zen.vel)
 					if canadd {
-						level[a].enemies = append(level[a].enemies, zen)
+						gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
 					}
 				}
 			}
 		}
-		if levelnum > 3 {
+		if gs.Level.Levelnum > 3 {
 
 			if flipcoin() { //GHOST
 				zen = xenemy{}
-				zen = enGhost
+				zen = gs.Enemies.EnGhost
 				zen.fly = true
 				canadd := true
-				zen.rec, canadd = findRecPos(enGhost.rec.Width, a)
+				zen.rec, canadd = findRecPos(gs.Enemies.EnGhost.rec.Width, a)
 				zen.crec = zen.rec
 				zen.crec.Y += zen.crec.Height / 3
 				zen.crec.Height -= zen.crec.Height / 3
@@ -8466,16 +8360,16 @@ func makeenemies() { //MARK:MAKE ENEMIES
 				zen.velY = rF32(-zen.vel, zen.vel)
 
 				if canadd {
-					level[a].enemies = append(level[a].enemies, zen)
+					gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
 				}
 			}
-			if hardcore {
+			if gs.Level.Hardcore {
 				if flipcoin() { //GHOST
 					zen = xenemy{}
-					zen = enGhost
+					zen = gs.Enemies.EnGhost
 					zen.fly = true
 					canadd := true
-					zen.rec, canadd = findRecPos(enGhost.rec.Width, a)
+					zen.rec, canadd = findRecPos(gs.Enemies.EnGhost.rec.Width, a)
 					zen.crec = zen.rec
 					zen.crec.Y += zen.crec.Height / 3
 					zen.crec.Height -= zen.crec.Height / 3
@@ -8491,15 +8385,15 @@ func makeenemies() { //MARK:MAKE ENEMIES
 					zen.velY = rF32(-zen.vel, zen.vel)
 
 					if canadd {
-						level[a].enemies = append(level[a].enemies, zen)
+						gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
 					}
 				}
 				if flipcoin() { //GHOST
 					zen = xenemy{}
-					zen = enGhost
+					zen = gs.Enemies.EnGhost
 					zen.fly = true
 					canadd := true
-					zen.rec, canadd = findRecPos(enGhost.rec.Width, a)
+					zen.rec, canadd = findRecPos(gs.Enemies.EnGhost.rec.Width, a)
 					zen.crec = zen.rec
 					zen.crec.Y += zen.crec.Height / 3
 					zen.crec.Height -= zen.crec.Height / 3
@@ -8515,60 +8409,60 @@ func makeenemies() { //MARK:MAKE ENEMIES
 					zen.velY = rF32(-zen.vel, zen.vel)
 
 					if canadd {
-						level[a].enemies = append(level[a].enemies, zen)
+						gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
 					}
 				}
 
 			}
 
 		}
-		if levelnum > 1 {
+		if gs.Level.Levelnum > 1 {
 
 			if flipcoin() { //SLIME
 				zen = xenemy{}
-				zen = enSlime
+				zen = gs.Enemies.EnSlime
 				zen.T1 = rI32(int(gs.Core.Fps/2), int(gs.Core.Fps*2))
 				canadd := true
-				zen.rec, canadd = findRecPos(enSlime.rec.Width, a)
+				zen.rec, canadd = findRecPos(gs.Enemies.EnSlime.rec.Width, a)
 				zen.crec = zen.rec
 				zen.crec.Y += zen.crec.Height / 3
 				zen.crec.Height -= zen.crec.Height / 3
 				zen.velX = rF32(-zen.vel, zen.vel)
 				zen.velY = rF32(-zen.vel, zen.vel)
 				if canadd {
-					level[a].enemies = append(level[a].enemies, zen)
+					gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
 				}
 			}
 
-			if hardcore {
+			if gs.Level.Hardcore {
 				if flipcoin() { //SLIME
 					zen = xenemy{}
-					zen = enSlime
+					zen = gs.Enemies.EnSlime
 					zen.T1 = rI32(int(gs.Core.Fps/2), int(gs.Core.Fps*2))
 					canadd := true
-					zen.rec, canadd = findRecPos(enSlime.rec.Width, a)
+					zen.rec, canadd = findRecPos(gs.Enemies.EnSlime.rec.Width, a)
 					zen.crec = zen.rec
 					zen.crec.Y += zen.crec.Height / 3
 					zen.crec.Height -= zen.crec.Height / 3
 					zen.velX = rF32(-zen.vel, zen.vel)
 					zen.velY = rF32(-zen.vel, zen.vel)
 					if canadd {
-						level[a].enemies = append(level[a].enemies, zen)
+						gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
 					}
 				}
 				if flipcoin() { //SLIME
 					zen = xenemy{}
-					zen = enSlime
+					zen = gs.Enemies.EnSlime
 					zen.T1 = rI32(int(gs.Core.Fps/2), int(gs.Core.Fps*2))
 					canadd := true
-					zen.rec, canadd = findRecPos(enSlime.rec.Width, a)
+					zen.rec, canadd = findRecPos(gs.Enemies.EnSlime.rec.Width, a)
 					zen.crec = zen.rec
 					zen.crec.Y += zen.crec.Height / 3
 					zen.crec.Height -= zen.crec.Height / 3
 					zen.velX = rF32(-zen.vel, zen.vel)
 					zen.velY = rF32(-zen.vel, zen.vel)
 					if canadd {
-						level[a].enemies = append(level[a].enemies, zen)
+						gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
 					}
 				}
 			}
@@ -8576,24 +8470,24 @@ func makeenemies() { //MARK:MAKE ENEMIES
 
 		if flipcoin() { //ROCK
 			zen = xenemy{}
-			zen = enRock
+			zen = gs.Enemies.EnRock
 			zen.spawnN = rInt(2, 11)
 			zen.T1 = rI32(int(gs.Core.Fps*2), int(gs.Core.Fps*5))
 			canadd := true
-			zen.rec, canadd = findRecPos(enRock.rec.Width, a)
+			zen.rec, canadd = findRecPos(gs.Enemies.EnRock.rec.Width, a)
 			zen.crec = zen.rec
 			zen.crec.Y += zen.crec.Height / 3
 			zen.crec.Height -= zen.crec.Height / 3
 			zen.velX = rF32(-zen.vel, zen.vel)
 			zen.velY = rF32(-zen.vel, zen.vel)
 			if canadd {
-				level[a].enemies = append(level[a].enemies, zen)
+				gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
 			}
 		} else { //SPIKEHOG
 			zen = xenemy{}
-			zen = enSpikes
+			zen = gs.Enemies.EnSpikes
 			canadd := true
-			zen.rec, canadd = findRecPos(enSpikes.rec.Width, a)
+			zen.rec, canadd = findRecPos(gs.Enemies.EnSpikes.rec.Width, a)
 			zen.crec = zen.rec
 			zen.crec.Height = zen.crec.Height / 2
 			zen.crec.Y += zen.crec.Height
@@ -8609,30 +8503,30 @@ func makeenemies() { //MARK:MAKE ENEMIES
 				}
 			}
 			if canadd {
-				level[a].enemies = append(level[a].enemies, zen)
+				gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
 			}
 		}
-		if hardcore {
+		if gs.Level.Hardcore {
 			if flipcoin() { //ROCK
 				zen = xenemy{}
-				zen = enRock
+				zen = gs.Enemies.EnRock
 				zen.spawnN = rInt(2, 11)
 				zen.T1 = rI32(int(gs.Core.Fps*2), int(gs.Core.Fps*5))
 				canadd := true
-				zen.rec, canadd = findRecPos(enRock.rec.Width, a)
+				zen.rec, canadd = findRecPos(gs.Enemies.EnRock.rec.Width, a)
 				zen.crec = zen.rec
 				zen.crec.Y += zen.crec.Height / 3
 				zen.crec.Height -= zen.crec.Height / 3
 				zen.velX = rF32(-zen.vel, zen.vel)
 				zen.velY = rF32(-zen.vel, zen.vel)
 				if canadd {
-					level[a].enemies = append(level[a].enemies, zen)
+					gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
 				}
 			} else { //SPIKEHOG
 				zen = xenemy{}
-				zen = enSpikes
+				zen = gs.Enemies.EnSpikes
 				canadd := true
-				zen.rec, canadd = findRecPos(enSpikes.rec.Width, a)
+				zen.rec, canadd = findRecPos(gs.Enemies.EnSpikes.rec.Width, a)
 				zen.crec = zen.rec
 				zen.crec.Height = zen.crec.Height / 2
 				zen.crec.Y += zen.crec.Height
@@ -8648,7 +8542,7 @@ func makeenemies() { //MARK:MAKE ENEMIES
 					}
 				}
 				if canadd {
-					level[a].enemies = append(level[a].enemies, zen)
+					gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
 				}
 			}
 		}
@@ -8662,7 +8556,7 @@ func makeenemies() { //MARK:MAKE ENEMIES
 			zen.vel = bsU / 3
 			zen.velX = rF32(-zen.vel, zen.vel)
 			zen.velY = rF32(-zen.vel, zen.vel)
-			zen.img = bats[rInt(0, len(bats))]
+			zen.img = gs.Render.Bats[rInt(0, len(gs.Render.Bats))]
 			zen.fade = 1
 			zen.col = rl.White
 			zen.frameNum = 3
@@ -8672,19 +8566,19 @@ func makeenemies() { //MARK:MAKE ENEMIES
 			zen.ori = rl.NewVector2(0, 0)
 			zen.crec = zen.rec
 			if canadd {
-				level[a].enemies = append(level[a].enemies, zen)
+				gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
 			}
 
 			if flipcoin() {
 				zen.velX = rF32(-zen.vel, zen.vel)
 				zen.velY = rF32(-zen.vel, zen.vel)
-				zen.img = bats[rInt(0, len(bats))]
+				zen.img = gs.Render.Bats[rInt(0, len(gs.Render.Bats))]
 				zen.xImg = zen.img.X
 				canadd = true
 				zen.rec, canadd = findRecPos(siz, a)
 				zen.crec = zen.rec
 				if canadd {
-					level[a].enemies = append(level[a].enemies, zen)
+					gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
 				}
 			}
 		}
@@ -8699,7 +8593,7 @@ func makeenemies() { //MARK:MAKE ENEMIES
 			zen.vel = bsU / 4
 			zen.velX = rF32(-zen.vel, zen.vel)
 			zen.velY = rF32(-zen.vel, zen.vel)
-			zen.img = rabbit1.recTL
+			zen.img = gs.Render.Rabbit1.recTL
 			zen.fade = 1
 			zen.col = ranCol()
 			canadd := true
@@ -8708,8 +8602,8 @@ func makeenemies() { //MARK:MAKE ENEMIES
 			zen.rec = rl.NewRectangle(zen.cnt.X-siz/2, zen.cnt.Y-siz/2, siz, siz)
 			zen.crec = zen.rec
 			if canadd {
-				if zen.rec.X > levRecInner.X && zen.rec.Y > levRecInner.Y {
-					level[a].enemies = append(level[a].enemies, zen)
+				if zen.rec.X > gs.Level.LevRecInner.X && zen.rec.Y > gs.Level.LevRecInner.Y {
+					gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
 				}
 			}
 
@@ -8721,8 +8615,8 @@ func makeenemies() { //MARK:MAKE ENEMIES
 				zen.rec, canadd = findRecPos(siz, a)
 				zen.crec = zen.rec
 				if canadd {
-					if zen.rec.X > levRecInner.X && zen.rec.Y > levRecInner.Y {
-						level[a].enemies = append(level[a].enemies, zen)
+					if zen.rec.X > gs.Level.LevRecInner.X && zen.rec.Y > gs.Level.LevRecInner.Y {
+						gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
 					}
 				}
 			}
@@ -8732,10 +8626,10 @@ func makeenemies() { //MARK:MAKE ENEMIES
 
 }
 func maketeleport() { //MARK:MAKE TELEPORT
-	teleportRadius = nil
-	length := scrWF32 / 2
+	gs.Player.TeleportRadius = nil
+	length := gs.Core.ScrWF32 / 2
 	for a := 0; a < 10; a++ {
-		teleportRadius = append(teleportRadius, length)
+		gs.Player.TeleportRadius = append(gs.Player.TeleportRadius, length)
 		length -= bsU4
 	}
 
@@ -8760,11 +8654,11 @@ func makegascloud(cnt rl.Vector2) { //MARK:MAKE GAS CLOUD
 	zblok.name = "gascloud"
 	zblok.onoff = true
 	zblok.color = ranGreen()
-	zblok.img = posiongas.recTL
+	zblok.img = gs.Render.Posiongas.recTL
 	zblok.vel = bsU / 4
 	zblok.velX = rF32(-zblok.vel, zblok.vel)
 	zblok.velY = rF32(-zblok.vel, zblok.vel)
-	level[roomNum].etc = append(level[roomNum].etc, zblok)
+	gs.Level.Level[gs.Level.RoomNum].etc = append(gs.Level.Level[gs.Level.RoomNum].etc, zblok)
 
 }
 func makeSwitchArrows() { //MARK:MAKE SWITCH ARROWS
@@ -8773,45 +8667,45 @@ func makeSwitchArrows() { //MARK:MAKE SWITCH ARROWS
 
 	switch choose {
 	case 1:
-		x := levRecInner.X + bsU
-		y := levRecInner.Y
+		x := gs.Level.LevRecInner.X + bsU
+		y := gs.Level.LevRecInner.Y
 		for {
 			makeProjectileEnemy(2, rl.NewVector2(x+bsU, y+bsU))
 			x += bsU2
-			if x > levRecInner.X+levRecInner.Width-bsU2 {
+			if x > gs.Level.LevRecInner.X+gs.Level.LevRecInner.Width-bsU2 {
 				break
 			}
 		}
 
 	case 2:
-		x := levRecInner.X + levRecInner.Width - bsU2
-		y := levRecInner.Y + bsU
+		x := gs.Level.LevRecInner.X + gs.Level.LevRecInner.Width - bsU2
+		y := gs.Level.LevRecInner.Y + bsU
 		for {
 			makeProjectileEnemy(5, rl.NewVector2(x+bsU, y+bsU))
 			y += bsU2
-			if y > levRecInner.Y+levRecInner.Width-bsU2 {
+			if y > gs.Level.LevRecInner.Y+gs.Level.LevRecInner.Width-bsU2 {
 				break
 			}
 		}
 
 	case 3:
-		x := levRecInner.X + bsU
-		y := levRecInner.Y + levRecInner.Width - bsU2
+		x := gs.Level.LevRecInner.X + bsU
+		y := gs.Level.LevRecInner.Y + gs.Level.LevRecInner.Width - bsU2
 		for {
 			makeProjectileEnemy(4, rl.NewVector2(x+bsU, y+bsU))
 			x += bsU2
-			if x > levRecInner.X+levRecInner.Width-bsU2 {
+			if x > gs.Level.LevRecInner.X+gs.Level.LevRecInner.Width-bsU2 {
 				break
 			}
 		}
 
 	case 4:
-		x := levRecInner.X
-		y := levRecInner.Y + bsU
+		x := gs.Level.LevRecInner.X
+		y := gs.Level.LevRecInner.Y + bsU
 		for {
 			makeProjectileEnemy(3, rl.NewVector2(x+bsU, y+bsU))
 			y += bsU2
-			if y > levRecInner.Y+levRecInner.Width-bsU2 {
+			if y > gs.Level.LevRecInner.Y+gs.Level.LevRecInner.Width-bsU2 {
 				break
 			}
 		}
@@ -8823,44 +8717,44 @@ func makeSwitchArrows() { //MARK:MAKE SWITCH ARROWS
 func makeexit() { //MARK:MAKE EXIT
 
 	for {
-		exitRoomNum = rInt(1, len(level))
-		if exitRoomNum != shopRoomNum {
-			level[exitRoomNum].exit = true
+		gs.Level.ExitRoomNum = rInt(1, len(gs.Level.Level))
+		if gs.Level.ExitRoomNum != gs.Level.ShopRoomNum {
+			gs.Level.Level[gs.Level.ExitRoomNum].exit = true
 			break
 		}
 	}
 
 	zblok := makeBlokGenNoRecNoCntr()
-	zblok.img = etc[53]
+	zblok.img = gs.Render.Etc[53]
 	zblok.name = "exit"
 	zblok.color = ranBrown()
 	siz := bsU3
 	for {
 		canadd := true
-		zblok.rec, canadd = findRecPoswithSpacing(siz, bsU2, exitRoomNum)
+		zblok.rec, canadd = findRecPoswithSpacing(siz, bsU2, gs.Level.ExitRoomNum)
 		if canadd {
 			break
 		}
 	}
 
-	level[exitRoomNum].etc = append(level[exitRoomNum].etc, zblok)
+	gs.Level.Level[gs.Level.ExitRoomNum].etc = append(gs.Level.Level[gs.Level.ExitRoomNum].etc, zblok)
 
 }
 func makestatues() { //MARK:MAKE STATUES
 
-	for a := 0; a < len(level); a++ {
+	for a := 0; a < len(gs.Level.Level); a++ {
 
 		if roll6() > 4 {
 			zblok := makeBlokGenNoRecNoCntr()
 			siz := rF32(bsU3, bsU5)
 			found := true
 			zblok.rec, found = findRecPoswithSpacing(siz, bsU2, a)
-			zblok.img = statues[rInt(0, len(statues))]
+			zblok.img = gs.Render.Statues[rInt(0, len(gs.Render.Statues))]
 			zblok.name = "statue"
 			zblok.solid = true
 
 			if found {
-				level[a].etc = append(level[a].etc, zblok)
+				gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
 			}
 		}
 	}
@@ -8868,7 +8762,7 @@ func makestatues() { //MARK:MAKE STATUES
 }
 func makespears() { //MARK:MAKE SPEARS
 
-	for a := 0; a < len(level); a++ {
+	for a := 0; a < len(gs.Level.Level); a++ {
 
 		zblok := makeBlokGenNoRecNoCntr()
 		multi := float32(2)
@@ -8876,9 +8770,9 @@ func makespears() { //MARK:MAKE SPEARS
 		switch choose {
 		case 1:
 			zblok.ro = 180
-			zblok.rec = rl.NewRectangle(levRecInner.X, levRecInner.Y, multi*spear.recTL.Width, multi*spear.recTL.Height)
+			zblok.rec = rl.NewRectangle(gs.Level.LevRecInner.X, gs.Level.LevRecInner.Y, multi*gs.Render.Spear.recTL.Width, multi*gs.Render.Spear.recTL.Height)
 			for {
-				zblok.rec.X += rF32(0, levRecInner.Width-bsU2)
+				zblok.rec.X += rF32(0, gs.Level.LevRecInner.Width-bsU2)
 				if checkInnerBloksExits(a, zblok.rec) {
 					break
 				}
@@ -8890,10 +8784,10 @@ func makespears() { //MARK:MAKE SPEARS
 			zblok.ori = rl.NewVector2(zblok.drec.Width/2, zblok.drec.Height/2)
 		case 2:
 			zblok.ro = 270
-			zblok.rec = rl.NewRectangle(levRecInner.X+levRecInner.Width-bsU-(multi*spear.recTL.Height)/2, levRecInner.Y+bsU-(multi*spear.recTL.Height)/2, multi*spear.recTL.Width, multi*spear.recTL.Height)
+			zblok.rec = rl.NewRectangle(gs.Level.LevRecInner.X+gs.Level.LevRecInner.Width-bsU-(multi*gs.Render.Spear.recTL.Height)/2, gs.Level.LevRecInner.Y+bsU-(multi*gs.Render.Spear.recTL.Height)/2, multi*gs.Render.Spear.recTL.Width, multi*gs.Render.Spear.recTL.Height)
 
 			for {
-				zblok.rec.Y += rF32(0, levRecInner.Width-bsU2)
+				zblok.rec.Y += rF32(0, gs.Level.LevRecInner.Width-bsU2)
 				if checkInnerBloksExits(a, zblok.rec) {
 					break
 				}
@@ -8902,14 +8796,14 @@ func makespears() { //MARK:MAKE SPEARS
 			zblok.drec = zblok.rec
 			zblok.drec.X += zblok.drec.Width / 2
 			zblok.drec.Y += zblok.drec.Height / 2
-			zblok.crec = rl.NewRectangle(levRecInner.X+levRecInner.Width-multi*spear.recTL.Height, (zblok.rec.Y+zblok.rec.Height/2)-bsU, multi*spear.recTL.Height, multi*spear.recTL.Width)
+			zblok.crec = rl.NewRectangle(gs.Level.LevRecInner.X+gs.Level.LevRecInner.Width-multi*gs.Render.Spear.recTL.Height, (zblok.rec.Y+zblok.rec.Height/2)-bsU, multi*gs.Render.Spear.recTL.Height, multi*gs.Render.Spear.recTL.Width)
 			zblok.ori = rl.NewVector2(zblok.drec.Width/2, zblok.drec.Height/2)
 
 		case 3:
 			zblok.ro = 0
-			zblok.rec = rl.NewRectangle(levRecInner.X, levRecInner.Y+levRecInner.Height-(multi*spear.recTL.Height), multi*spear.recTL.Width, multi*spear.recTL.Height)
+			zblok.rec = rl.NewRectangle(gs.Level.LevRecInner.X, gs.Level.LevRecInner.Y+gs.Level.LevRecInner.Height-(multi*gs.Render.Spear.recTL.Height), multi*gs.Render.Spear.recTL.Width, multi*gs.Render.Spear.recTL.Height)
 			for {
-				zblok.rec.X += rF32(0, levRecInner.Width-bsU2)
+				zblok.rec.X += rF32(0, gs.Level.LevRecInner.Width-bsU2)
 				if checkInnerBloksExits(a, zblok.rec) {
 					break
 				}
@@ -8922,10 +8816,10 @@ func makespears() { //MARK:MAKE SPEARS
 
 		case 4:
 			zblok.ro = 90
-			zblok.rec = rl.NewRectangle(levRecInner.X+bsU3, levRecInner.Y+bsU-(multi*spear.recTL.Height)/2, multi*spear.recTL.Width, multi*spear.recTL.Height)
+			zblok.rec = rl.NewRectangle(gs.Level.LevRecInner.X+bsU3, gs.Level.LevRecInner.Y+bsU-(multi*gs.Render.Spear.recTL.Height)/2, multi*gs.Render.Spear.recTL.Width, multi*gs.Render.Spear.recTL.Height)
 
 			for {
-				zblok.rec.Y += rF32(0, levRecInner.Width-bsU2)
+				zblok.rec.Y += rF32(0, gs.Level.LevRecInner.Width-bsU2)
 				if checkInnerBloksExits(a, zblok.rec) {
 					break
 				}
@@ -8934,42 +8828,42 @@ func makespears() { //MARK:MAKE SPEARS
 			zblok.drec = zblok.rec
 			zblok.drec.X += zblok.drec.Width / 2
 			zblok.drec.Y += zblok.drec.Height / 2
-			zblok.crec = rl.NewRectangle(zblok.rec.X-bsU3, (zblok.rec.Y+zblok.rec.Height/2)-bsU, multi*spear.recTL.Height, multi*spear.recTL.Width)
+			zblok.crec = rl.NewRectangle(zblok.rec.X-bsU3, (zblok.rec.Y+zblok.rec.Height/2)-bsU, multi*gs.Render.Spear.recTL.Height, multi*gs.Render.Spear.recTL.Width)
 			zblok.ori = rl.NewVector2(zblok.drec.Width/2, zblok.drec.Height/2)
 		}
 
-		zblok.img = spear.recTL
+		zblok.img = gs.Render.Spear.recTL
 		zblok.name = "spear"
-		if zblok.rec.X > levRecInner.X && zblok.rec.X < levRecInner.Width+levRecInner.X && zblok.rec.Y > levRecInner.Y && zblok.rec.Y < levRecInner.Y+levRecInner.Width {
-			level[a].etc = append(level[a].etc, zblok)
+		if zblok.rec.X > gs.Level.LevRecInner.X && zblok.rec.X < gs.Level.LevRecInner.Width+gs.Level.LevRecInner.X && zblok.rec.Y > gs.Level.LevRecInner.Y && zblok.rec.Y < gs.Level.LevRecInner.Y+gs.Level.LevRecInner.Width {
+			gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
 		}
 
 	}
 }
 func makeblades() { //MARK:MAKE BLADES
 
-	for a := 0; a < len(level); a++ {
+	for a := 0; a < len(gs.Level.Level); a++ {
 
 		if flipcoin() {
 			siz := rF32(bsU2, bsU4)
 			zblok := makeBlokGenNoRecNoCntr()
 			found := true
 			zblok.rec, found = findRecPos(siz, a)
-			zblok.img = blades.recTL
+			zblok.img = gs.Render.Blades.recTL
 			zblok.name = "blades"
 			zblok.vel = bsU / 4
 			zblok.velX = rF32(-zblok.vel, zblok.vel)
 			zblok.velY = rF32(-zblok.vel, zblok.vel)
 
 			if found {
-				level[a].etc = append(level[a].etc, zblok)
+				gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
 			}
 		}
 	}
 }
 func makeshrines() { //MARK:MAKE SHRINES
 
-	choose := rInt(0, len(level))
+	choose := rInt(0, len(gs.Level.Level))
 
 	siz := rF32(bsU3, bsU5)
 	zblok := xblok{}
@@ -8980,18 +8874,18 @@ func makeshrines() { //MARK:MAKE SHRINES
 		}
 	}
 
-	zblok.img = shrines[rInt(0, len(shrines))]
+	zblok.img = gs.Render.Shrines[rInt(0, len(gs.Render.Shrines))]
 	zblok.name = "shrine"
 	zblok.color = ranCol()
 	zblok.fade = 0.2
 	zblok.solid = true
 	zblok.onoff = true
-	level[choose].etc = append(level[choose].etc, zblok)
+	gs.Level.Level[choose].etc = append(gs.Level.Level[choose].etc, zblok)
 
 }
 func makeetc() { //MARK:MAKE ETC
 
-	for a := 0; a < len(level); a++ {
+	for a := 0; a < len(gs.Level.Level); a++ {
 
 		//GAS CLOUD TRAPS
 		if roll6() == 6 {
@@ -9005,9 +8899,9 @@ func makeetc() { //MARK:MAKE ETC
 			zblok.ori = rl.NewVector2(zblok.rec.Width/2, zblok.rec.Width/2)
 			zblok.name = "gascloudtrap"
 			zblok.color = rl.SkyBlue
-			zblok.img = etc[26]
+			zblok.img = gs.Render.Etc[26]
 			if canadd {
-				level[a].etc = append(level[a].etc, zblok)
+				gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
 			}
 		}
 
@@ -9025,12 +8919,12 @@ func makeetc() { //MARK:MAKE ETC
 			zblok.onoffswitch = flipcoin()
 			zblok.color = rl.SkyBlue
 			if zblok.onoffswitch {
-				zblok.img = etc[21]
+				zblok.img = gs.Render.Etc[21]
 			} else {
-				zblok.img = etc[22]
+				zblok.img = gs.Render.Etc[22]
 			}
 			if canadd {
-				level[a].etc = append(level[a].etc, zblok)
+				gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
 			}
 		}
 		//CHESTS
@@ -9049,9 +8943,9 @@ func makeetc() { //MARK:MAKE ETC
 			zblok.crec.Height += bsU
 			zblok.crec.X -= bsU / 2
 			zblok.crec.Y -= bsU / 2
-			zblok.img = etc[23]
+			zblok.img = gs.Render.Etc[23]
 			if canadd {
-				level[a].etc = append(level[a].etc, zblok)
+				gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
 			}
 		}
 		//SKULLS
@@ -9065,9 +8959,9 @@ func makeetc() { //MARK:MAKE ETC
 			zblok.name = "skull"
 			zblok.fade = rF32(0.3, 0.6)
 			zblok.color = ranGrey()
-			zblok.img = skulls[rInt(0, len(skulls))]
+			zblok.img = gs.Render.Skulls[rInt(0, len(gs.Render.Skulls))]
 			if canadd {
-				level[a].etc = append(level[a].etc, zblok)
+				gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
 				num--
 			}
 			if num <= 0 {
@@ -9087,9 +8981,9 @@ func makeetc() { //MARK:MAKE ETC
 			zblok.name = "candle"
 			zblok.fade = rF32(0.5, 0.8)
 			zblok.color = rl.White
-			zblok.img = candles[rInt(0, len(candles))]
+			zblok.img = gs.Render.Candles[rInt(0, len(gs.Render.Candles))]
 			if canadd {
-				level[a].etc = append(level[a].etc, zblok)
+				gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
 				num--
 			}
 
@@ -9109,9 +9003,9 @@ func makeetc() { //MARK:MAKE ETC
 			zblok.name = "sign"
 			zblok.fade = rF32(0.4, 0.7)
 			zblok.color = ranBrown()
-			zblok.img = signs[rInt(0, len(signs))]
+			zblok.img = gs.Render.Signs[rInt(0, len(gs.Render.Signs))]
 			if canadd {
-				level[a].etc = append(level[a].etc, zblok)
+				gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
 				num--
 			}
 
@@ -9131,9 +9025,9 @@ func makeetc() { //MARK:MAKE ETC
 			zblok.name = "plant"
 			zblok.fade = rF32(0.3, 0.6)
 			zblok.color = ranGreen()
-			zblok.img = plants[rInt(0, len(plants))]
+			zblok.img = gs.Render.Plants[rInt(0, len(gs.Render.Plants))]
 			if canadd {
-				level[a].etc = append(level[a].etc, zblok)
+				gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
 				num--
 			}
 
@@ -9153,9 +9047,9 @@ func makeetc() { //MARK:MAKE ETC
 			zblok.name = "mushroom"
 			zblok.fade = rF32(0.3, 0.6)
 			zblok.color = rl.White
-			zblok.img = mushrooms[rInt(0, len(mushrooms))]
+			zblok.img = gs.Render.Mushrooms[rInt(0, len(gs.Render.Mushrooms))]
 			if canadd {
-				level[a].etc = append(level[a].etc, zblok)
+				gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
 				num--
 			}
 
@@ -9172,9 +9066,9 @@ func makeetc() { //MARK:MAKE ETC
 			zblok.solid = true
 			zblok.name = "powerupBlok"
 			zblok.color = brightYellow()
-			zblok.img = etc[27]
+			zblok.img = gs.Render.Etc[27]
 			if canadd {
-				level[a].etc = append(level[a].etc, zblok)
+				gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
 
 			}
 		}
@@ -9190,9 +9084,9 @@ func makeetc() { //MARK:MAKE ETC
 			zblok.onoff = true
 			zblok.name = "oilbarrel"
 			zblok.color = rl.DarkGreen
-			zblok.img = etc[20]
+			zblok.img = gs.Render.Etc[20]
 			if canadd {
-				level[a].etc = append(level[a].etc, zblok)
+				gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
 				num--
 			}
 
@@ -9211,7 +9105,7 @@ func makeetc() { //MARK:MAKE ETC
 			zblok.fade = 1
 			zblok.color = rl.White
 			zblok.rec = rl.NewRectangle(0, 0, siz, siz)
-			zblok.img = spring.recTL
+			zblok.img = gs.Render.Spring.recTL
 
 			addtolevel := false
 
@@ -9219,12 +9113,12 @@ func makeetc() { //MARK:MAKE ETC
 				choose := rInt(1, 5)
 				switch choose {
 				case 1:
-					zblok.rec.Y = levRecInner.Y
+					zblok.rec.Y = gs.Level.LevRecInner.Y
 					for {
-						zblok.rec.X = levRecInner.X + rF32(0, levRecInner.Width-bsU2)
+						zblok.rec.X = gs.Level.LevRecInner.X + rF32(0, gs.Level.LevRecInner.Width-bsU2)
 						canadd := true
-						for b := 0; b < len(level[a].doorExitRecs); b++ {
-							if rl.CheckCollisionRecs(zblok.rec, level[a].doorExitRecs[b]) {
+						for b := 0; b < len(gs.Level.Level[a].doorExitRecs); b++ {
+							if rl.CheckCollisionRecs(zblok.rec, gs.Level.Level[a].doorExitRecs[b]) {
 								canadd = false
 							}
 						}
@@ -9236,12 +9130,12 @@ func makeetc() { //MARK:MAKE ETC
 					zblok.ro = 180
 					zblok.slideDIR = 3
 				case 2:
-					zblok.rec.X = levRecInner.X + levRecInner.Width - siz
+					zblok.rec.X = gs.Level.LevRecInner.X + gs.Level.LevRecInner.Width - siz
 					for {
-						zblok.rec.Y = levRecInner.Y + rF32(0, levRecInner.Width-bsU2)
+						zblok.rec.Y = gs.Level.LevRecInner.Y + rF32(0, gs.Level.LevRecInner.Width-bsU2)
 						canadd := true
-						for b := 0; b < len(level[a].doorExitRecs); b++ {
-							if rl.CheckCollisionRecs(zblok.rec, level[a].doorExitRecs[b]) {
+						for b := 0; b < len(gs.Level.Level[a].doorExitRecs); b++ {
+							if rl.CheckCollisionRecs(zblok.rec, gs.Level.Level[a].doorExitRecs[b]) {
 								canadd = false
 							}
 						}
@@ -9253,12 +9147,12 @@ func makeetc() { //MARK:MAKE ETC
 					zblok.ro = 270
 					zblok.slideDIR = 4
 				case 3:
-					zblok.rec.Y = levRecInner.Y + levRecInner.Width - siz
+					zblok.rec.Y = gs.Level.LevRecInner.Y + gs.Level.LevRecInner.Width - siz
 					for {
-						zblok.rec.X = levRecInner.X + rF32(0, levRecInner.Width-bsU2)
+						zblok.rec.X = gs.Level.LevRecInner.X + rF32(0, gs.Level.LevRecInner.Width-bsU2)
 						canadd := true
-						for b := 0; b < len(level[a].doorExitRecs); b++ {
-							if rl.CheckCollisionRecs(zblok.rec, level[a].doorExitRecs[b]) {
+						for b := 0; b < len(gs.Level.Level[a].doorExitRecs); b++ {
+							if rl.CheckCollisionRecs(zblok.rec, gs.Level.Level[a].doorExitRecs[b]) {
 								canadd = false
 							}
 						}
@@ -9270,12 +9164,12 @@ func makeetc() { //MARK:MAKE ETC
 					zblok.ro = 0
 					zblok.slideDIR = 1
 				case 4:
-					zblok.rec.X = levRecInner.X
+					zblok.rec.X = gs.Level.LevRecInner.X
 					for {
-						zblok.rec.Y = levRecInner.Y + rF32(0, levRecInner.Width-bsU2)
+						zblok.rec.Y = gs.Level.LevRecInner.Y + rF32(0, gs.Level.LevRecInner.Width-bsU2)
 						canadd := true
-						for b := 0; b < len(level[a].doorExitRecs); b++ {
-							if rl.CheckCollisionRecs(zblok.rec, level[a].doorExitRecs[b]) {
+						for b := 0; b < len(gs.Level.Level[a].doorExitRecs); b++ {
+							if rl.CheckCollisionRecs(zblok.rec, gs.Level.Level[a].doorExitRecs[b]) {
 								canadd = false
 							}
 						}
@@ -9294,7 +9188,7 @@ func makeetc() { //MARK:MAKE ETC
 					zblok.drec.Y += zblok.rec.Width / 2
 					zblok.crec = zblok.rec
 
-					level[a].etc = append(level[a].etc, zblok)
+					gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
 
 					num--
 				}
@@ -9313,7 +9207,7 @@ func makeetc() { //MARK:MAKE ETC
 			zblok.solid = true
 			zblok.name = "springblok"
 			zblok.fade = 1
-			switch levelnum {
+			switch gs.Level.Levelnum {
 			case 1:
 				zblok.color = ranBlue()
 			case 2:
@@ -9325,14 +9219,14 @@ func makeetc() { //MARK:MAKE ETC
 			case 5:
 				zblok.color = ranCol()
 			}
-			zblok.img = wallT
+			zblok.img = gs.Level.WallT
 			if canadd {
-				level[a].etc = append(level[a].etc, zblok)
+				gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
 
 				zblok.name = "spring"
 				zblok.solid = false
 				zblok.color = rl.White
-				zblok.img = spring.recTL
+				zblok.img = gs.Render.Spring.recTL
 
 				if flipcoin() {
 					zblok.rec.X += siz
@@ -9342,7 +9236,7 @@ func makeetc() { //MARK:MAKE ETC
 					zblok.drec.X += zblok.rec.Width / 2
 					zblok.drec.Y += zblok.rec.Width / 2
 					zblok.crec = zblok.rec
-					level[a].etc = append(level[a].etc, zblok)
+					gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
 				} else {
 					zblok.rec.X += siz
 				}
@@ -9355,7 +9249,7 @@ func makeetc() { //MARK:MAKE ETC
 					zblok.drec.X += zblok.rec.Width / 2
 					zblok.drec.Y += zblok.rec.Width / 2
 					zblok.crec = zblok.rec
-					level[a].etc = append(level[a].etc, zblok)
+					gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
 				} else {
 					zblok.rec.X -= siz * 2
 				}
@@ -9369,7 +9263,7 @@ func makeetc() { //MARK:MAKE ETC
 					zblok.drec.X += zblok.rec.Width / 2
 					zblok.drec.Y += zblok.rec.Width / 2
 					zblok.crec = zblok.rec
-					level[a].etc = append(level[a].etc, zblok)
+					gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
 				} else {
 					zblok.rec.Y += siz
 					zblok.rec.X += siz
@@ -9383,7 +9277,7 @@ func makeetc() { //MARK:MAKE ETC
 					zblok.drec.X += zblok.rec.Width / 2
 					zblok.drec.Y += zblok.rec.Width / 2
 					zblok.crec = zblok.rec
-					level[a].etc = append(level[a].etc, zblok)
+					gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
 				} else {
 					zblok.rec.Y -= siz * 2
 				}
@@ -9413,8 +9307,8 @@ func makesnow() { //MARK:MAKE SNOW
 
 	for {
 
-		x := rF32(0, scrWF32)
-		y := levY - rF32(bsU, scrHF32)
+		x := rF32(0, gs.Core.ScrWF32)
+		y := gs.Level.LevY - rF32(bsU, gs.Core.ScrHF32)
 		siz := rF32(bsU, bsU3)
 
 		zimg := ximg{}
@@ -9423,17 +9317,17 @@ func makesnow() { //MARK:MAKE SNOW
 		choose := rInt(1, 4)
 		switch choose {
 		case 1:
-			zimg.img = etc[15]
+			zimg.img = gs.Render.Etc[15]
 		case 2:
-			zimg.img = etc[16]
+			zimg.img = gs.Render.Etc[16]
 		case 3:
-			zimg.img = etc[17]
+			zimg.img = gs.Render.Etc[17]
 		}
 		zimg.ori = rl.NewVector2(zimg.rec.Width/2, zimg.rec.Height/2)
 		zimg.ro = rF32(0, 360)
 		zimg.col = rl.White
 		zimg.fade = rF32(0.3, 0.7)
-		snow = append(snow, zimg)
+		gs.FX.Snow = append(gs.FX.Snow, zimg)
 
 		num--
 		if num == 0 {
@@ -9447,12 +9341,12 @@ func makeProjectile(name string) { //MARK:MAKE PROJECTILE
 
 	zproj := xproj{}
 	zproj.name = name
-	zproj.cnt = pl.cnt
+	zproj.cnt = gs.Player.Pl.cnt
 	zproj.onoff = true
 	zproj.vel = bsU / 2
 	zproj.fade = 1
 	zproj.dmg = 1
-	zproj.bounceN = mods.bounceN
+	zproj.bounceN = gs.Player.Mods.bounceN
 
 	siz := bsU + bsU/2
 
@@ -9465,7 +9359,7 @@ func makeProjectile(name string) { //MARK:MAKE PROJECTILE
 		zproj.drec.X += zproj.rec.Width / 2
 		zproj.drec.Y += zproj.rec.Height / 2
 		zproj.ori = rl.NewVector2(zproj.rec.Width/2, zproj.rec.Height/2)
-		zproj.img = etc[50]
+		zproj.img = gs.Render.Etc[50]
 		zproj.col = rl.White
 		zproj.vel = bsU / 4
 
@@ -9475,31 +9369,31 @@ func makeProjectile(name string) { //MARK:MAKE PROJECTILE
 		case 1:
 			zproj.velx = -zproj.vel
 			zproj.vely = -zproj.vel
-			plProj = append(plProj, zproj)
+			gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 		case 2:
 			zproj.vely = -zproj.vel
-			plProj = append(plProj, zproj)
+			gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 		case 3:
 			zproj.velx = +zproj.vel
 			zproj.vely = -zproj.vel
-			plProj = append(plProj, zproj)
+			gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 		case 4:
 			zproj.velx = zproj.vel
-			plProj = append(plProj, zproj)
+			gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 		case 5:
 			zproj.velx = +zproj.vel
 			zproj.vely = +zproj.vel
-			plProj = append(plProj, zproj)
+			gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 		case 6:
 			zproj.vely = +zproj.vel
-			plProj = append(plProj, zproj)
+			gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 		case 7:
 			zproj.velx = -zproj.vel
 			zproj.vely = +zproj.vel
-			plProj = append(plProj, zproj)
+			gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 		case 8:
 			zproj.velx = -zproj.vel
-			plProj = append(plProj, zproj)
+			gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 		}
 
 		choose2 := rInt(1, 9)
@@ -9514,59 +9408,59 @@ func makeProjectile(name string) { //MARK:MAKE PROJECTILE
 		case 1:
 			zproj.velx = -zproj.vel
 			zproj.vely = -zproj.vel
-			plProj = append(plProj, zproj)
+			gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 		case 2:
 			zproj.vely = -zproj.vel
-			plProj = append(plProj, zproj)
+			gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 		case 3:
 			zproj.velx = +zproj.vel
 			zproj.vely = -zproj.vel
-			plProj = append(plProj, zproj)
+			gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 		case 4:
 			zproj.velx = zproj.vel
-			plProj = append(plProj, zproj)
+			gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 		case 5:
 			zproj.velx = +zproj.vel
 			zproj.vely = +zproj.vel
-			plProj = append(plProj, zproj)
+			gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 		case 6:
 			zproj.vely = +zproj.vel
-			plProj = append(plProj, zproj)
+			gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 		case 7:
 			zproj.velx = -zproj.vel
 			zproj.vely = +zproj.vel
-			plProj = append(plProj, zproj)
+			gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 		case 8:
 			zproj.velx = -zproj.vel
-			plProj = append(plProj, zproj)
+			gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 		}
 
 	case "fireworks":
 		siz = bsU2
-		zproj.cnt = fireworksCnt
+		zproj.cnt = gs.FX.FireworksCnt
 		zproj.rec = rl.NewRectangle(zproj.cnt.X-siz/2, zproj.cnt.Y-siz/2, siz, siz)
 		zproj.drec = zproj.rec
 		zproj.drec.X += zproj.rec.Width / 2
 		zproj.drec.Y += zproj.rec.Height / 2
 		zproj.ori = rl.NewVector2(zproj.rec.Width/2, zproj.rec.Height/2)
-		zproj.img = etc[49]
+		zproj.img = gs.Render.Etc[49]
 		zproj.col = rl.White
 
 		zproj.velx = bsU / 2
 		zproj.vely = -bsU / 2
-		plProj = append(plProj, zproj)
+		gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 		zproj.velx = bsU / 2
 		zproj.vely = +bsU / 2
 		zproj.ro = 90
-		plProj = append(plProj, zproj)
+		gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 		zproj.velx = -bsU / 2
 		zproj.vely = -bsU / 2
 		zproj.ro = 270
-		plProj = append(plProj, zproj)
+		gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 		zproj.velx = -bsU / 2
 		zproj.vely = +bsU / 2
 		zproj.ro = 180
-		plProj = append(plProj, zproj)
+		gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 
 	case "gs.Companions.MrAlien":
 		siz = bsU
@@ -9576,33 +9470,33 @@ func makeProjectile(name string) { //MARK:MAKE PROJECTILE
 		zproj.drec.X += zproj.rec.Width / 2
 		zproj.drec.Y += zproj.rec.Height / 2
 		zproj.ori = rl.NewVector2(zproj.rec.Width/2, zproj.rec.Height/2)
-		zproj.img = plantBull.recTL
+		zproj.img = gs.Render.PlantBull.recTL
 		zproj.col = ranGreen()
 
 		zproj.velx = bsU / 4
-		plProj = append(plProj, zproj)
+		gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 		zproj.velx = -bsU / 4
-		plProj = append(plProj, zproj)
+		gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 		zproj.velx = 0
 
 		zproj.vely = bsU / 4
-		plProj = append(plProj, zproj)
+		gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 		zproj.vely = -bsU / 4
-		plProj = append(plProj, zproj)
+		gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 		zproj.vely = 0
 
 		zproj.velx = bsU / 4
 		zproj.vely = -bsU / 4
-		plProj = append(plProj, zproj)
+		gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 		zproj.velx = bsU / 4
 		zproj.vely = +bsU / 4
-		plProj = append(plProj, zproj)
+		gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 		zproj.velx = -bsU / 4
 		zproj.vely = -bsU / 4
-		plProj = append(plProj, zproj)
+		gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 		zproj.velx = -bsU / 4
 		zproj.vely = +bsU / 4
-		plProj = append(plProj, zproj)
+		gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 
 	case "plantbull":
 		siz = bsU
@@ -9613,20 +9507,20 @@ func makeProjectile(name string) { //MARK:MAKE PROJECTILE
 		zproj.drec.Y += zproj.rec.Height / 2
 		zproj.ori = rl.NewVector2(zproj.rec.Width/2, zproj.rec.Height/2)
 		zproj.drec = zproj.rec
-		zproj.img = plantBull.recTL
+		zproj.img = gs.Render.PlantBull.recTL
 		zproj.col = ranGreen()
 		if gs.Companions.MrPlanty.velx > 0 {
 			zproj.velx = bsU / 4
 		} else {
 			zproj.velx = -bsU / 4
 		}
-		plProj = append(plProj, zproj)
+		gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 
 	case "fireball":
-		zproj.img = fireballPlayer.recTL
+		zproj.img = gs.Render.FireballPlayer.recTL
 		zproj.col = ranOrange()
 
-		switch pl.direc {
+		switch gs.Player.Pl.direc {
 		case 1:
 			zproj.vely = -zproj.vel
 			zproj.ro = 270
@@ -9647,22 +9541,22 @@ func makeProjectile(name string) { //MARK:MAKE PROJECTILE
 		zproj.drec.X += zproj.rec.Width / 2
 		zproj.drec.Y += zproj.rec.Height / 2
 		zproj.ori = rl.NewVector2(zproj.rec.Width/2, zproj.rec.Height/2)
-		plProj = append(plProj, zproj)
+		gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 
-		if mods.fireballN > 1 {
+		if gs.Player.Mods.fireballN > 1 {
 			zproj.col = ranOrange()
-			if mods.fireballN >= 2 {
+			if gs.Player.Mods.fireballN >= 2 {
 				zproj.ro += 180
 				zproj.velx *= -1
 				zproj.vely *= -1
-				plProj = append(plProj, zproj)
+				gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 			}
-			if mods.fireballN >= 3 {
+			if gs.Player.Mods.fireballN >= 3 {
 				zproj.col = ranOrange()
 				zproj.ro += 90
 				zproj.vely = 0
 				zproj.velx = 0
-				switch pl.direc {
+				switch gs.Player.Pl.direc {
 				case 1:
 					zproj.velx = zproj.vel
 				case 2:
@@ -9672,20 +9566,20 @@ func makeProjectile(name string) { //MARK:MAKE PROJECTILE
 				case 4:
 					zproj.vely = -zproj.vel
 				}
-				plProj = append(plProj, zproj)
+				gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 			}
-			if mods.fireballN >= 4 {
+			if gs.Player.Mods.fireballN >= 4 {
 				zproj.col = ranOrange()
 				zproj.ro += 180
 				zproj.velx *= -1
 				zproj.vely *= -1
-				plProj = append(plProj, zproj)
+				gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 			}
 
-			if mods.fireballN >= 5 {
+			if gs.Player.Mods.fireballN >= 5 {
 				zproj.col = ranOrange()
 				zproj.ro = 0
-				switch pl.direc {
+				switch gs.Player.Pl.direc {
 				case 1:
 					zproj.velx = zproj.vel
 					zproj.vely = -zproj.vel
@@ -9703,13 +9597,13 @@ func makeProjectile(name string) { //MARK:MAKE PROJECTILE
 					zproj.vely = -zproj.vel
 					zproj.ro = 225
 				}
-				plProj = append(plProj, zproj)
+				gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 			}
 
-			if mods.fireballN >= 6 {
+			if gs.Player.Mods.fireballN >= 6 {
 				zproj.col = ranOrange()
 				zproj.ro = 0
-				switch pl.direc {
+				switch gs.Player.Pl.direc {
 				case 1:
 					zproj.velx = -zproj.vel
 					zproj.vely = zproj.vel
@@ -9727,13 +9621,13 @@ func makeProjectile(name string) { //MARK:MAKE PROJECTILE
 					zproj.vely = zproj.vel
 					zproj.ro = 45
 				}
-				plProj = append(plProj, zproj)
+				gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 			}
 
-			if mods.fireballN >= 7 {
+			if gs.Player.Mods.fireballN >= 7 {
 				zproj.col = ranOrange()
 				zproj.ro = 0
-				switch pl.direc {
+				switch gs.Player.Pl.direc {
 				case 1:
 					zproj.velx = zproj.vel
 					zproj.vely = zproj.vel
@@ -9751,13 +9645,13 @@ func makeProjectile(name string) { //MARK:MAKE PROJECTILE
 					zproj.vely = -zproj.vel
 					zproj.ro = 315
 				}
-				plProj = append(plProj, zproj)
+				gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 			}
 
-			if mods.fireballN >= 8 {
+			if gs.Player.Mods.fireballN >= 8 {
 				zproj.col = ranOrange()
 				zproj.ro = 0
-				switch pl.direc {
+				switch gs.Player.Pl.direc {
 				case 1:
 					zproj.velx = -zproj.vel
 					zproj.vely = -zproj.vel
@@ -9775,13 +9669,13 @@ func makeProjectile(name string) { //MARK:MAKE PROJECTILE
 					zproj.vely = zproj.vel
 					zproj.ro = 135
 				}
-				plProj = append(plProj, zproj)
+				gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 			}
 
 		}
 
 	case "axe":
-		zproj.img = etc[3]
+		zproj.img = gs.Render.Etc[3]
 		zproj.col = rl.SkyBlue
 
 		for {
@@ -9797,7 +9691,7 @@ func makeProjectile(name string) { //MARK:MAKE PROJECTILE
 		zproj.drec.X += zproj.rec.Width / 2
 		zproj.drec.Y += zproj.rec.Height / 2
 		zproj.ori = rl.NewVector2(zproj.rec.Width/2, zproj.rec.Height/2)
-		plProj = append(plProj, zproj)
+		gs.Player.PlProj = append(gs.Player.PlProj, zproj)
 	}
 
 }
@@ -9808,9 +9702,9 @@ func makespikes() { //MARK: MAKE SPIKES
 	zblok := xblok{}
 	zblok.name = "spikes"
 	zblok.fade = 1
-	zblok.img = spikes.recTL
+	zblok.img = gs.Render.Spikes.recTL
 
-	for a := 0; a < len(level); a++ {
+	for a := 0; a < len(gs.Level.Level); a++ {
 		if flipcoin() {
 			zblok.cnt = findRanCntV2()
 			num := rInt(10, 30)
@@ -9825,8 +9719,8 @@ func makespikes() { //MARK: MAKE SPIKES
 				v4 := v1
 				v4.Y += siz
 
-				if rl.CheckCollisionPointRec(v1, levRecInner) && rl.CheckCollisionPointRec(v2, levRecInner) && rl.CheckCollisionPointRec(v3, levRecInner) && rl.CheckCollisionPointRec(v4, levRecInner) {
-					level[a].spikes = append(level[a].spikes, zblok)
+				if rl.CheckCollisionPointRec(v1, gs.Level.LevRecInner) && rl.CheckCollisionPointRec(v2, gs.Level.LevRecInner) && rl.CheckCollisionPointRec(v3, gs.Level.LevRecInner) && rl.CheckCollisionPointRec(v4, gs.Level.LevRecInner) {
+					gs.Level.Level[a].spikes = append(gs.Level.Level[a].spikes, zblok)
 				}
 
 				choose := rInt(1, 5)
@@ -9852,12 +9746,12 @@ func maketurrets() { //MARK: MAKE TURRETS
 	siz := bsU2
 	zblok := xblok{}
 	zblok.name = "turret"
-	zblok.img = etc[18]
+	zblok.img = gs.Render.Etc[18]
 	zblok.solid = true
 	zblok.fade = 1
 	zblok.onoff = true
 
-	for a := 0; a < len(level); a++ {
+	for a := 0; a < len(gs.Level.Level); a++ {
 
 		if flipcoin() {
 			num := rInt(1, 4)
@@ -9877,7 +9771,7 @@ func maketurrets() { //MARK: MAKE TURRETS
 				zblok.crec = zblok.rec
 				zblok.ro = rF32(0, 360)
 				zblok.timer = rI32(1, 3) * gs.Core.Fps
-				level[a].etc = append(level[a].etc, zblok)
+				gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
 				num--
 			}
 		}
@@ -9905,12 +9799,12 @@ func makeFX(numType int, cnt rl.Vector2) { //MARK: MAKE FX
 		for a := 0; a < 9; a++ {
 			if a != 4 {
 				if flipcoin() {
-					if rl.CheckCollisionPointRec(cnt2, levRecInner) {
+					if rl.CheckCollisionPointRec(cnt2, gs.Level.LevRecInner) {
 						zfx.rec = rl.NewRectangle(cnt2.X-siz/2, cnt2.Y-siz/2, siz, siz)
-						zfx.img = burn.recTL
+						zfx.img = gs.Render.Burn.recTL
 						zfx.col = ranOrange()
 						zfx.fade = rF32(0.7, 1.1)
-						fx = append(fx, zfx)
+						gs.FX.Fx = append(gs.FX.Fx, zfx)
 					}
 				}
 			}
@@ -9931,12 +9825,12 @@ func makeFX(numType int, cnt rl.Vector2) { //MARK: MAKE FX
 		for a := 0; a < 25; a++ {
 			if a != 12 {
 				if flipcoin() {
-					if rl.CheckCollisionPointRec(cnt2, levRecInner) {
+					if rl.CheckCollisionPointRec(cnt2, gs.Level.LevRecInner) {
 						zfx.rec = rl.NewRectangle(cnt2.X-siz/2, cnt2.Y-siz/2, siz, siz)
-						zfx.img = burn.recTL
+						zfx.img = gs.Render.Burn.recTL
 						zfx.col = ranOrange()
 						zfx.fade = rF32(0.7, 1.1)
-						fx = append(fx, zfx)
+						gs.FX.Fx = append(gs.FX.Fx, zfx)
 					}
 				}
 			}
@@ -9983,18 +9877,18 @@ func makeFX(numType int, cnt rl.Vector2) { //MARK: MAKE FX
 				case 8:
 					cnt2.X -= bsU2
 				}
-				if rl.CheckCollisionPointRec(cnt2, levRecInner) || countbreak == 0 {
+				if rl.CheckCollisionPointRec(cnt2, gs.Level.LevRecInner) || countbreak == 0 {
 					break
 				}
 				countbreak--
 			}
 
 			zfx.rec = rl.NewRectangle(cnt2.X-siz/2, cnt2.Y-siz/2, siz, siz)
-			zfx.img = burn.recTL
+			zfx.img = gs.Render.Burn.recTL
 			zfx.col = ranOrange()
 			zfx.fade = rF32(0.7, 1.1)
 
-			fx = append(fx, zfx)
+			gs.FX.Fx = append(gs.FX.Fx, zfx)
 			num--
 		}
 
@@ -10019,7 +9913,7 @@ func makeFX(numType int, cnt rl.Vector2) { //MARK: MAKE FX
 			}
 		}
 
-		fx = append(fx, zfx)
+		gs.FX.Fx = append(gs.FX.Fx, zfx)
 	case 1: //BARREL
 		zfx.name = "fxBarrel"
 		num := 20
@@ -10040,7 +9934,7 @@ func makeFX(numType int, cnt rl.Vector2) { //MARK: MAKE FX
 			}
 		}
 
-		fx = append(fx, zfx)
+		gs.FX.Fx = append(gs.FX.Fx, zfx)
 
 	}
 
@@ -10067,10 +9961,10 @@ func makeBlokGenRandom(siz float32) xblok { //MARK:MAKE GENERIC BLOCK RANDOM POS
 	zblok.fade = 1
 	zblok.color = ranCol()
 
-	x := levRecInner.X + bsU
-	y := levRecInner.Y + bsU
-	x = rF32(x, x+levRecInner.Width-bsU3)
-	y = rF32(y, y+levRecInner.Width-bsU3)
+	x := gs.Level.LevRecInner.X + bsU
+	y := gs.Level.LevRecInner.Y + bsU
+	x = rF32(x, x+gs.Level.LevRecInner.Width-bsU3)
+	y = rF32(y, y+gs.Level.LevRecInner.Width-bsU3)
 
 	zblok.rec = rl.NewRectangle(x, y, siz, siz)
 	zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Height/2)
@@ -10086,7 +9980,7 @@ func makeBlokGenericRanCentr(siz float32) xblok { //MARK:MAKE GENERIC BLOCK RAND
 	zblok.color = ranCol()
 	for {
 		zblok.cnt = findRanCntV2()
-		if zblok.cnt.X+siz/2 < levRec.X+levRec.Width && zblok.cnt.Y+siz/2 < levRec.Y+levRec.Width {
+		if zblok.cnt.X+siz/2 < gs.Level.LevRec.X+gs.Level.LevRec.Width && zblok.cnt.Y+siz/2 < gs.Level.LevRec.Y+gs.Level.LevRec.Width {
 			break
 		}
 	}
@@ -10103,10 +9997,10 @@ func makemovebloks() { //MARK:MAKE MOVE BLOKS
 
 	zblok := xblok{}
 	bloksiz := bsU2
-	blokimg := walltiles[rInt(0, len(walltiles))]
+	blokimg := gs.Render.Walltiles[rInt(0, len(gs.Render.Walltiles))]
 	zblok.fade = 1
 
-	for a := 0; a < len(level); a++ {
+	for a := 0; a < len(gs.Level.Level); a++ {
 
 		bloknum := rInt(0, 5)
 
@@ -10127,9 +10021,9 @@ func makemovebloks() { //MARK:MAKE MOVE BLOKS
 				zblok.velY = 0
 				zblok.vel = bsU / 2
 
-				if len(level[a].movBloks) > 0 {
-					for c := 0; c < len(level[a].movBloks); c++ {
-						if rl.CheckCollisionRecs(zblok.rec, level[a].movBloks[c].rec) {
+				if len(gs.Level.Level[a].movBloks) > 0 {
+					for c := 0; c < len(gs.Level.Level[a].movBloks); c++ {
+						if rl.CheckCollisionRecs(zblok.rec, gs.Level.Level[a].movBloks[c].rec) {
 							canadd = false
 						}
 					}
@@ -10153,14 +10047,14 @@ func makemovebloks() { //MARK:MAKE MOVE BLOKS
 						zblok.velX = rF32(zblok.vel/4, zblok.vel)
 					}
 					zblok.movType = 2 //UD
-					level[a].movBloks = append(level[a].movBloks, zblok)
+					gs.Level.Level[a].movBloks = append(gs.Level.Level[a].movBloks, zblok)
 				case 1: //LR
 					zblok.velX = rF32(zblok.vel/4, zblok.vel)
 					if roll12() == 12 {
 						zblok.velY = rF32(zblok.vel/4, zblok.vel)
 					}
 					zblok.movType = 1 //LR
-					level[a].movBloks = append(level[a].movBloks, zblok)
+					gs.Level.Level[a].movBloks = append(gs.Level.Level[a].movBloks, zblok)
 				}
 			}
 
@@ -10171,16 +10065,16 @@ func makemovebloks() { //MARK:MAKE MOVE BLOKS
 }
 
 func makeshaders() { //MARK:MAKE SHADERS
-	shader = rl.LoadShader("", "shaders/bloom.fs")
-	shader2 = rl.LoadShader("", "shaders/grayscale.fs")
-	shader3 = rl.LoadShader("", "shaders/sobel.fs")
-	renderTarget = rl.LoadRenderTexture(scrW32, scrH32)
+	gs.Render.Shader = rl.LoadShader("", "shaders/bloom.fs")
+	gs.Render.Shader2 = rl.LoadShader("", "shaders/grayscale.fs")
+	gs.Render.Shader3 = rl.LoadShader("", "shaders/sobel.fs")
+	gs.Render.RenderTarget = rl.LoadRenderTexture(gs.Core.ScrW32, gs.Core.ScrH32)
 }
 func makecompanions() { //MARK: MAKE COMPANIONS
 
 	//MR CARROT
 	siz := bsU3
-	gs.Companions.MrCarrot.rec = rl.NewRectangle(cnt.X, cnt.Y, siz, siz)
+	gs.Companions.MrCarrot.rec = rl.NewRectangle(gs.Core.Cnt.X, gs.Core.Cnt.Y, siz, siz)
 	gs.Companions.MrCarrot.imgl = rl.NewRectangle(0, 248, 38, 38)
 	gs.Companions.MrCarrot.imgr = rl.NewRectangle(228, 248, 38, 38)
 	gs.Companions.MrCarrot.vel = bsU / 5
@@ -10192,7 +10086,7 @@ func makecompanions() { //MARK: MAKE COMPANIONS
 	gs.Companions.MrCarrot.timer = gs.Core.Fps * rI32(1, 5)
 
 	//MR PLANTY
-	gs.Companions.MrPlanty.rec = rl.NewRectangle(cnt.X, cnt.Y, siz, siz)
+	gs.Companions.MrPlanty.rec = rl.NewRectangle(gs.Core.Cnt.X, gs.Core.Cnt.Y, siz, siz)
 	gs.Companions.MrPlanty.imgl = rl.NewRectangle(0, 454, 44, 44)
 	gs.Companions.MrPlanty.imgr = rl.NewRectangle(352, 454, 44, 44)
 	gs.Companions.MrPlanty.vel = bsU / 5
@@ -10203,8 +10097,8 @@ func makecompanions() { //MARK: MAKE COMPANIONS
 	gs.Companions.MrPlanty.frames = 7
 
 	//ALIEN
-	gs.Companions.MrAlien.rec = rl.NewRectangle(cnt.X, cnt.Y, siz, siz)
-	gs.Companions.MrAlien.img = alien[0]
+	gs.Companions.MrAlien.rec = rl.NewRectangle(gs.Core.Cnt.X, gs.Core.Cnt.Y, siz, siz)
+	gs.Companions.MrAlien.img = gs.Render.Alien[0]
 	gs.Companions.MrAlien.vel = bsU / 5
 	gs.Companions.MrAlien.velx = rF32(-gs.Companions.MrAlien.vel, gs.Companions.MrAlien.vel)
 	gs.Companions.MrAlien.vely = rF32(-gs.Companions.MrAlien.vel, gs.Companions.MrAlien.vel)
@@ -10219,8 +10113,8 @@ func makefxinitial() { //MARK:MAKE FX INITAL
 	num := 300
 	for a := 0; a < num; a++ {
 		siz := rF32(2, 5)
-		rec := rl.NewRectangle(rF32(0, scrWF32), rF32(-scrHF32, -bsU), siz, siz)
-		rain = append(rain, rec)
+		rec := rl.NewRectangle(rF32(0, gs.Core.ScrWF32), rF32(-gs.Core.ScrHF32, -bsU), siz, siz)
+		gs.FX.Rain = append(gs.FX.Rain, rec)
 	}
 
 	//SCAN LINES
@@ -10229,9 +10123,9 @@ func makefxinitial() { //MARK:MAKE FX INITAL
 	change := float32(3)
 
 	for {
-		scanlinev2 = append(scanlinev2, rl.NewVector2(x, y))
+		gs.FX.ScanlineV2 = append(gs.FX.ScanlineV2, rl.NewVector2(x, y))
 		y += change
-		if y >= scrHF32+1 {
+		if y >= gs.Core.ScrHF32+1 {
 			break
 		}
 	}
@@ -10249,109 +10143,109 @@ func makebosses() { //MARK:MAKE BOSSES
 	zboss.vel = rF32(bsU/8, bsU/4)
 	zboss.velX = rF32(-zboss.vel, zboss.vel)
 	zboss.velY = rF32(-zboss.vel, zboss.vel)
-	zboss.rec = rl.NewRectangle(cnt.X-siz/2, levRecInner.Y+bsU2, siz, siz)
-	zboss.cnt = cnt
+	zboss.rec = rl.NewRectangle(gs.Core.Cnt.X-siz/2, gs.Level.LevRecInner.Y+bsU2, siz, siz)
+	zboss.cnt = gs.Core.Cnt
 	zboss.crec = zboss.rec
 	zboss.crec.X += zboss.rec.Width / 4
 	zboss.crec.Y += zboss.rec.Height / 5
 	zboss.crec.Width -= zboss.rec.Width / 2
 	zboss.crec.Height -= zboss.rec.Height / 5
 	zboss.atkType = rInt(1, 4)
-	bosses = append(bosses, zboss)
+	gs.Level.Bosses = append(gs.Level.Bosses, zboss)
 	zboss.img = rl.NewRectangle(450, 1561, 48, 48)
 	zboss.xl = zboss.img.X
 	zboss.vel = rF32(bsU/8, bsU/4)
 	zboss.velX = rF32(-zboss.vel, zboss.vel)
 	zboss.velY = rF32(-zboss.vel, zboss.vel)
 	zboss.atkType = rInt(1, 4)
-	bosses = append(bosses, zboss)
+	gs.Level.Bosses = append(gs.Level.Bosses, zboss)
 	zboss.img = rl.NewRectangle(593, 1561, 48, 48)
 	zboss.xl = zboss.img.X
 	zboss.vel = rF32(bsU/8, bsU/4)
 	zboss.velX = rF32(-zboss.vel, zboss.vel)
 	zboss.velY = rF32(-zboss.vel, zboss.vel)
 	zboss.atkType = rInt(1, 4)
-	bosses = append(bosses, zboss)
+	gs.Level.Bosses = append(gs.Level.Bosses, zboss)
 }
 func makeimgs() { //MARK:MAKE IMGS
 
-	etc = append(etc, rl.NewRectangle(2, 36, 18, 18))       // 0 BARREL
-	etc = append(etc, rl.NewRectangle(24, 36, 16, 16))      // 1 HP POTION
-	etc = append(etc, rl.NewRectangle(42, 36, 16, 16))      // 2 PLAYER HP ICON
-	etc = append(etc, rl.NewRectangle(60, 36, 14, 14))      // 3 THROWING AXE
-	etc = append(etc, rl.NewRectangle(77, 36, 18, 18))      // 4 SANTA
-	etc = append(etc, rl.NewRectangle(99, 36, 13, 13))      // 5 BOUNCE PROJECTILE
-	etc = append(etc, rl.NewRectangle(115, 36, 16, 16))     // 6 ESCAPE VINE
-	etc = append(etc, rl.NewRectangle(132, 35, 17, 17))     // 7 SKELETON KEY
-	etc = append(etc, rl.NewRectangle(151, 35, 16, 16))     // 8 APPLE
-	etc = append(etc, rl.NewRectangle(170, 36, 17, 17))     // 9 PLANT COMPANION
-	etc = append(etc, rl.NewRectangle(192, 36, 18, 18))     // 10 MEDI KIT
-	etc = append(etc, rl.NewRectangle(215, 38, 16, 16))     // 11 WALLET
-	etc = append(etc, rl.NewRectangle(235, 38, 15, 15))     // 12 RECHARGE
-	etc = append(etc, rl.NewRectangle(1082, 234, 32, 32))   // 13 SHOP1
-	etc = append(etc, rl.NewRectangle(993, 156, 104, 104))  // 14 SHOP2
-	etc = append(etc, rl.NewRectangle(1132, 228, 17, 17))   // 15 SNOW1
-	etc = append(etc, rl.NewRectangle(1157, 229, 15, 15))   // 16 SNOW2
-	etc = append(etc, rl.NewRectangle(1182, 228, 15, 15))   // 17 SNOW3
-	etc = append(etc, rl.NewRectangle(254, 37, 16, 16))     // 18 TURRET
-	etc = append(etc, rl.NewRectangle(274, 38, 14, 14))     // 19 NINJA STAR
-	etc = append(etc, rl.NewRectangle(292, 36, 16, 16))     // 20 OIL BARREL
-	etc = append(etc, rl.NewRectangle(344, 60, 15, 15))     // 21 SWITCH 1
-	etc = append(etc, rl.NewRectangle(361, 60, 15, 15))     // 22 SWITCH 2
-	etc = append(etc, rl.NewRectangle(445, 58, 17, 17))     // 23 CHEST
-	etc = append(etc, rl.NewRectangle(717, 37, 12, 12))     // 24 SWITCH ARROW
-	etc = append(etc, rl.NewRectangle(998, 414, 200, 200))  // 25 NIGHT REC
-	etc = append(etc, rl.NewRectangle(731, 33, 18, 18))     // 26 SPINNING TRAP
-	etc = append(etc, rl.NewRectangle(256, 16, 16, 16))     // 27 POWERUP BLOK
-	etc = append(etc, rl.NewRectangle(820, 34, 18, 18))     // 28 MAP
-	etc = append(etc, rl.NewRectangle(842, 32, 18, 18))     // 29 FIRE TRAIL
-	etc = append(etc, rl.NewRectangle(863, 35, 16, 16))     // 30 INVISIBILITY
-	etc = append(etc, rl.NewRectangle(883, 33, 17, 17))     // 31 COFFEE
-	etc = append(etc, rl.NewRectangle(905, 34, 18, 18))     // 32 TELEPORT
-	etc = append(etc, rl.NewRectangle(927, 35, 16, 16))     // 33 ATTACK RANGE
-	etc = append(etc, rl.NewRectangle(945, 35, 16, 16))     // 34 ATTACK DAMAGE
-	etc = append(etc, rl.NewRectangle(587, 58, 15, 15))     // 35 ORBITAL
-	etc = append(etc, rl.NewRectangle(607, 58, 16, 16))     // 36 CHAIN LIGHTNING
-	etc = append(etc, rl.NewRectangle(624, 57, 16, 16))     // 37 HP RING
-	etc = append(etc, rl.NewRectangle(641, 57, 16, 16))     // 38 ARMOR SHIELD
-	etc = append(etc, rl.NewRectangle(661, 56, 18, 18))     // 39 ANCHOR PAUSE ENEMY
-	etc = append(etc, rl.NewRectangle(681, 55, 18, 18))     // 40 UMBRELLA RAIN
-	etc = append(etc, rl.NewRectangle(705, 57, 14, 14))     // 41 DASH
-	etc = append(etc, rl.NewRectangle(724, 56, 18, 18))     // 42 SOCKS POISON GAS
-	etc = append(etc, rl.NewRectangle(748, 56, 17, 17))     // 43 CHERRIES
-	etc = append(etc, rl.NewRectangle(770, 58, 15, 15))     // 44 FISH FLOOD
-	etc = append(etc, rl.NewRectangle(789, 57, 18, 18))     // 45 CAKE BIRTHDAY
-	etc = append(etc, rl.NewRectangle(811, 58, 16, 16))     // 46 PEACE NO DAMAGE
-	etc = append(etc, rl.NewRectangle(831, 58, 16, 16))     // 47 ALIEN SPECIAL ENEMY
-	etc = append(etc, rl.NewRectangle(850, 57, 16, 16))     // 48 AIR STRIKE
-	etc = append(etc, rl.NewRectangle(893, 58, 14, 14))     // 49 POWERUP FIREWORKS
-	etc = append(etc, rl.NewRectangle(909, 58, 14, 14))     // 50 CARROT COMPANION
-	etc = append(etc, rl.NewRectangle(870, 55, 18, 18))     // 51 MARIO PLATFORMER LEVEL
-	etc = append(etc, rl.NewRectangle(1132, 80, 64, 64))    // 52 FOOTPRINTS
-	etc = append(etc, rl.NewRectangle(966, 35, 14, 14))     // 53 STAIRCASE
-	etc = append(etc, rl.NewRectangle(41, 1219, 565, 300))  // 54 BITTY KNIGHT LOGO
-	etc = append(etc, rl.NewRectangle(748, 1214, 308, 305)) // 55 GO LOGO
-	etc = append(etc, rl.NewRectangle(10, 1532, 256, 256))  // 56 RAYLIB
-	etc = append(etc, rl.NewRectangle(938, 104, 20, 20))    // 57 BOSS 3 PROJ
-	etc = append(etc, rl.NewRectangle(841, 818, 128, 128))  // 58 POISON GAS
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(2, 36, 18, 18))       // 0 BARREL
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(24, 36, 16, 16))      // 1 HP POTION
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(42, 36, 16, 16))      // 2 PLAYER HP ICON
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(60, 36, 14, 14))      // 3 THROWING AXE
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(77, 36, 18, 18))      // 4 SANTA
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(99, 36, 13, 13))      // 5 BOUNCE PROJECTILE
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(115, 36, 16, 16))     // 6 ESCAPE VINE
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(132, 35, 17, 17))     // 7 SKELETON KEY
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(151, 35, 16, 16))     // 8 APPLE
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(170, 36, 17, 17))     // 9 PLANT COMPANION
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(192, 36, 18, 18))     // 10 MEDI KIT
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(215, 38, 16, 16))     // 11 WALLET
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(235, 38, 15, 15))     // 12 RECHARGE
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(1082, 234, 32, 32))   // 13 SHOP1
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(993, 156, 104, 104))  // 14 SHOP2
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(1132, 228, 17, 17))   // 15 SNOW1
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(1157, 229, 15, 15))   // 16 SNOW2
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(1182, 228, 15, 15))   // 17 SNOW3
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(254, 37, 16, 16))     // 18 TURRET
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(274, 38, 14, 14))     // 19 NINJA STAR
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(292, 36, 16, 16))     // 20 OIL BARREL
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(344, 60, 15, 15))     // 21 SWITCH 1
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(361, 60, 15, 15))     // 22 SWITCH 2
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(445, 58, 17, 17))     // 23 CHEST
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(717, 37, 12, 12))     // 24 SWITCH ARROW
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(998, 414, 200, 200))  // 25 NIGHT REC
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(731, 33, 18, 18))     // 26 SPINNING TRAP
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(256, 16, 16, 16))     // 27 POWERUP BLOK
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(820, 34, 18, 18))     // 28 MAP
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(842, 32, 18, 18))     // 29 FIRE TRAIL
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(863, 35, 16, 16))     // 30 INVISIBILITY
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(883, 33, 17, 17))     // 31 COFFEE
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(905, 34, 18, 18))     // 32 TELEPORT
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(927, 35, 16, 16))     // 33 ATTACK RANGE
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(945, 35, 16, 16))     // 34 ATTACK DAMAGE
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(587, 58, 15, 15))     // 35 ORBITAL
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(607, 58, 16, 16))     // 36 CHAIN LIGHTNING
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(624, 57, 16, 16))     // 37 HP RING
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(641, 57, 16, 16))     // 38 ARMOR SHIELD
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(661, 56, 18, 18))     // 39 ANCHOR PAUSE ENEMY
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(681, 55, 18, 18))     // 40 UMBRELLA RAIN
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(705, 57, 14, 14))     // 41 DASH
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(724, 56, 18, 18))     // 42 SOCKS POISON GAS
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(748, 56, 17, 17))     // 43 CHERRIES
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(770, 58, 15, 15))     // 44 FISH FLOOD
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(789, 57, 18, 18))     // 45 CAKE BIRTHDAY
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(811, 58, 16, 16))     // 46 PEACE NO DAMAGE
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(831, 58, 16, 16))     // 47 ALIEN SPECIAL ENEMY
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(850, 57, 16, 16))     // 48 AIR STRIKE
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(893, 58, 14, 14))     // 49 POWERUP FIREWORKS
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(909, 58, 14, 14))     // 50 CARROT COMPANION
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(870, 55, 18, 18))     // 51 MARIO PLATFORMER LEVEL
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(1132, 80, 64, 64))    // 52 FOOTPRINTS
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(966, 35, 14, 14))     // 53 STAIRCASE
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(41, 1219, 565, 300))  // 54 BITTY KNIGHT LOGO
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(748, 1214, 308, 305)) // 55 GO LOGO
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(10, 1532, 256, 256))  // 56 RAYLIB
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(938, 104, 20, 20))    // 57 BOSS 3 PROJ
+	gs.Render.Etc = append(gs.Render.Etc, rl.NewRectangle(841, 818, 128, 128))  // 58 POISON GAS
 
-	plants = append(plants, rl.NewRectangle(315, 36, 13, 13))
-	plants = append(plants, rl.NewRectangle(329, 38, 11, 11))
-	plants = append(plants, rl.NewRectangle(341, 37, 12, 12))
-	plants = append(plants, rl.NewRectangle(354, 31, 18, 18))
-	plants = append(plants, rl.NewRectangle(373, 31, 18, 18))
-	plants = append(plants, rl.NewRectangle(392, 33, 16, 16))
-	plants = append(plants, rl.NewRectangle(409, 33, 16, 16))
-	plants = append(plants, rl.NewRectangle(425, 33, 16, 16))
-	plants = append(plants, rl.NewRectangle(442, 35, 14, 14))
-	plants = append(plants, rl.NewRectangle(457, 35, 14, 14))
+	gs.Render.Plants = append(gs.Render.Plants, rl.NewRectangle(315, 36, 13, 13))
+	gs.Render.Plants = append(gs.Render.Plants, rl.NewRectangle(329, 38, 11, 11))
+	gs.Render.Plants = append(gs.Render.Plants, rl.NewRectangle(341, 37, 12, 12))
+	gs.Render.Plants = append(gs.Render.Plants, rl.NewRectangle(354, 31, 18, 18))
+	gs.Render.Plants = append(gs.Render.Plants, rl.NewRectangle(373, 31, 18, 18))
+	gs.Render.Plants = append(gs.Render.Plants, rl.NewRectangle(392, 33, 16, 16))
+	gs.Render.Plants = append(gs.Render.Plants, rl.NewRectangle(409, 33, 16, 16))
+	gs.Render.Plants = append(gs.Render.Plants, rl.NewRectangle(425, 33, 16, 16))
+	gs.Render.Plants = append(gs.Render.Plants, rl.NewRectangle(442, 35, 14, 14))
+	gs.Render.Plants = append(gs.Render.Plants, rl.NewRectangle(457, 35, 14, 14))
 
 	x := float32(0)
 	y := float32(0)
 
 	//FLOOR
 	for {
-		floortiles = append(floortiles, rl.NewRectangle(x, y, 16, 16))
+		gs.Render.Floortiles = append(gs.Render.Floortiles, rl.NewRectangle(x, y, 16, 16))
 		x += 16
 		if x >= 896 {
 			break
@@ -10361,7 +10255,7 @@ func makeimgs() { //MARK:MAKE IMGS
 	x = 0
 	y = 16
 	for {
-		walltiles = append(walltiles, rl.NewRectangle(x, y, 16, 16))
+		gs.Render.Walltiles = append(gs.Render.Walltiles, rl.NewRectangle(x, y, 16, 16))
 		x += 16
 		if x >= 256 {
 			break
@@ -10371,7 +10265,7 @@ func makeimgs() { //MARK:MAKE IMGS
 	x = 1
 	y = 351
 	for {
-		bats = append(bats, rl.NewRectangle(x, y, 16, 16))
+		gs.Render.Bats = append(gs.Render.Bats, rl.NewRectangle(x, y, 16, 16))
 		y += 16
 		if y > 383 {
 			break
@@ -10379,25 +10273,25 @@ func makeimgs() { //MARK:MAKE IMGS
 	}
 	//KNIGHT MOVE
 	x = 935
-	pl.imgWalkX = x
+	gs.Player.Pl.imgWalkX = x
 	y = 268
 	for a := 0; a < 4; a++ {
-		knight = append(knight, rl.NewRectangle(x, y, 32, 32))
+		gs.Render.Knight = append(gs.Render.Knight, rl.NewRectangle(x, y, 32, 32))
 		y += 32
 	}
 	//KNIGHT ATTACK
 	x = 735
-	pl.imgAtkX = x
+	gs.Player.Pl.imgAtkX = x
 	y = 268
 	for a := 0; a < 4; a++ {
-		knight = append(knight, rl.NewRectangle(x, y, 32, 32))
+		gs.Render.Knight = append(gs.Render.Knight, rl.NewRectangle(x, y, 32, 32))
 		y += 32
 	}
 	//BUILDINGS
 	x = 0
 	y = 132
 	for {
-		shrines = append(shrines, rl.NewRectangle(x, y, 32, 32))
+		gs.Render.Shrines = append(gs.Render.Shrines, rl.NewRectangle(x, y, 32, 32))
 		x += 32
 		if x > 64 {
 			break
@@ -10407,207 +10301,207 @@ func makeimgs() { //MARK:MAKE IMGS
 	x = 474
 	y = 34
 	for a := 0; a < 7; a++ {
-		skulls = append(skulls, rl.NewRectangle(x, y, 16, 16))
+		gs.Render.Skulls = append(gs.Render.Skulls, rl.NewRectangle(x, y, 16, 16))
 		x += 16
 	}
 	//CANDLES
 	x = 586
 	y = 34
 	for a := 0; a < 3; a++ {
-		candles = append(candles, rl.NewRectangle(x, y, 16, 16))
+		gs.Render.Candles = append(gs.Render.Candles, rl.NewRectangle(x, y, 16, 16))
 		x += 16
 	}
 	//SIGNS
 	x = 634
 	y = 34
 	for a := 0; a < 5; a++ {
-		signs = append(signs, rl.NewRectangle(x, y, 16, 16))
+		gs.Render.Signs = append(gs.Render.Signs, rl.NewRectangle(x, y, 16, 16))
 		x += 16
 	}
 	//SPLATS
 	x = 0
 	y = 1072
 	for a := 0; a < 6; a++ {
-		splats = append(splats, rl.NewRectangle(x, y, 128, 128))
+		gs.Render.Splats = append(gs.Render.Splats, rl.NewRectangle(x, y, 128, 128))
 		x += 128
 	}
 	//STATUES
 	x = 0
 	y = 175
 	for a := 0; a < 16; a++ {
-		statues = append(statues, rl.NewRectangle(x, y, 48, 48))
+		gs.Render.Statues = append(gs.Render.Statues, rl.NewRectangle(x, y, 48, 48))
 		x += 48
 	}
 	//MUSHROOMS
 	x = 751
 	y = 34
 	for a := 0; a < 4; a++ {
-		mushrooms = append(mushrooms, rl.NewRectangle(x, y, 16, 16))
+		gs.Render.Mushrooms = append(gs.Render.Mushrooms, rl.NewRectangle(x, y, 16, 16))
 		x += 16
 	}
 	//PATTERNS
 	x = 2
 	y = 798
 	for a := 0; a < 6; a++ {
-		patterns = append(patterns, rl.NewRectangle(x, y, 128, 128))
-		patterns = append(patterns, rl.NewRectangle(x, y+128, 128, 128))
+		gs.Render.Patterns = append(gs.Render.Patterns, rl.NewRectangle(x, y, 128, 128))
+		gs.Render.Patterns = append(gs.Render.Patterns, rl.NewRectangle(x, y+128, 128, 128))
 		x += 128
 	}
 	//GEMS
 	x = 0
 	y = 297
 	for a := 0; a < 8; a++ {
-		gems = append(gems, rl.NewRectangle(x, y, 32, 32))
+		gs.Render.Gems = append(gs.Render.Gems, rl.NewRectangle(x, y, 32, 32))
 		x += 32
 	}
 
 	//RABBIT1
-	rabbit1.frames = 3
-	rabbit1.xl = 68
-	rabbit1.yt = 335
-	rabbit1.W = 16
-	rabbit1.recTL = rl.NewRectangle(rabbit1.xl, rabbit1.yt, rabbit1.W, rabbit1.W)
+	gs.Render.Rabbit1.frames = 3
+	gs.Render.Rabbit1.xl = 68
+	gs.Render.Rabbit1.yt = 335
+	gs.Render.Rabbit1.W = 16
+	gs.Render.Rabbit1.recTL = rl.NewRectangle(gs.Render.Rabbit1.xl, gs.Render.Rabbit1.yt, gs.Render.Rabbit1.W, gs.Render.Rabbit1.W)
 
 	//FIREBALL PLAYER
-	fireballPlayer.frames = 3
-	fireballPlayer.xl = 1
-	fireballPlayer.yt = 60
-	fireballPlayer.W = 16
-	fireballPlayer.recTL = rl.NewRectangle(fireballPlayer.xl, fireballPlayer.yt, fireballPlayer.W, fireballPlayer.W)
+	gs.Render.FireballPlayer.frames = 3
+	gs.Render.FireballPlayer.xl = 1
+	gs.Render.FireballPlayer.yt = 60
+	gs.Render.FireballPlayer.W = 16
+	gs.Render.FireballPlayer.recTL = rl.NewRectangle(gs.Render.FireballPlayer.xl, gs.Render.FireballPlayer.yt, gs.Render.FireballPlayer.W, gs.Render.FireballPlayer.W)
 
 	//BURN
-	burn.frames = 3
-	burn.xl = 72
-	burn.yt = 60
-	burn.W = 16
-	burn.recTL = rl.NewRectangle(burn.xl, burn.yt, burn.W, burn.W)
+	gs.Render.Burn.frames = 3
+	gs.Render.Burn.xl = 72
+	gs.Render.Burn.yt = 60
+	gs.Render.Burn.W = 16
+	gs.Render.Burn.recTL = rl.NewRectangle(gs.Render.Burn.xl, gs.Render.Burn.yt, gs.Render.Burn.W, gs.Render.Burn.W)
 
 	//STAR
-	star.frames = 3
-	star.xl = 144
-	star.yt = 60
-	star.W = 16
-	star.recTL = rl.NewRectangle(star.xl, star.yt, star.W, star.W)
+	gs.Render.Star.frames = 3
+	gs.Render.Star.xl = 144
+	gs.Render.Star.yt = 60
+	gs.Render.Star.W = 16
+	gs.Render.Star.recTL = rl.NewRectangle(gs.Render.Star.xl, gs.Render.Star.yt, gs.Render.Star.W, gs.Render.Star.W)
 
 	//WATER
-	wateranim.frames = 3
-	wateranim.xl = 208
-	wateranim.yt = 60
-	wateranim.W = 16
-	wateranim.recTL = rl.NewRectangle(wateranim.xl, wateranim.yt, wateranim.W, wateranim.W)
+	gs.Render.Wateranim.frames = 3
+	gs.Render.Wateranim.xl = 208
+	gs.Render.Wateranim.yt = 60
+	gs.Render.Wateranim.W = 16
+	gs.Render.Wateranim.recTL = rl.NewRectangle(gs.Render.Wateranim.xl, gs.Render.Wateranim.yt, gs.Render.Wateranim.W, gs.Render.Wateranim.W)
 
 	//PLANT BULL
-	plantBull.frames = 4
-	plantBull.xl = 276
-	plantBull.yt = 60
-	plantBull.W = 16
-	plantBull.recTL = rl.NewRectangle(plantBull.xl, plantBull.yt, plantBull.W, plantBull.W)
+	gs.Render.PlantBull.frames = 4
+	gs.Render.PlantBull.xl = 276
+	gs.Render.PlantBull.yt = 60
+	gs.Render.PlantBull.W = 16
+	gs.Render.PlantBull.recTL = rl.NewRectangle(gs.Render.PlantBull.xl, gs.Render.PlantBull.yt, gs.Render.PlantBull.W, gs.Render.PlantBull.W)
 
 	//SPIKES
-	spikes.frames = 13
-	spikes.xl = 0
-	spikes.yt = 90
-	spikes.W = 32
-	spikes.recTL = rl.NewRectangle(spikes.xl, spikes.yt, spikes.W, spikes.W)
+	gs.Render.Spikes.frames = 13
+	gs.Render.Spikes.xl = 0
+	gs.Render.Spikes.yt = 90
+	gs.Render.Spikes.W = 32
+	gs.Render.Spikes.recTL = rl.NewRectangle(gs.Render.Spikes.xl, gs.Render.Spikes.yt, gs.Render.Spikes.W, gs.Render.Spikes.W)
 
 	//SPRING
-	spring.frames = 2
-	spring.xl = 382
-	spring.yt = 59
-	spring.W = 16
-	spring.recTL = rl.NewRectangle(spring.xl, spring.yt, spring.W, spring.W)
+	gs.Render.Spring.frames = 2
+	gs.Render.Spring.xl = 382
+	gs.Render.Spring.yt = 59
+	gs.Render.Spring.W = 16
+	gs.Render.Spring.recTL = rl.NewRectangle(gs.Render.Spring.xl, gs.Render.Spring.yt, gs.Render.Spring.W, gs.Render.Spring.W)
 
 	//POISON GAS
-	posiongas.frames = 3
-	posiongas.xl = 686
-	posiongas.yt = 638
-	posiongas.W = 128
-	posiongas.recTL = rl.NewRectangle(posiongas.xl, posiongas.yt, posiongas.W, posiongas.W)
+	gs.Render.Posiongas.frames = 3
+	gs.Render.Posiongas.xl = 686
+	gs.Render.Posiongas.yt = 638
+	gs.Render.Posiongas.W = 128
+	gs.Render.Posiongas.recTL = rl.NewRectangle(gs.Render.Posiongas.xl, gs.Render.Posiongas.yt, gs.Render.Posiongas.W, gs.Render.Posiongas.W)
 
 	//MUSHROOM BULL
-	mushBull.frames = 3
-	mushBull.xl = 516
-	mushBull.yt = 59
-	mushBull.W = 16
-	mushBull.recTL = rl.NewRectangle(mushBull.xl, mushBull.yt, mushBull.W, mushBull.W)
+	gs.Render.MushBull.frames = 3
+	gs.Render.MushBull.xl = 516
+	gs.Render.MushBull.yt = 59
+	gs.Render.MushBull.W = 16
+	gs.Render.MushBull.recTL = rl.NewRectangle(gs.Render.MushBull.xl, gs.Render.MushBull.yt, gs.Render.MushBull.W, gs.Render.MushBull.W)
 
 	//BLADES
-	blades.frames = 7
-	blades.xl = 456
-	blades.yt = 92
-	blades.W = 32
-	blades.recTL = rl.NewRectangle(blades.xl, blades.yt, blades.W, blades.W)
+	gs.Render.Blades.frames = 7
+	gs.Render.Blades.xl = 456
+	gs.Render.Blades.yt = 92
+	gs.Render.Blades.W = 32
+	gs.Render.Blades.recTL = rl.NewRectangle(gs.Render.Blades.xl, gs.Render.Blades.yt, gs.Render.Blades.W, gs.Render.Blades.W)
 
 	//SPEAR
-	spear.frames = 7
-	spear.xl = 1004
-	spear.yt = 5
-	spear.W = 16
-	spear.recTL = rl.NewRectangle(spear.xl, spear.yt, spear.W, 64)
+	gs.Render.Spear.frames = 7
+	gs.Render.Spear.xl = 1004
+	gs.Render.Spear.yt = 5
+	gs.Render.Spear.W = 16
+	gs.Render.Spear.recTL = rl.NewRectangle(gs.Render.Spear.xl, gs.Render.Spear.yt, gs.Render.Spear.W, 64)
 
 	//FIRETRAIL
-	firetrailanim.frames = 3
-	firetrailanim.xl = 724
-	firetrailanim.yt = 82
-	firetrailanim.W = 16
-	firetrailanim.recTL = rl.NewRectangle(firetrailanim.xl, firetrailanim.yt, firetrailanim.W, 16)
+	gs.Render.Firetrailanim.frames = 3
+	gs.Render.Firetrailanim.xl = 724
+	gs.Render.Firetrailanim.yt = 82
+	gs.Render.Firetrailanim.W = 16
+	gs.Render.Firetrailanim.recTL = rl.NewRectangle(gs.Render.Firetrailanim.xl, gs.Render.Firetrailanim.yt, gs.Render.Firetrailanim.W, 16)
 
 	//ORBITAL
-	orbitalanim.frames = 5
-	orbitalanim.xl = 800
-	orbitalanim.yt = 84
-	orbitalanim.W = 16
-	orbitalanim.recTL = rl.NewRectangle(orbitalanim.xl, orbitalanim.yt, orbitalanim.W, 16)
+	gs.Render.Orbitalanim.frames = 5
+	gs.Render.Orbitalanim.xl = 800
+	gs.Render.Orbitalanim.yt = 84
+	gs.Render.Orbitalanim.W = 16
+	gs.Render.Orbitalanim.recTL = rl.NewRectangle(gs.Render.Orbitalanim.xl, gs.Render.Orbitalanim.yt, gs.Render.Orbitalanim.W, 16)
 
 	//FLOOD
-	floodanim.frames = 3
-	floodanim.xl = 900
-	floodanim.yt = 82
-	floodanim.W = 16
-	floodanim.recTL = rl.NewRectangle(floodanim.xl, floodanim.yt, floodanim.W, 16)
-	floodImg = floodanim.recTL
+	gs.Render.Floodanim.frames = 3
+	gs.Render.Floodanim.xl = 900
+	gs.Render.Floodanim.yt = 82
+	gs.Render.Floodanim.W = 16
+	gs.Render.Floodanim.recTL = rl.NewRectangle(gs.Render.Floodanim.xl, gs.Render.Floodanim.yt, gs.Render.Floodanim.W, 16)
+	gs.FX.FloodImg = gs.Render.Floodanim.recTL
 
 	//FISH R
-	fishR.frames = 3
-	fishR.xl = 724
-	fishR.yt = 105
-	fishR.W = 16
-	fishR.recTL = rl.NewRectangle(fishR.xl, fishR.yt, fishR.W, 16)
+	gs.Render.FishR.frames = 3
+	gs.Render.FishR.xl = 724
+	gs.Render.FishR.yt = 105
+	gs.Render.FishR.W = 16
+	gs.Render.FishR.recTL = rl.NewRectangle(gs.Render.FishR.xl, gs.Render.FishR.yt, gs.Render.FishR.W, 16)
 
 	//FISH L
-	fishL.frames = 3
-	fishL.xl = 794
-	fishL.yt = 105
-	fishL.W = 16
-	fishL.recTL = rl.NewRectangle(fishL.xl, fishL.yt, fishL.W, 16)
+	gs.Render.FishL.frames = 3
+	gs.Render.FishL.xl = 794
+	gs.Render.FishL.yt = 105
+	gs.Render.FishL.W = 16
+	gs.Render.FishL.recTL = rl.NewRectangle(gs.Render.FishL.xl, gs.Render.FishL.yt, gs.Render.FishL.W, 16)
 
 	//AIRSTRIKE
-	airstrikeanim.frames = 3
-	airstrikeanim.xl = 664
-	airstrikeanim.yt = 614
-	airstrikeanim.W = 32
-	airstrikeanim.recTL = rl.NewRectangle(airstrikeanim.xl, airstrikeanim.yt, airstrikeanim.W, 32)
+	gs.Render.Airstrikeanim.frames = 3
+	gs.Render.Airstrikeanim.xl = 664
+	gs.Render.Airstrikeanim.yt = 614
+	gs.Render.Airstrikeanim.W = 32
+	gs.Render.Airstrikeanim.recTL = rl.NewRectangle(gs.Render.Airstrikeanim.xl, gs.Render.Airstrikeanim.yt, gs.Render.Airstrikeanim.W, 32)
 
 	//BOSS1 PROJ
-	boss1anim.frames = 3
-	boss1anim.xl = 977
-	boss1anim.yt = 83
-	boss1anim.W = 16
-	boss1anim.recTL = rl.NewRectangle(boss1anim.xl, boss1anim.yt, boss1anim.W, 16)
+	gs.Render.Boss1anim.frames = 3
+	gs.Render.Boss1anim.xl = 977
+	gs.Render.Boss1anim.yt = 83
+	gs.Render.Boss1anim.W = 16
+	gs.Render.Boss1anim.recTL = rl.NewRectangle(gs.Render.Boss1anim.xl, gs.Render.Boss1anim.yt, gs.Render.Boss1anim.W, 16)
 
 	//BOSS2 PROJ
-	boss2anim.frames = 3
-	boss2anim.xl = 866
-	boss2anim.yt = 107
-	boss2anim.W = 16
-	boss2anim.recTL = rl.NewRectangle(boss2anim.xl, boss2anim.yt, boss2anim.W, 16)
+	gs.Render.Boss2anim.frames = 3
+	gs.Render.Boss2anim.xl = 866
+	gs.Render.Boss2anim.yt = 107
+	gs.Render.Boss2anim.W = 16
+	gs.Render.Boss2anim.recTL = rl.NewRectangle(gs.Render.Boss2anim.xl, gs.Render.Boss2anim.yt, gs.Render.Boss2anim.W, 16)
 
 	//ALIEN
 	x = 1008
 	y = 770
 
 	for {
-		alien = append(alien, rl.NewRectangle(x, y, 64, 64))
+		gs.Render.Alien = append(gs.Render.Alien, rl.NewRectangle(x, y, 64, 64))
 		x += 64
 		if x >= 1200 {
 			x = 1008
@@ -10625,207 +10519,207 @@ func inp() { //MARK:INP
 
 	//OPTIONS ON
 
-	if rl.IsKeyPressed(rl.KeyEscape) && !intro && !gs.Mario.MarioOn && !died && !nextlevelscreen {
+	if rl.IsKeyPressed(rl.KeyEscape) && !gs.UI.Intro && !gs.Mario.MarioOn && !gs.Player.Died && !gs.Level.NextLevelScreen {
 
-		if gs.UI.OptionsOn && !exiton && !gs.Shop.ShopOn && !levMapOn && !invenon && !gs.UI.CreditsOn && !gs.UI.HelpOn && !gs.Timing.TimesOn {
-			if optionsChange {
+		if gs.UI.OptionsOn && !gs.Level.Exiton && !gs.Shop.ShopOn && !gs.Level.LevMapOn && !gs.Player.InvenOn && !gs.UI.CreditsOn && !gs.UI.HelpOn && !gs.Timing.TimesOn {
+			if gs.UI.OptionsChange {
 				savesettings()
 			}
 			gs.UI.OptionsOn = false
 			gs.UI.CreditsOn = false
 			gs.UI.HelpOn = false
-			exiton = false
-			pause = false
-		} else if gs.UI.OptionsOn && exiton {
-			exiton = false
-		} else if !gs.UI.OptionsOn && !gs.Shop.ShopOn && !levMapOn && !invenon && !gs.UI.CreditsOn && !gs.UI.HelpOn && !gs.Timing.TimesOn {
-			pause = true
+			gs.Level.Exiton = false
+			gs.Core.Pause = false
+		} else if gs.UI.OptionsOn && gs.Level.Exiton {
+			gs.Level.Exiton = false
+		} else if !gs.UI.OptionsOn && !gs.Shop.ShopOn && !gs.Level.LevMapOn && !gs.Player.InvenOn && !gs.UI.CreditsOn && !gs.UI.HelpOn && !gs.Timing.TimesOn {
+			gs.Core.Pause = true
 			gs.UI.CreditsOn = false
 			gs.UI.HelpOn = false
-			exiton = false
+			gs.Level.Exiton = false
 			gs.UI.OptionsOn = true
-			optionsChange = false
+			gs.UI.OptionsChange = false
 			gs.UI.OptionNum = 0
-		} else if !gs.UI.OptionsOn && gs.Shop.ShopOn && !levMapOn && !invenon && !gs.UI.CreditsOn && !gs.UI.HelpOn && !gs.Timing.TimesOn {
+		} else if !gs.UI.OptionsOn && gs.Shop.ShopOn && !gs.Level.LevMapOn && !gs.Player.InvenOn && !gs.UI.CreditsOn && !gs.UI.HelpOn && !gs.Timing.TimesOn {
 			gs.Shop.ShopOn = false
-			pl.cnt.Y = gs.Shop.ShopExitY
+			gs.Player.Pl.cnt.Y = gs.Shop.ShopExitY
 			upPlayerRec()
-			pause = false
-		} else if !gs.UI.OptionsOn && !gs.Shop.ShopOn && levMapOn && !invenon && !gs.UI.CreditsOn && !gs.UI.HelpOn && !gs.Timing.TimesOn {
-			levMapOn = false
-			pause = false
-		} else if !gs.UI.OptionsOn && !gs.Shop.ShopOn && !levMapOn && invenon && !gs.UI.CreditsOn && !gs.UI.HelpOn && !gs.Timing.TimesOn {
-			invenon = false
-			pause = false
-		} else if gs.UI.OptionsOn && !gs.Shop.ShopOn && !levMapOn && !invenon && gs.UI.CreditsOn && !gs.UI.HelpOn && !gs.Timing.TimesOn {
+			gs.Core.Pause = false
+		} else if !gs.UI.OptionsOn && !gs.Shop.ShopOn && gs.Level.LevMapOn && !gs.Player.InvenOn && !gs.UI.CreditsOn && !gs.UI.HelpOn && !gs.Timing.TimesOn {
+			gs.Level.LevMapOn = false
+			gs.Core.Pause = false
+		} else if !gs.UI.OptionsOn && !gs.Shop.ShopOn && !gs.Level.LevMapOn && gs.Player.InvenOn && !gs.UI.CreditsOn && !gs.UI.HelpOn && !gs.Timing.TimesOn {
+			gs.Player.InvenOn = false
+			gs.Core.Pause = false
+		} else if gs.UI.OptionsOn && !gs.Shop.ShopOn && !gs.Level.LevMapOn && !gs.Player.InvenOn && gs.UI.CreditsOn && !gs.UI.HelpOn && !gs.Timing.TimesOn {
 			gs.UI.CreditsOn = false
 			gs.UI.OptionsOn = true
-		} else if gs.UI.OptionsOn && !gs.Shop.ShopOn && !levMapOn && !invenon && !gs.UI.CreditsOn && gs.UI.HelpOn && !gs.Timing.TimesOn {
+		} else if gs.UI.OptionsOn && !gs.Shop.ShopOn && !gs.Level.LevMapOn && !gs.Player.InvenOn && !gs.UI.CreditsOn && gs.UI.HelpOn && !gs.Timing.TimesOn {
 			gs.UI.HelpOn = false
-		} else if !gs.UI.OptionsOn && !gs.Shop.ShopOn && !levMapOn && !invenon && !gs.UI.CreditsOn && !gs.UI.HelpOn && gs.Timing.TimesOn {
+		} else if !gs.UI.OptionsOn && !gs.Shop.ShopOn && !gs.Level.LevMapOn && !gs.Player.InvenOn && !gs.UI.CreditsOn && !gs.UI.HelpOn && gs.Timing.TimesOn {
 			gs.Timing.TimesOn = false
 			restartgame()
 		}
 
-	} else if intro {
+	} else if gs.UI.Intro {
 		if rl.IsKeyPressed(rl.KeyEscape) || rl.IsGamepadButtonPressed(0, rl.GamepadButtonMiddleRight) {
 			if gs.UI.OptionsOn {
-				if optionsChange {
+				if gs.UI.OptionsChange {
 					savesettings()
 				}
 				gs.UI.OptionsOn = false
 			} else {
 				gs.UI.OptionsOn = true
-				optionsChange = false
+				gs.UI.OptionsChange = false
 				gs.UI.OptionNum = 0
 			}
 		}
 
 		if gs.UI.OptionsOn && rl.IsGamepadButtonPressed(0, 6) {
-			if optionsChange {
+			if gs.UI.OptionsChange {
 				savesettings()
 			}
 			gs.UI.OptionsOn = false
 		}
 	}
 	if gs.Input.UseController {
-		if rl.IsGamepadButtonPressed(0, rl.GamepadButtonMiddleRight) && !invenon && !gs.Shop.ShopOn && !levMapOn && !intro && !gs.Mario.MarioOn && !died && !nextlevelscreen {
+		if rl.IsGamepadButtonPressed(0, rl.GamepadButtonMiddleRight) && !gs.Player.InvenOn && !gs.Shop.ShopOn && !gs.Level.LevMapOn && !gs.UI.Intro && !gs.Mario.MarioOn && !gs.Player.Died && !gs.Level.NextLevelScreen {
 			if gs.UI.OptionsOn {
-				if optionsChange {
+				if gs.UI.OptionsChange {
 					savesettings()
 				}
 				gs.UI.CreditsOn = false
 				gs.UI.HelpOn = false
-				exiton = false
+				gs.Level.Exiton = false
 				gs.UI.OptionsOn = false
-				pause = false
+				gs.Core.Pause = false
 			} else {
 				gs.UI.CreditsOn = false
 				gs.UI.HelpOn = false
-				exiton = false
-				optionsChange = false
+				gs.Level.Exiton = false
+				gs.UI.OptionsChange = false
 				gs.UI.OptionsOn = true
 				gs.UI.OptionNum = 0
-				pause = true
+				gs.Core.Pause = true
 			}
 		}
 	}
 
-	if !intro && !gs.Mario.MarioOn && !died {
+	if !gs.UI.Intro && !gs.Mario.MarioOn && !gs.Player.Died {
 
 		//INVEN ON
-		if rl.IsKeyPressed(rl.KeyTab) && !gs.UI.OptionsOn && !levMapOn && !gs.Shop.ShopOn && !nextlevelscreen {
-			if invenon {
-				invenon = false
-				pause = false
+		if rl.IsKeyPressed(rl.KeyTab) && !gs.UI.OptionsOn && !gs.Level.LevMapOn && !gs.Shop.ShopOn && !gs.Level.NextLevelScreen {
+			if gs.Player.InvenOn {
+				gs.Player.InvenOn = false
+				gs.Core.Pause = false
 			} else {
-				invenon = true
-				pause = true
+				gs.Player.InvenOn = true
+				gs.Core.Pause = true
 			}
 		}
 
 		//MAP ON
-		if rl.IsKeyPressed(rl.KeyRightControl) && !gs.UI.OptionsOn && !invenon && !gs.Shop.ShopOn && !nextlevelscreen {
+		if rl.IsKeyPressed(rl.KeyRightControl) && !gs.UI.OptionsOn && !gs.Player.InvenOn && !gs.Shop.ShopOn && !gs.Level.NextLevelScreen {
 
-			if levMapOn {
-				levMapOn = false
-				pause = false
+			if gs.Level.LevMapOn {
+				gs.Level.LevMapOn = false
+				gs.Core.Pause = false
 			} else {
-				levMapOn = true
-				pause = true
+				gs.Level.LevMapOn = true
+				gs.Core.Pause = true
 			}
 		}
 		if gs.Input.UseController {
-			if rl.IsGamepadButtonPressed(0, 6) && !gs.UI.OptionsOn && !invenon && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !nextlevelscreen && !gs.UI.HelpOn && !gs.UI.CreditsOn {
-				if levMapOn {
-					levMapOn = false
-					pause = false
+			if rl.IsGamepadButtonPressed(0, 6) && !gs.UI.OptionsOn && !gs.Player.InvenOn && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !gs.Level.NextLevelScreen && !gs.UI.HelpOn && !gs.UI.CreditsOn {
+				if gs.Level.LevMapOn {
+					gs.Level.LevMapOn = false
+					gs.Core.Pause = false
 				} else {
-					levMapOn = true
-					pause = true
+					gs.Level.LevMapOn = true
+					gs.Core.Pause = true
 				}
-			} else if rl.IsGamepadButtonPressed(0, 6) && gs.UI.OptionsOn && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !nextlevelscreen && !gs.UI.HelpOn && !gs.UI.CreditsOn {
-				if optionsChange {
+			} else if rl.IsGamepadButtonPressed(0, 6) && gs.UI.OptionsOn && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !gs.Level.NextLevelScreen && !gs.UI.HelpOn && !gs.UI.CreditsOn {
+				if gs.UI.OptionsChange {
 					savesettings()
 				}
 				gs.UI.OptionsOn = false
-				pause = false
+				gs.Core.Pause = false
 
-			} else if rl.IsGamepadButtonPressed(0, 6) && invenon && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !nextlevelscreen && !gs.UI.HelpOn && !gs.UI.CreditsOn {
-				invenon = false
-				pause = false
-			} else if rl.IsGamepadButtonPressed(0, 6) && gs.UI.OptionsOn && !invenon && !gs.Shop.ShopOn && gs.Timing.TimesOn && !nextlevelscreen && !gs.UI.HelpOn && !gs.UI.CreditsOn {
+			} else if rl.IsGamepadButtonPressed(0, 6) && gs.Player.InvenOn && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !gs.Level.NextLevelScreen && !gs.UI.HelpOn && !gs.UI.CreditsOn {
+				gs.Player.InvenOn = false
+				gs.Core.Pause = false
+			} else if rl.IsGamepadButtonPressed(0, 6) && gs.UI.OptionsOn && !gs.Player.InvenOn && !gs.Shop.ShopOn && gs.Timing.TimesOn && !gs.Level.NextLevelScreen && !gs.UI.HelpOn && !gs.UI.CreditsOn {
 				gs.Timing.TimesOn = false
-			} else if rl.IsGamepadButtonPressed(0, 6) && gs.UI.OptionsOn && !invenon && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !nextlevelscreen && gs.UI.HelpOn && !gs.UI.CreditsOn {
+			} else if rl.IsGamepadButtonPressed(0, 6) && gs.UI.OptionsOn && !gs.Player.InvenOn && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !gs.Level.NextLevelScreen && gs.UI.HelpOn && !gs.UI.CreditsOn {
 				gs.UI.HelpOn = false
-			} else if rl.IsGamepadButtonPressed(0, 6) && gs.UI.OptionsOn && !invenon && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !nextlevelscreen && !gs.UI.HelpOn && gs.UI.CreditsOn {
+			} else if rl.IsGamepadButtonPressed(0, 6) && gs.UI.OptionsOn && !gs.Player.InvenOn && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !gs.Level.NextLevelScreen && !gs.UI.HelpOn && gs.UI.CreditsOn {
 				gs.UI.CreditsOn = false
 			}
 			//INVEN ON
-			if rl.IsGamepadButtonPressed(0, 5) && !gs.UI.OptionsOn && !levMapOn && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !nextlevelscreen && !gs.UI.HelpOn && !gs.UI.CreditsOn {
-				if invenon {
-					invenon = false
-					pause = false
+			if rl.IsGamepadButtonPressed(0, 5) && !gs.UI.OptionsOn && !gs.Level.LevMapOn && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !gs.Level.NextLevelScreen && !gs.UI.HelpOn && !gs.UI.CreditsOn {
+				if gs.Player.InvenOn {
+					gs.Player.InvenOn = false
+					gs.Core.Pause = false
 				} else {
-					invenon = true
-					pause = true
+					gs.Player.InvenOn = true
+					gs.Core.Pause = true
 				}
 			}
 		}
 
 		//PLAYER
-		if !pause {
-			if !pl.escape {
+		if !gs.Core.Pause {
+			if !gs.Player.Pl.escape {
 				if rl.IsKeyPressed(rl.KeySpace) {
-					if pl.atkTimer == 0 {
+					if gs.Player.Pl.atkTimer == 0 {
 						rl.PlaySound(gs.Audio.Sfx[0])
-						chainLightingSwingOnOff = false
-						pl.atk = true
-						pl.atkTimer = gs.Core.Fps / 3
-						pl.img.X = pl.imgAtkX
-						if mods.fireball {
+						gs.Player.ChainLightingSwingOnOff = false
+						gs.Player.Pl.atk = true
+						gs.Player.Pl.atkTimer = gs.Core.Fps / 3
+						gs.Player.Pl.img.X = gs.Player.Pl.imgAtkX
+						if gs.Player.Mods.fireball {
 							makeProjectile("fireball")
 						}
 					}
 					gs.Input.KeypressT = gs.Core.Fps / 2
 				}
-				pl.move = false
+				gs.Player.Pl.move = false
 
-				if !pl.slide {
+				if !gs.Player.Pl.slide {
 					if rl.IsKeyDown(rl.KeyW) || rl.IsKeyDown(rl.KeyUp) {
 						if checkplayermove(1) {
-							pl.cnt.Y -= pl.vel
+							gs.Player.Pl.cnt.Y -= gs.Player.Pl.vel
 						}
-						pl.direc = 1
-						if pl.atkTimer == 0 {
-							pl.move = true
+						gs.Player.Pl.direc = 1
+						if gs.Player.Pl.atkTimer == 0 {
+							gs.Player.Pl.move = true
 						}
 					}
 					if rl.IsKeyDown(rl.KeyS) || rl.IsKeyDown(rl.KeyDown) {
 						if checkplayermove(3) {
-							pl.cnt.Y += pl.vel
+							gs.Player.Pl.cnt.Y += gs.Player.Pl.vel
 						}
-						pl.direc = 3
-						if pl.atkTimer == 0 {
-							pl.move = true
+						gs.Player.Pl.direc = 3
+						if gs.Player.Pl.atkTimer == 0 {
+							gs.Player.Pl.move = true
 						}
 					}
 					if rl.IsKeyDown(rl.KeyA) || rl.IsKeyDown(rl.KeyLeft) {
 						if checkplayermove(4) {
-							pl.cnt.X -= pl.vel
+							gs.Player.Pl.cnt.X -= gs.Player.Pl.vel
 						}
-						pl.direc = 4
-						if pl.atkTimer == 0 {
-							pl.move = true
+						gs.Player.Pl.direc = 4
+						if gs.Player.Pl.atkTimer == 0 {
+							gs.Player.Pl.move = true
 						}
 					}
 					if rl.IsKeyDown(rl.KeyD) || rl.IsKeyDown(rl.KeyRight) {
 						if checkplayermove(2) {
-							pl.cnt.X += pl.vel
+							gs.Player.Pl.cnt.X += gs.Player.Pl.vel
 						}
-						pl.direc = 2
-						if pl.atkTimer == 0 {
-							pl.move = true
+						gs.Player.Pl.direc = 2
+						if gs.Player.Pl.atkTimer == 0 {
+							gs.Player.Pl.move = true
 						}
 					}
 				}
@@ -10833,57 +10727,57 @@ func inp() { //MARK:INP
 				//CONTROLLER
 				if gs.Input.UseController {
 					if rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) {
-						if pl.atkTimer == 0 {
+						if gs.Player.Pl.atkTimer == 0 {
 							rl.PlaySound(gs.Audio.Sfx[0])
-							chainLightingSwingOnOff = false
-							pl.atk = true
-							pl.atkTimer = gs.Core.Fps / 3
-							pl.img.X = pl.imgAtkX
-							if mods.fireball {
+							gs.Player.ChainLightingSwingOnOff = false
+							gs.Player.Pl.atk = true
+							gs.Player.Pl.atkTimer = gs.Core.Fps / 3
+							gs.Player.Pl.img.X = gs.Player.Pl.imgAtkX
+							if gs.Player.Mods.fireball {
 								makeProjectile("fireball")
 							}
 						}
 						gs.Input.KeypressT = gs.Core.Fps / 2
 					}
-					pl.move = false
+					gs.Player.Pl.move = false
 
-					if !pl.slide {
+					if !gs.Player.Pl.slide {
 
 						if rl.GetGamepadAxisMovement(0, 1) < 0 || rl.IsGamepadButtonDown(0, 1) {
 							if checkplayermove(1) {
-								pl.cnt.Y -= pl.vel
+								gs.Player.Pl.cnt.Y -= gs.Player.Pl.vel
 							}
-							pl.direc = 1
-							if pl.atkTimer == 0 {
-								pl.move = true
+							gs.Player.Pl.direc = 1
+							if gs.Player.Pl.atkTimer == 0 {
+								gs.Player.Pl.move = true
 							}
 						}
 						if rl.GetGamepadAxisMovement(0, 1) > 0 || rl.IsGamepadButtonDown(0, 3) {
 							if checkplayermove(3) {
-								pl.cnt.Y += pl.vel
+								gs.Player.Pl.cnt.Y += gs.Player.Pl.vel
 							}
-							pl.direc = 3
-							if pl.atkTimer == 0 {
-								pl.move = true
+							gs.Player.Pl.direc = 3
+							if gs.Player.Pl.atkTimer == 0 {
+								gs.Player.Pl.move = true
 							}
 						}
 
 						if rl.GetGamepadAxisMovement(0, 0) < 0 || rl.IsGamepadButtonDown(0, 4) {
 							if checkplayermove(4) {
-								pl.cnt.X -= pl.vel
+								gs.Player.Pl.cnt.X -= gs.Player.Pl.vel
 							}
-							pl.direc = 4
-							if pl.atkTimer == 0 {
-								pl.move = true
+							gs.Player.Pl.direc = 4
+							if gs.Player.Pl.atkTimer == 0 {
+								gs.Player.Pl.move = true
 							}
 						}
 						if rl.GetGamepadAxisMovement(0, 0) > 0 || rl.IsGamepadButtonDown(0, 2) {
 							if checkplayermove(2) {
-								pl.cnt.X += pl.vel
+								gs.Player.Pl.cnt.X += gs.Player.Pl.vel
 							}
-							pl.direc = 2
-							if pl.atkTimer == 0 {
-								pl.move = true
+							gs.Player.Pl.direc = 2
+							if gs.Player.Pl.atkTimer == 0 {
+								gs.Player.Pl.move = true
 							}
 						}
 
@@ -10898,35 +10792,35 @@ func inp() { //MARK:INP
 	/*
 		//DEBUG
 		if rl.IsKeyPressed(rl.KeyF1) {
-			if debug {
-				debug = false
+			if gs.Core.Debug {
+				gs.Core.Debug = false
 			} else {
-				debug = true
+				gs.Core.Debug = true
 			}
 		}
 
 		//ZOOM
 		if rl.IsKeyPressed(rl.KeyKpAdd) {
-			if cam2.Zoom == 1 {
-				cam2.Zoom = 2
-			} else if cam2.Zoom == 2 {
-				cam2.Zoom = 3
-			} else if cam2.Zoom == 3 {
-				cam2.Zoom = 4
-			} else if cam2.Zoom == 4 {
-				cam2.Zoom = 1
+			if gs.Render.Cam2.Zoom == 1 {
+				gs.Render.Cam2.Zoom = 2
+			} else if gs.Render.Cam2.Zoom == 2 {
+				gs.Render.Cam2.Zoom = 3
+			} else if gs.Render.Cam2.Zoom == 3 {
+				gs.Render.Cam2.Zoom = 4
+			} else if gs.Render.Cam2.Zoom == 4 {
+				gs.Render.Cam2.Zoom = 1
 			}
 			cams()
 		}
 		if rl.IsKeyPressed(rl.KeyKpSubtract) {
-			if cam2.Zoom == 1 {
-				cam2.Zoom = 4
-			} else if cam2.Zoom == 2 {
-				cam2.Zoom = 1
-			} else if cam2.Zoom == 3 {
-				cam2.Zoom = 2
-			} else if cam2.Zoom == 4 {
-				cam2.Zoom = 3
+			if gs.Render.Cam2.Zoom == 1 {
+				gs.Render.Cam2.Zoom = 4
+			} else if gs.Render.Cam2.Zoom == 2 {
+				gs.Render.Cam2.Zoom = 1
+			} else if gs.Render.Cam2.Zoom == 3 {
+				gs.Render.Cam2.Zoom = 2
+			} else if gs.Render.Cam2.Zoom == 4 {
+				gs.Render.Cam2.Zoom = 3
 			}
 			cams()
 		}
@@ -10940,41 +10834,41 @@ func timers() { //MARK:TIMERS
 		gs.Shop.ShopExitT--
 	}
 
-	runT++
-	if runT%gs.Core.Fps == 0 {
-		secs++
-		runT = 0
+	gs.Level.RunT++
+	if gs.Level.RunT%gs.Core.Fps == 0 {
+		gs.Level.Secs++
+		gs.Level.RunT = 0
 	}
-	if secs == 60 {
-		secs = 0
-		mins++
-	}
-
-	if anchorT > 0 {
-		anchorT--
+	if gs.Level.Secs == 60 {
+		gs.Level.Secs = 0
+		gs.Level.Mins++
 	}
 
-	if roomChangedTimer > 0 {
-		roomChangedTimer--
-		if roomChangedTimer == 1 {
-			roomChanged = false
+	if gs.Level.AnchorT > 0 {
+		gs.Level.AnchorT--
+	}
+
+	if gs.Level.RoomChangedTimer > 0 {
+		gs.Level.RoomChangedTimer--
+		if gs.Level.RoomChangedTimer == 1 {
+			gs.Level.RoomChanged = false
 		}
 	}
 
 }
 func cams() { //MARK:CAMS
 
-	cam2.Target = cnt
+	gs.Render.Cam2.Target = gs.Core.Cnt
 
-	cam2.Offset.X = scrWF32 / 2
-	cam2.Offset.Y = scrHF32 / 2
+	gs.Render.Cam2.Offset.X = gs.Core.ScrWF32 / 2
+	gs.Render.Cam2.Offset.Y = gs.Core.ScrHF32 / 2
 
-	if flipcam && !gs.UI.OptionsOn {
-		cam2.Rotation = 180
-	} else if flipcam && gs.UI.OptionsOn {
-		cam2.Rotation = 0
+	if gs.Level.Flipcam && !gs.UI.OptionsOn {
+		gs.Render.Cam2.Rotation = 180
+	} else if gs.Level.Flipcam && gs.UI.OptionsOn {
+		gs.Render.Cam2.Rotation = 0
 	} else {
-		cam2.Rotation = 0
+		gs.Render.Cam2.Rotation = 0
 	}
 
 }
@@ -10982,14 +10876,14 @@ func cams() { //MARK:CAMS
 func initialWindow() { //MARK:INITIAL WINDOW
 	rl.SetExitKey(rl.KeyEnd)
 	rl.HideCursor()
-	imgs = rl.LoadTexture("img/imgs.png")
-	renderTarget = rl.LoadRenderTexture(scrW32, scrH32)
+	gs.Render.Imgs = rl.LoadTexture("img/imgs.png")
+	gs.Render.RenderTarget = rl.LoadRenderTexture(gs.Core.ScrW32, gs.Core.ScrH32)
 
-	pause = true
-	intro = true
-	//shaderon = true
+	gs.Core.Pause = true
+	gs.UI.Intro = true
+	//gs.Render.ShaderOn = true
 
-	//endgame = true
+	//gs.Level.Endgame = true
 
 	gs.UI.HpBarsOn = true
 	makesettings()
@@ -11010,18 +10904,18 @@ func initialWindow() { //MARK:INITIAL WINDOW
 	rl.SetMusicVolume(gs.Audio.Music, gs.Audio.Volume)
 	upvolume()
 
-	diedRec = rl.NewRectangle(cnt.X-bsU, cnt.Y-bsU, bsU2, bsU2)
-	diedIMG = splats[rInt(0, len(splats))]
-	endgameT = gs.Core.Fps * 5
-	endgopherrec = rl.NewRectangle(cnt.X-bsU4, levRec.Y+levRec.Height, bsU8, bsU8)
+	gs.Player.DiedRec = rl.NewRectangle(gs.Core.Cnt.X-bsU, gs.Core.Cnt.Y-bsU, bsU2, bsU2)
+	gs.Player.DiedIMG = gs.Render.Splats[rInt(0, len(gs.Render.Splats))]
+	gs.Level.EndgameT = gs.Core.Fps * 5
+	gs.Level.EndgopherRec = rl.NewRectangle(gs.Core.Cnt.X-bsU4, gs.Level.LevRec.Y+gs.Level.LevRec.Height, bsU8, bsU8)
 
 }
 
 func unload() { //MARK:UNLOAD
-	rl.UnloadShader(shader)
-	rl.UnloadShader(shader2)
-	rl.UnloadRenderTexture(renderTarget)
-	rl.UnloadTexture(imgs)
+	rl.UnloadShader(gs.Render.Shader)
+	rl.UnloadShader(gs.Render.Shader2)
+	rl.UnloadRenderTexture(gs.Render.RenderTarget)
+	rl.UnloadTexture(gs.Render.Imgs)
 
 	rl.StopMusicStream(gs.Audio.Music)
 	rl.UnloadMusicStream(gs.Audio.Music)
@@ -11047,61 +10941,61 @@ func main() { //MARK:MAIN
 	rl.InitAudioDevice()
 	rl.SetWindowMonitor(0)
 	rl.SetWindowState(rl.FlagBorderlessWindowedMode)
-	scrW, scrH = rl.GetScreenWidth(), rl.GetScreenHeight()
+	gs.Core.ScrW, gs.Core.ScrH = rl.GetScreenWidth(), rl.GetScreenHeight()
 
 	//rl.ToggleFullscreen()
 
-	rl.SetWindowSize(scrW, scrH)
+	rl.SetWindowSize(gs.Core.ScrW, gs.Core.ScrH)
 
-	scrW32, scrH32 = int32(scrW), int32(scrH)
-	scrWF32, scrHF32 = float32(scrW), float32(scrH)
-	cnt = rl.NewVector2(scrWF32/2, scrHF32/2)
-	if scrH >= 2160 {
-		cam2.Zoom = 3
-	} else if scrH >= 1440 && scrH < 2160 {
-		cam2.Zoom = 2
-	} else if scrH == 1200 {
-		cam2.Zoom = 1.65
-	} else if scrH > 1050 && scrH < 1200 {
-		cam2.Zoom = 1.5
-	} else if scrH >= 990 && scrH <= 1050 {
-		cam2.Zoom = 1.35
-	} else if scrH >= 900 && scrH < 990 {
-		cam2.Zoom = 1.2
-	} else if scrH >= 720 && scrH < 900 {
-		cam2.Zoom = 1
-	} else if scrH >= 600 && scrH < 720 {
-		cam2.Zoom = 0.8
-	} else if scrH < 600 && scrH > 300 {
-		cam2.Zoom = 0.5
-	} else if scrH < 300 {
-		cam2.Zoom = 0.2
+	gs.Core.ScrW32, gs.Core.ScrH32 = int32(gs.Core.ScrW), int32(gs.Core.ScrH)
+	gs.Core.ScrWF32, gs.Core.ScrHF32 = float32(gs.Core.ScrW), float32(gs.Core.ScrH)
+	gs.Core.Cnt = rl.NewVector2(gs.Core.ScrWF32/2, gs.Core.ScrHF32/2)
+	if gs.Core.ScrH >= 2160 {
+		gs.Render.Cam2.Zoom = 3
+	} else if gs.Core.ScrH >= 1440 && gs.Core.ScrH < 2160 {
+		gs.Render.Cam2.Zoom = 2
+	} else if gs.Core.ScrH == 1200 {
+		gs.Render.Cam2.Zoom = 1.65
+	} else if gs.Core.ScrH > 1050 && gs.Core.ScrH < 1200 {
+		gs.Render.Cam2.Zoom = 1.5
+	} else if gs.Core.ScrH >= 990 && gs.Core.ScrH <= 1050 {
+		gs.Render.Cam2.Zoom = 1.35
+	} else if gs.Core.ScrH >= 900 && gs.Core.ScrH < 990 {
+		gs.Render.Cam2.Zoom = 1.2
+	} else if gs.Core.ScrH >= 720 && gs.Core.ScrH < 900 {
+		gs.Render.Cam2.Zoom = 1
+	} else if gs.Core.ScrH >= 600 && gs.Core.ScrH < 720 {
+		gs.Render.Cam2.Zoom = 0.8
+	} else if gs.Core.ScrH < 600 && gs.Core.ScrH > 300 {
+		gs.Render.Cam2.Zoom = 0.5
+	} else if gs.Core.ScrH < 300 {
+		gs.Render.Cam2.Zoom = 0.2
 	}
 
-	levX = cnt.X - levW/2
-	levY = cnt.Y - levW/2
-	levRec = rl.NewRectangle(levX, levY, levW, levW)
-	levRecInner = levRec
-	levRecInner.X += borderWallBlokSiz
-	levRecInner.Y += borderWallBlokSiz
-	levRecInner.Width -= borderWallBlokSiz * 2
-	levRecInner.Height -= borderWallBlokSiz * 2
+	gs.Level.LevX = gs.Core.Cnt.X - gs.Level.LevW/2
+	gs.Level.LevY = gs.Core.Cnt.Y - gs.Level.LevW/2
+	gs.Level.LevRec = rl.NewRectangle(gs.Level.LevX, gs.Level.LevY, gs.Level.LevW, gs.Level.LevW)
+	gs.Level.LevRecInner = gs.Level.LevRec
+	gs.Level.LevRecInner.X += gs.Level.BorderWallBlokSiz
+	gs.Level.LevRecInner.Y += gs.Level.BorderWallBlokSiz
+	gs.Level.LevRecInner.Width -= gs.Level.BorderWallBlokSiz * 2
+	gs.Level.LevRecInner.Height -= gs.Level.BorderWallBlokSiz * 2
 
 	initialWindow() //INITIAL INSIDE WINDOW
 
 	rl.SetTargetFPS(gs.Core.Fps)
 
 	for !rl.WindowShouldClose() {
-		frames++
+		gs.Core.Frames++
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.Black)
 
-		if shaderon && !shader2on && !shader3on { //BLOOM SHADER
-			rl.BeginTextureMode(renderTarget) // Enable drawing to texture
+		if gs.Render.ShaderOn && !gs.Render.Shader2On && !gs.Render.Shader3On { //BLOOM SHADER
+			rl.BeginTextureMode(gs.Render.RenderTarget) // Enable drawing to texture
 			rl.ClearBackground(rl.Black)
 			drawnocamBG()
 
-			rl.BeginMode2D(cam2)
+			rl.BeginMode2D(gs.Render.Cam2)
 
 			drawcam()
 
@@ -11111,16 +11005,16 @@ func main() { //MARK:MAIN
 
 			rl.EndTextureMode()
 
-			rl.BeginShaderMode(shader)
-			rl.DrawTextureRec(renderTarget.Texture, rl.NewRectangle(0, 0, float32(renderTarget.Texture.Width), float32(-renderTarget.Texture.Height)), rl.NewVector2(0, 0), rl.White)
+			rl.BeginShaderMode(gs.Render.Shader)
+			rl.DrawTextureRec(gs.Render.RenderTarget.Texture, rl.NewRectangle(0, 0, float32(gs.Render.RenderTarget.Texture.Width), float32(-gs.Render.RenderTarget.Texture.Height)), rl.NewVector2(0, 0), rl.White)
 			rl.EndShaderMode()
 
-		} else if shaderon && shader2on && !shader3on {
-			rl.BeginTextureMode(renderTarget) // Enable drawing to texture
+		} else if gs.Render.ShaderOn && gs.Render.Shader2On && !gs.Render.Shader3On {
+			rl.BeginTextureMode(gs.Render.RenderTarget) // Enable drawing to texture
 			rl.ClearBackground(rl.Black)
 			drawnocamBG()
 
-			rl.BeginMode2D(cam2)
+			rl.BeginMode2D(gs.Render.Cam2)
 
 			drawcam()
 
@@ -11130,20 +11024,20 @@ func main() { //MARK:MAIN
 
 			rl.EndTextureMode()
 
-			rl.BeginTextureMode(renderTarget) // Enable drawing to texture
-			rl.BeginShaderMode(shader)
-			rl.DrawTextureRec(renderTarget.Texture, rl.NewRectangle(0, 0, float32(renderTarget.Texture.Width), float32(-renderTarget.Texture.Height)), rl.NewVector2(0, 0), rl.White)
+			rl.BeginTextureMode(gs.Render.RenderTarget) // Enable drawing to texture
+			rl.BeginShaderMode(gs.Render.Shader)
+			rl.DrawTextureRec(gs.Render.RenderTarget.Texture, rl.NewRectangle(0, 0, float32(gs.Render.RenderTarget.Texture.Width), float32(-gs.Render.RenderTarget.Texture.Height)), rl.NewVector2(0, 0), rl.White)
 			rl.EndShaderMode()
 			rl.EndTextureMode()
-			rl.BeginShaderMode(shader2)
-			rl.DrawTextureRec(renderTarget.Texture, rl.NewRectangle(0, 0, float32(renderTarget.Texture.Width), float32(-renderTarget.Texture.Height)), rl.NewVector2(0, 0), rl.White)
+			rl.BeginShaderMode(gs.Render.Shader2)
+			rl.DrawTextureRec(gs.Render.RenderTarget.Texture, rl.NewRectangle(0, 0, float32(gs.Render.RenderTarget.Texture.Width), float32(-gs.Render.RenderTarget.Texture.Height)), rl.NewVector2(0, 0), rl.White)
 			rl.EndShaderMode()
-		} else if shaderon && !shader2on && shader3on {
-			rl.BeginTextureMode(renderTarget) // Enable drawing to texture
+		} else if gs.Render.ShaderOn && !gs.Render.Shader2On && gs.Render.Shader3On {
+			rl.BeginTextureMode(gs.Render.RenderTarget) // Enable drawing to texture
 			rl.ClearBackground(rl.Black)
 			drawnocamBG()
 
-			rl.BeginMode2D(cam2)
+			rl.BeginMode2D(gs.Render.Cam2)
 
 			drawcam()
 
@@ -11153,20 +11047,20 @@ func main() { //MARK:MAIN
 
 			rl.EndTextureMode()
 
-			rl.BeginTextureMode(renderTarget) // Enable drawing to texture
-			rl.BeginShaderMode(shader)
-			rl.DrawTextureRec(renderTarget.Texture, rl.NewRectangle(0, 0, float32(renderTarget.Texture.Width), float32(-renderTarget.Texture.Height)), rl.NewVector2(0, 0), rl.White)
+			rl.BeginTextureMode(gs.Render.RenderTarget) // Enable drawing to texture
+			rl.BeginShaderMode(gs.Render.Shader)
+			rl.DrawTextureRec(gs.Render.RenderTarget.Texture, rl.NewRectangle(0, 0, float32(gs.Render.RenderTarget.Texture.Width), float32(-gs.Render.RenderTarget.Texture.Height)), rl.NewVector2(0, 0), rl.White)
 			rl.EndShaderMode()
 			rl.EndTextureMode()
-			rl.BeginShaderMode(shader3)
-			rl.DrawTextureRec(renderTarget.Texture, rl.NewRectangle(0, 0, float32(renderTarget.Texture.Width), float32(-renderTarget.Texture.Height)), rl.NewVector2(0, 0), rl.White)
+			rl.BeginShaderMode(gs.Render.Shader3)
+			rl.DrawTextureRec(gs.Render.RenderTarget.Texture, rl.NewRectangle(0, 0, float32(gs.Render.RenderTarget.Texture.Width), float32(-gs.Render.RenderTarget.Texture.Height)), rl.NewVector2(0, 0), rl.White)
 			rl.EndShaderMode()
-		} else if !shaderon && shader2on && !shader3on {
-			rl.BeginTextureMode(renderTarget) // Enable drawing to texture
+		} else if !gs.Render.ShaderOn && gs.Render.Shader2On && !gs.Render.Shader3On {
+			rl.BeginTextureMode(gs.Render.RenderTarget) // Enable drawing to texture
 			rl.ClearBackground(rl.Black)
 			drawnocamBG()
 
-			rl.BeginMode2D(cam2)
+			rl.BeginMode2D(gs.Render.Cam2)
 
 			drawcam()
 
@@ -11176,15 +11070,15 @@ func main() { //MARK:MAIN
 
 			rl.EndTextureMode()
 
-			rl.BeginShaderMode(shader2)
-			rl.DrawTextureRec(renderTarget.Texture, rl.NewRectangle(0, 0, float32(renderTarget.Texture.Width), float32(-renderTarget.Texture.Height)), rl.NewVector2(0, 0), rl.White)
+			rl.BeginShaderMode(gs.Render.Shader2)
+			rl.DrawTextureRec(gs.Render.RenderTarget.Texture, rl.NewRectangle(0, 0, float32(gs.Render.RenderTarget.Texture.Width), float32(-gs.Render.RenderTarget.Texture.Height)), rl.NewVector2(0, 0), rl.White)
 			rl.EndShaderMode()
-		} else if !shaderon && !shader2on && shader3on {
-			rl.BeginTextureMode(renderTarget) // Enable drawing to texture
+		} else if !gs.Render.ShaderOn && !gs.Render.Shader2On && gs.Render.Shader3On {
+			rl.BeginTextureMode(gs.Render.RenderTarget) // Enable drawing to texture
 			rl.ClearBackground(rl.Black)
 			drawnocamBG()
 
-			rl.BeginMode2D(cam2)
+			rl.BeginMode2D(gs.Render.Cam2)
 
 			drawcam()
 
@@ -11194,13 +11088,13 @@ func main() { //MARK:MAIN
 
 			rl.EndTextureMode()
 
-			rl.BeginShaderMode(shader3)
-			rl.DrawTextureRec(renderTarget.Texture, rl.NewRectangle(0, 0, float32(renderTarget.Texture.Width), float32(-renderTarget.Texture.Height)), rl.NewVector2(0, 0), rl.White)
+			rl.BeginShaderMode(gs.Render.Shader3)
+			rl.DrawTextureRec(gs.Render.RenderTarget.Texture, rl.NewRectangle(0, 0, float32(gs.Render.RenderTarget.Texture.Width), float32(-gs.Render.RenderTarget.Texture.Height)), rl.NewVector2(0, 0), rl.White)
 			rl.EndShaderMode()
 		} else { //NO BLOOM SHADER
 			rl.ClearBackground(rl.Black)
 			drawnocamBG()
-			rl.BeginMode2D(cam2)
+			rl.BeginMode2D(gs.Render.Cam2)
 			drawcam()
 			rl.EndMode2D()
 			drawnocam()
