@@ -313,3 +313,286 @@ type xanim struct {
 	recTL  rl.Rectangle
 }
 
+type GameState struct {
+    Core       CoreState
+    Render     RenderState
+    Audio      AudioState
+    Input      InputState
+    Player     PlayerState
+    Enemies    EnemyState
+    Level      LevelState
+    Shop       ShopState
+    UI         UIState
+    FX         FXState
+    Companions CompanionState
+    Timing     TimingState
+    Mario      MarioState
+}
+
+type CoreState struct {
+    Fps       int32
+    Frames    int
+    ScrW      int
+    ScrH      int
+    ScrW32    int32
+    ScrH32    int32
+    ScrWF32   float32
+    ScrHF32   float32
+    Cnt       rl.Vector2
+    Ori       rl.Vector2
+    MouseV2   rl.Vector2
+    Mousev2cam rl.Vector2
+    Debug     bool
+    Pause     bool
+}
+
+type RenderState struct {
+    Imgs         rl.Texture2D
+    Shader       rl.Shader
+    Shader2      rl.Shader
+    Shader3      rl.Shader
+    RenderTarget rl.RenderTexture2D
+    Cam2         rl.Camera2D
+    ShaderOn     bool
+    Shader2On    bool
+    Shader3On    bool
+    // sprite sheet slices
+    Walltiles  []rl.Rectangle
+    Floortiles []rl.Rectangle
+    Bats       []rl.Rectangle
+    Knight     []rl.Rectangle
+    Etc        []rl.Rectangle
+    Shrines    []rl.Rectangle
+    Plants     []rl.Rectangle
+    Skulls     []rl.Rectangle
+    Candles    []rl.Rectangle
+    Signs      []rl.Rectangle
+    Splats     []rl.Rectangle
+    Statues    []rl.Rectangle
+    Mushrooms  []rl.Rectangle
+    Alien      []rl.Rectangle
+    Patterns   []rl.Rectangle
+    Gems       []rl.Rectangle
+    Coin       rl.Rectangle
+    // animations
+    Rabbit1         xanim
+    FireballPlayer  xanim
+    Burn            xanim
+    Star            xanim
+    Wateranim       xanim
+    PlantBull        xanim
+    Spikes          xanim
+    Spring          xanim
+    Posiongas       xanim
+    MushBull        xanim
+    Blades          xanim
+    Spear           xanim
+    Firetrailanim   xanim
+    Orbitalanim     xanim
+    Floodanim       xanim
+    FishR           xanim
+    FishL           xanim
+    Airstrikeanim   xanim
+    Boss1anim       xanim
+    Boss2anim       xanim
+}
+// Done
+type AudioState struct {
+    Music      rl.Music
+    BackMusic  []rl.Music
+    Sfx        []rl.Sound
+    MusicOn    bool
+    Volume     float32
+    BgMusicNum int
+}
+// Done
+type InputState struct {
+    UseController        bool
+    IsController         bool
+    ControllerOn         bool
+    ControllerDisconnect bool
+    ControllerWasOn      bool
+    KeypressT            int32
+}
+
+type PlayerState struct {
+    Pl                     xplayer
+    Mods                   xmod
+    Max                    xmax
+    Kills                  xkills
+    PlProj                 []xproj
+    Inven                  []xblok
+    InvenOn                bool
+    HpHitY                 float32
+    ReviveY                float32
+    WaterY                 float32
+    HpHitF                 float32
+    ReviveF                float32
+    WaterF                 float32
+    PlVineRec              rl.Rectangle
+    DiedRec                rl.Rectangle
+    DiedIMG                rl.Rectangle
+    TeleportRoomNum        int
+    TeleportRadius         []float32
+    StartdmgT              int32
+    Escaped                bool
+    EscapeRoomFound        bool
+    TeleportOn             bool
+    PlatkrecOn             bool
+    ChainLightingSwingOnOff bool
+    Died                   bool
+}
+
+type EnemyState struct {
+    EnProj     []xproj
+    EnSpikes   xenemy
+    EnGhost    xenemy
+    EnSlime    xenemy
+    EnRock     xenemy
+    EnMushroom xenemy
+}
+
+type LevelState struct {
+    Level             []xroom
+    LevRec            rl.Rectangle
+    LevRecInner       rl.Rectangle
+    WallT             rl.Rectangle
+    LevW              float32
+    BorderWallBlokSiz float32
+    LevX              float32
+    LevY              float32
+    RoomNum           int
+    LevBorderBlokNum  int
+    LevMap            []rl.Rectangle
+    Levelnum          int
+    ExitRoomNum       int
+    ShopRoomNum       int
+    Exited            bool
+    NextLevelScreen   bool
+    Secs              int
+    Mins              int
+    MinsEND           int
+    SecsEND           int
+    RoomChangedTimer  int32
+    AnchorT           int32
+    RunT              int32
+    DiedscrT          int32
+    NextlevelT        int32
+    LevMapOn          bool
+    RoomChanged       bool
+    Night             bool
+    Flipcam           bool
+    Exiton            bool
+    ExitLR            bool
+    Endgame           bool
+    Hardcore          bool
+    // end level
+    Bosses       []xboss
+    Bossnum      int
+    EndgameT     int32
+    EndPauseT    int32
+    EndgopherRec rl.Rectangle
+}
+
+// Done
+type ShopState struct {
+    ShopOn    bool
+    ShopExitY float32
+    ShopItems []xblok
+    ShopNum   int
+    ShopExitT int32
+}
+
+type UIState struct {
+    OptionNum            int
+    TxtSize              int32
+    OptionT              int32
+    OptionsOn            bool
+    HpBarsOn             bool
+    ArtifactsOn          bool
+    ScanLinesOn          bool
+    CreditsOn            bool
+    HelpOn               bool
+    Invincible           bool
+    Resettimes           bool
+    RestartOn            bool
+    OptionsChange        bool
+    StartScreen          bool
+    Intro                bool
+    IntroCount           bool
+    IntroT1              int32
+    IntroT2              int32
+    IntroT3              int32
+    IntroF1              float32
+    IntroF2              float32
+    IntroF3              float32
+    FadeBlinkOn          bool
+    FadeBlinkOn2         bool
+    FadeBlink            float32
+    FadeBlink2           float32
+    TxtSoldList          []xtxt
+    GameTxt              []xtxt
+}
+
+type FXState struct {
+    Fx              []xfx
+    Snow            []ximg
+    ScanlineV2      []rl.Vector2
+    ChainV2         []rl.Vector2
+    ChainLightOn    bool
+    ChainLightTimer int32
+    Rain            []rl.Rectangle
+    FloodRec        rl.Rectangle
+    FloodImg        rl.Rectangle
+    Fish1           rl.Rectangle
+    Fish2           rl.Rectangle
+    FishV2          rl.Vector2
+    Fish2V2         rl.Vector2
+    FishSiz         float32
+    FishSiz2        float32
+    FishLR          bool
+    Fish2LR         bool
+    FishRec         rl.Rectangle
+    FishRec2        rl.Rectangle
+    WaterLR         bool
+    WaterUP         bool
+    AirstrikeT      int32
+    AirstrikebombT  int32
+    AirstrikeDir    int
+    AirstrikeOn     bool
+    AirstrikeV2     []rl.Vector2
+    FireworksCnt    rl.Vector2
+}
+
+// Done
+type CompanionState struct {
+    MrPlanty  xcompanion
+    MrAlien   xcompanion
+    MrCarrot  xcompanion
+}
+
+// Done
+type TimingState struct {
+    Times      []int
+    BestTime   bool
+    TimesOn    bool
+    BestTimesT int32
+}
+
+// Done
+type MarioState struct {
+    MarioOn        bool
+    MarioJump      bool
+    MarioT         int32
+    MarioJumpT     int32
+    MarioRecs      []rl.Rectangle
+    MarioCoins     []rl.Rectangle
+    MarioPL        rl.Rectangle
+    MarioScreenRec rl.Rectangle
+    PatternRec     rl.Rectangle
+    MarioImg       rl.Rectangle
+    MarioV2L       rl.Vector2
+    MarioV2R       rl.Vector2
+    MarioCols      []rl.Color
+    MarioCoinOnOff []bool
+}
