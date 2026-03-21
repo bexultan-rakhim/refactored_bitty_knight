@@ -1,4 +1,4 @@
-module github.com/unklnik/bitty_knight
+module github.com/bexultan-rakhim/refactored_bitty_knight
 
 go 1.22.0
 

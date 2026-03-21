@@ -202,6 +202,16 @@ type xblok struct {
 	shopoff     bool
 }
 
+
+func makeBlokGenNoRecNoCntr() xblok { //MARK:MAKE GENERIC BLOCK NO CENTER NO REC
+	zblok := xblok{}
+	zblok.fade = 1
+	zblok.color = rl.White
+	zblok.onoff = true
+
+	return zblok
+}
+
 type xcompanion struct {
 	img   rl.Rectangle
 	imgl  rl.Rectangle
