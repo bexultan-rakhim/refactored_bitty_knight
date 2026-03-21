@@ -144,7 +144,7 @@ func drawcam() { //MARK:DRAW CAM
   } else if gs.Level.Endgame {
     drawEndGame()
   } else if gs.Level.NextLevelScreen {
-    drawnextlevelscreen()
+    drawNextLevelScreen(&gs.Level, &gs.Core, &gs.Player, &gs.Input)
   } else if gs.Player.Died {
     drawDied()
   }
@@ -222,7 +222,7 @@ func drawcam() { //MARK:DRAW CAM
 
     //CHAIN LIGHTNING
     if gs.FX.ChainLightOn {
-      drawChainLight()
+      drawChainLight(&gs.FX, &gs.Level, &gs.Core, &gs.Player, &gs.Audio)
     }
 
     //ENEMIES
@@ -300,7 +300,7 @@ func drawcam() { //MARK:DRAW CAM
 
     //INVENTORY
     if len(gs.Player.Inven) > 0 {
-      drawInven()
+      drawInven(gs.Render, gs.Player, gs.Level, gs.Core.Ori)
     }
     //PLAYER INFO
     drawPlayerInfo()
@@ -352,39 +352,35 @@ func drawcam() { //MARK:DRAW CAM
   }
 
 }
-func drawnextlevelscreen() { //MARK:DRAW NEXT LEVEL SCREEN
 
-  txt := "prepare for level " + fmt.Sprint(gs.Level.Levelnum)
-  txtlen := rl.MeasureText(txt, 40)
-  x := int32(gs.Core.Cnt.X) - txtlen/2
-  y := int32(gs.Core.Cnt.Y - 20)
-
-  rl.DrawText(txt, x, y, 40, rl.White)
-
-  txt = "press space or button to continue"
-  txtlen = rl.MeasureText(txt, 20)
-  x = int32(gs.Core.Cnt.X) - txtlen/2
-  y = int32(gs.Core.Cnt.Y + 30)
-
-  rl.DrawText(txt, x, y, 20, rl.White)
-
-  if gs.Level.NextlevelT > 0 {
-    gs.Level.NextlevelT--
-  } else {
-    gs.Player.StartdmgT = gs.Core.Fps * 5
-    if rl.IsKeyPressed(rl.KeySpace) {
-      gs.Level.NextLevelScreen = false
-      gs.Core.Pause = false
-    }
-    if gs.Input.UseController {
-      if rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) {
-        gs.Level.NextLevelScreen = false
-        gs.Core.Pause = false
-      }
-    }
-  }
-
+func drawNextLevelScreen(level *LevelState, core *CoreState, player *PlayerState, input *InputState) { //MARK:DRAW NEXT LEVEL SCREEN
+	txt := "prepare for level " + fmt.Sprint(level.Levelnum)
+	txtlen := rl.MeasureText(txt, 40)
+	x := int32(core.Cnt.X) - txtlen/2
+	y := int32(core.Cnt.Y - 20)
+	rl.DrawText(txt, x, y, 40, rl.White)
+	txt = "press space or button to continue"
+	txtlen = rl.MeasureText(txt, 20)
+	x = int32(core.Cnt.X) - txtlen/2
+	y = int32(core.Cnt.Y + 30)
+	rl.DrawText(txt, x, y, 20, rl.White)
+	if level.NextlevelT > 0 {
+		level.NextlevelT--
+	} else {
+		player.StartdmgT = core.Fps * 5
+		if rl.IsKeyPressed(rl.KeySpace) {
+			level.NextLevelScreen = false
+			core.Pause = false
+		}
+		if input.UseController {
+			if rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) {
+				level.NextLevelScreen = false
+				core.Pause = false
+			}
+		}
+	}
 }
+
 func drawEndGame() { //MARK:DRAW END GAME
   gs.Core.Pause = true
   rl.DrawRectangle(0, 0, gs.Core.ScrW32, gs.Core.ScrH32, rl.Black)
@@ -1158,37 +1154,37 @@ func drawOptions() { //MARK:DRAW OPTIONS
 
     txt = "hp bars"
     rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
-    gs.UI.HpBarsOn = onoff(onoffx, txty, float32(gs.UI.TxtSize), gs.UI.HpBarsOn)
+    gs.UI.HpBarsOn = onoff(&gs.Core, onoffx, txty, float32(gs.UI.TxtSize), gs.UI.HpBarsOn)
     txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 
     txt = "scan lines"
     rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
-    gs.UI.ScanLinesOn = onoff(onoffx, txty, float32(gs.UI.TxtSize), gs.UI.ScanLinesOn)
+    gs.UI.ScanLinesOn = onoff(&gs.Core, onoffx, txty, float32(gs.UI.TxtSize), gs.UI.ScanLinesOn)
     txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 
     txt = "pixel artifacts"
     rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
-    gs.UI.ArtifactsOn = onoff(onoffx, txty, float32(gs.UI.TxtSize), gs.UI.ArtifactsOn)
+    gs.UI.ArtifactsOn = onoff(&gs.Core, onoffx, txty, float32(gs.UI.TxtSize), gs.UI.ArtifactsOn)
     txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 
     txt = "bloom 'fuzzy'"
     rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
-    gs.Render.ShaderOn = onoff(onoffx, txty, float32(gs.UI.TxtSize), gs.Render.ShaderOn)
+    gs.Render.ShaderOn = onoff(&gs.Core, onoffx, txty, float32(gs.UI.TxtSize), gs.Render.ShaderOn)
     txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 
     txt = "player atk range"
     rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
-    gs.Player.PlatkrecOn = onoff(onoffx, txty, float32(gs.UI.TxtSize), gs.Player.PlatkrecOn)
+    gs.Player.PlatkrecOn = onoff(&gs.Core, onoffx, txty, float32(gs.UI.TxtSize), gs.Player.PlatkrecOn)
     txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 
     txt = "gs.UI.Invincible"
     rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
-    gs.UI.Invincible = onoff(onoffx, txty, float32(gs.UI.TxtSize), gs.UI.Invincible)
+    gs.UI.Invincible = onoff(&gs.Core, onoffx, txty, float32(gs.UI.TxtSize), gs.UI.Invincible)
     txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 
     txt = "use controller"
     rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
-    gs.Input.UseController = onoff(onoffx, txty, float32(gs.UI.TxtSize), gs.Input.UseController)
+    gs.Input.UseController = onoff(&gs.Core, onoffx, txty, float32(gs.UI.TxtSize), gs.Input.UseController)
     if !gs.Input.IsController && gs.UI.OptionNum == 6 {
       txt = "no controller detected"
       rl.DrawText(txt, txtx, txty+(gs.UI.TxtSize+gs.UI.TxtSize/2)*4, gs.UI.TxtSize, ranCol())
@@ -1196,7 +1192,7 @@ func drawOptions() { //MARK:DRAW OPTIONS
     txty += gs.UI.TxtSize + gs.UI.TxtSize/2
     txt = "music"
     rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
-    gs.Audio.MusicOn = onoff(onoffx, txty, float32(gs.UI.TxtSize), gs.Audio.MusicOn)
+    gs.Audio.MusicOn = onoff(&gs.Core,onoffx, txty, float32(gs.UI.TxtSize), gs.Audio.MusicOn)
     txty += gs.UI.TxtSize + gs.UI.TxtSize/2
 
     txt = "music track"
@@ -1288,7 +1284,7 @@ func drawOptions() { //MARK:DRAW OPTIONS
     txty += gs.UI.TxtSize + gs.UI.TxtSize/2
     txt = "hardcore"
     rl.DrawText(txt, txtx, txty, gs.UI.TxtSize, rl.White)
-    gs.Level.Hardcore = onoff(onoffx, txty, float32(gs.UI.TxtSize), gs.Level.Hardcore)
+    gs.Level.Hardcore = onoff(&gs.Core, onoffx, txty, float32(gs.UI.TxtSize), gs.Level.Hardcore)
     if gs.UI.OptionNum == 15 {
       txt = "more enemies > game will restart"
       rl.DrawText(txt, txtx, txty-(gs.UI.TxtSize+gs.UI.TxtSize/2)*6, gs.UI.TxtSize, ranCol())
@@ -1418,43 +1414,50 @@ func drawUpMario() { //MARK:DRAW UP MARIO
   }
 
 }
-func drawInven() { //MARK:DRAW INVENTORY
 
-  x := gs.Level.LevX - bsU2
-  y := gs.Level.LevY + bsU/2
+func drawInven(render RenderState, player PlayerState, lvl LevelState, ori rl.Vector2) { //MARK:DRAW INVENTORY
+
+  x := lvl.LevX - bsU2
+  y := lvl.LevY + bsU/2
   siz := bsU + bsU/2
 
-  for a := 0; a < len(gs.Player.Inven); a++ {
+  for a := 0; a < len(player.Inven); a++ {
     rec := rl.NewRectangle(x, y, siz, siz)
-    rl.DrawTexturePro(gs.Render.Imgs, gs.Player.Inven[a].img, rec, gs.Core.Ori, 0, gs.Player.Inven[a].color)
+    rl.DrawTexturePro(render.Imgs, player.Inven[a].img, rec, ori, 0, player.Inven[a].color)
 
-    rl.DrawTexturePro(gs.Render.Imgs, gs.Player.Inven[a].img, BlurRec(rec, 1), gs.Core.Ori, 0, rl.Fade(gs.Player.Inven[a].color, rF32(0.1, 0.2)))
+    rl.DrawTexturePro(render.Imgs, player.Inven[a].img, BlurRec(rec, 1), ori, 0, rl.Fade(player.Inven[a].color, rF32(0.1, 0.2)))
 
-    if gs.Player.Inven[a].numof > 1 {
+    if player.Inven[a].numof > 1 {
       txtx := int32(x+siz) - txU/2
       txty := int32(y+siz) - txU/2
-      rl.DrawText(fmt.Sprint(gs.Player.Inven[a].numof), txtx-2, txty-2, txU, rl.Black)
-      rl.DrawText(fmt.Sprint(gs.Player.Inven[a].numof), txtx, txty, txU, rl.White)
+      rl.DrawText(fmt.Sprint(player.Inven[a].numof), txtx-2, txty-2, txU, rl.Black)
+      rl.DrawText(fmt.Sprint(player.Inven[a].numof), txtx, txty, txU, rl.White)
     }
 
     y += siz + bsU/4
   }
 
 }
-func drawInvenDetail() { //MARK:DRAW INVENTORY DETAIL
 
-  if len(gs.Player.Inven) > 0 {
+func drawInvenDetail(
+  player PlayerState,
+  lvl LevelState,
+  core CoreState,
+  render RenderState,
+) { //MARK:DRAW INVENTORY DETAIL
 
-    x := gs.Level.LevX
-    y := gs.Level.LevY + bsU/4
+  if len(player.Inven) > 0 {
+
+    x := lvl.LevX
+    y := lvl.LevY + bsU/4
     siz := bsU
 
-    txtcntr := int32(gs.Core.Cnt.X)
+    txtcntr := int32(core.Cnt.X)
     txty := int32(y) + txU/4
 
-    for a := 0; a < len(gs.Player.Inven); a++ {
+    for a := 0; a < len(player.Inven); a++ {
 
-      txt := gs.Player.Inven[a].name + " - " + gs.Player.Inven[a].desc
+      txt := player.Inven[a].name + " - " + player.Inven[a].desc
       txtlen := rl.MeasureText(txt, txU)
 
       txtx := txtcntr - txtlen/2
@@ -1463,13 +1466,13 @@ func drawInvenDetail() { //MARK:DRAW INVENTORY DETAIL
       rl.DrawText(txt, txtx-1, txty+1, txU, rl.Black)
       rl.DrawText(txt, txtx, txty, txU, rl.White)
 
-      rl.DrawTexturePro(gs.Render.Imgs, gs.Player.Inven[a].img, rl.NewRectangle(x, y, siz, siz), gs.Core.Ori, 0, gs.Player.Inven[a].color)
+      rl.DrawTexturePro(render.Imgs, player.Inven[a].img, rl.NewRectangle(x, y, siz, siz), core.Ori, 0, player.Inven[a].color)
 
-      if gs.Player.Inven[a].numof > 1 {
+      if player.Inven[a].numof > 1 {
         txtx2 := int32(x+siz) - txU/2
         txty2 := int32(y+siz) - txU/2
-        rl.DrawText(fmt.Sprint(gs.Player.Inven[a].numof), txtx2-2, txty2-2, txU, rl.Black)
-        rl.DrawText(fmt.Sprint(gs.Player.Inven[a].numof), txtx2, txty2, txU, rl.White)
+        rl.DrawText(fmt.Sprint(player.Inven[a].numof), txtx2-2, txty2-2, txU, rl.Black)
+        rl.DrawText(fmt.Sprint(player.Inven[a].numof), txtx2, txty2, txU, rl.White)
       }
 
       y += siz + bsU/4
@@ -1481,10 +1484,10 @@ func drawInvenDetail() { //MARK:DRAW INVENTORY DETAIL
 
     txt := "you have nothing..."
     txtlen := rl.MeasureText(txt, txU8)
-    rl.DrawText(txt, int32(gs.Core.Cnt.X)-txtlen/2, int32(gs.Core.Cnt.Y)-txU8, txU8, rl.White)
+    rl.DrawText(txt, int32(core.Cnt.X)-txtlen/2, int32(core.Cnt.Y)-txU8, txU8, rl.White)
     txt = "find something"
     txtlen = rl.MeasureText(txt, txU8)
-    rl.DrawText(txt, int32(gs.Core.Cnt.X)-txtlen/2, int32(gs.Core.Cnt.Y)+txU, txU8, rl.White)
+    rl.DrawText(txt, int32(core.Cnt.X)-txtlen/2, int32(core.Cnt.Y)+txU, txU8, rl.White)
   }
 
 }
@@ -1606,36 +1609,36 @@ func drawPlayerInfo() { //MARK:DRAW PLAYER INFO
   }
 
 }
-func drawChainLight() { //MARK:DRAW CHAIN LIGHTNING
 
-  for a := 1; a < len(gs.FX.ChainV2); a++ {
-    rl.DrawLineEx(gs.FX.ChainV2[a], gs.FX.ChainV2[a-1], rF32(2, 12), rl.Fade(ranCyan(), rF32(0.2, 0.5)))
-  }
-  gs.FX.ChainV2 = nil
-  for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].enemies); a++ {
-    if gs.Level.Level[gs.Level.RoomNum].enemies[a].cnt.X > gs.Level.LevRecInner.X && gs.Level.Level[gs.Level.RoomNum].enemies[a].cnt.Y > gs.Level.LevRecInner.Y {
-      gs.FX.ChainV2 = append(gs.FX.ChainV2, gs.Level.Level[gs.Level.RoomNum].enemies[a].cnt)
-    }
-  }
-  gs.FX.ChainLightTimer--
-
-  if gs.FX.ChainLightTimer <= 0 {
-    for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].enemies); a++ {
-      gs.Level.Level[gs.Level.RoomNum].enemies[a].hppause = gs.Core.Fps / 2
-      gs.Level.Level[gs.Level.RoomNum].enemies[a].hp -= 1
-      if gs.Level.Level[gs.Level.RoomNum].enemies[a].hp <= 0 {
-        cntr := gs.Level.Level[gs.Level.RoomNum].enemies[a].cnt
-        addkill(a)
-        gs.Level.Level[gs.Level.RoomNum].enemies[a].off = true
-        makeFX(2, cntr)
-      } else {
-        playEnemyHitAudio(gs.Audio)
-      }
-    }
-    gs.FX.ChainLightOn = false
-  }
-
+func drawChainLight(fx *FXState, level *LevelState, core *CoreState, player *PlayerState, audio *AudioState) { //MARK:DRAW CHAIN LIGHTNING
+	for a := 1; a < len(fx.ChainV2); a++ {
+		rl.DrawLineEx(fx.ChainV2[a], fx.ChainV2[a-1], rF32(2, 12), rl.Fade(ranCyan(), rF32(0.2, 0.5)))
+	}
+	fx.ChainV2 = nil
+	for a := 0; a < len(level.Level[level.RoomNum].enemies); a++ {
+		if level.Level[level.RoomNum].enemies[a].cnt.X > level.LevRecInner.X && level.Level[level.RoomNum].enemies[a].cnt.Y > level.LevRecInner.Y {
+			fx.ChainV2 = append(fx.ChainV2, level.Level[level.RoomNum].enemies[a].cnt)
+		}
+	}
+	fx.ChainLightTimer--
+	if fx.ChainLightTimer <= 0 {
+		for a := 0; a < len(level.Level[level.RoomNum].enemies); a++ {
+			level.Level[level.RoomNum].enemies[a].hppause = core.Fps / 2
+			level.Level[level.RoomNum].enemies[a].hp -= 1
+			if level.Level[level.RoomNum].enemies[a].hp <= 0 {
+				cntr := level.Level[level.RoomNum].enemies[a].cnt
+				addKill(player, *level, a)
+				rl.PlaySound(audio.Sfx[7])
+				level.Level[level.RoomNum].enemies[a].off = true
+				makeFX(2, cntr)
+			} else {
+				playEnemyHitAudio(*audio)
+			}
+		}
+		fx.ChainLightOn = false
+	}
 }
+
 func drawPlayer() { //MARK:DRAW PLAYER
 
   drawRec := gs.Player.Pl.rec
@@ -2282,23 +2285,18 @@ func drawnocam() { //MARK:DRAW NO CAM
 
 }
 
-func drawnoRender() { //MARK:DRAW NO RENDER
-  if gs.Player.InvenOn {
+func drawnoRender(player PlayerState, lvl LevelState, core CoreState, render RenderState) { //MARK:DRAW NO RENDER
+  if player.InvenOn {
     rl.BeginMode2D(gs.Render.Cam2)
 
-    drawInvenDetail()
+    drawInvenDetail(player, lvl, core, render)
 
     rl.EndMode2D()
 
   }
-
-  if gs.Core.Debug {
-    drawDebug()
-  }
-
 }
 
-func drawDebug() { //MARK:DRAW DEBUG
+func drawDebug(gs GameState) { //MARK:DRAW DEBUG
 
   siderec := rl.NewRectangle(0, 0, 300, gs.Core.ScrHF32)
   rl.DrawRectangleRec(siderec, rl.Fade(darkRed(), 0.3))
@@ -2361,35 +2359,32 @@ func drawDebug() { //MARK:DRAW DEBUG
   txtY += txU
   rl.DrawText("hardcore"+" "+fmt.Sprint(gs.Level.Hardcore), txtX, txtY, txU, rl.White)
   txtY += txU
-
 }
-func drawBlokDrec(blok xblok, shadow, blur bool, blurDist float32) { //MARK:DRAW BLOK DREC
 
-  if shadow {
-    shadowRec := blok.drec
-    shadowRec.X -= 5
-    shadowRec.Y += 5
-    rl.DrawTexturePro(gs.Render.Imgs, blok.img, shadowRec, rl.NewVector2(blok.drec.Width/2, blok.drec.Height/2), blok.ro, rl.Fade(rl.Black, 0.8))
-  }
-
-  rl.DrawTexturePro(gs.Render.Imgs, blok.img, blok.drec, rl.NewVector2(blok.drec.Width/2, blok.drec.Height/2), blok.ro, rl.Fade(blok.color, blok.fade))
-  if blur {
-    blurRec := blok.drec
-    blurRec.X -= rF32(-blurDist, blurDist)
-    blurRec.Y -= rF32(-blurDist, blurDist)
-    rl.DrawTexturePro(gs.Render.Imgs, blok.img, blurRec, rl.NewVector2(blok.drec.Width/2, blok.drec.Height/2), blok.ro, rl.Fade(blok.color, rF32(0.05, 0.2)))
-  }
-
-  if gs.Core.Debug {
-    rl.DrawRectangleLinesEx(blok.rec, 0.5, rl.Green)
-    rl.DrawRectangleLinesEx(blok.crec, 1, rl.Blue)
-    rl.DrawRectangleLinesEx(blok.crec2, 2, rl.Red)
-    rl.DrawCircleV(blok.cnt, 4, rl.Red)
-    rl.DrawText(blok.name, blok.rec.ToInt32().X, blok.rec.ToInt32().Y-10, 10, rl.White)
-    rl.DrawText(fmt.Sprint(blok.timer), blok.rec.ToInt32().X, blok.rec.ToInt32().Y+blok.rec.ToInt32().Height, 10, rl.White)
-  }
-
+func drawBlokDrec(render *RenderState, core *CoreState, blok xblok, shadow, blur bool, blurDist float32) { //MARK:DRAW BLOK DREC
+	if shadow {
+		shadowRec := blok.drec
+		shadowRec.X -= 5
+		shadowRec.Y += 5
+		rl.DrawTexturePro(render.Imgs, blok.img, shadowRec, rl.NewVector2(blok.drec.Width/2, blok.drec.Height/2), blok.ro, rl.Fade(rl.Black, 0.8))
+	}
+	rl.DrawTexturePro(render.Imgs, blok.img, blok.drec, rl.NewVector2(blok.drec.Width/2, blok.drec.Height/2), blok.ro, rl.Fade(blok.color, blok.fade))
+	if blur {
+		blurRec := blok.drec
+		blurRec.X -= rF32(-blurDist, blurDist)
+		blurRec.Y -= rF32(-blurDist, blurDist)
+		rl.DrawTexturePro(render.Imgs, blok.img, blurRec, rl.NewVector2(blok.drec.Width/2, blok.drec.Height/2), blok.ro, rl.Fade(blok.color, rF32(0.05, 0.2)))
+	}
+	if core.Debug {
+		rl.DrawRectangleLinesEx(blok.rec, 0.5, rl.Green)
+		rl.DrawRectangleLinesEx(blok.crec, 1, rl.Blue)
+		rl.DrawRectangleLinesEx(blok.crec2, 2, rl.Red)
+		rl.DrawCircleV(blok.cnt, 4, rl.Red)
+		rl.DrawText(blok.name, blok.rec.ToInt32().X, blok.rec.ToInt32().Y-10, 10, rl.White)
+		rl.DrawText(fmt.Sprint(blok.timer), blok.rec.ToInt32().X, blok.rec.ToInt32().Y+blok.rec.ToInt32().Height, 10, rl.White)
+	}
 }
+
 func drawBlok(blok xblok, shadow, blur bool, blurDist float32) { //MARK:DRAW BLOK
 
   if shadow {
@@ -2862,7 +2857,8 @@ func drawUpPlayerProj() { //MARK:DRAW UP PLAYER PROJECTILES
             if gs.Level.Level[gs.Level.RoomNum].enemies[b].hp <= 0 {
               cntr := gs.Level.Level[gs.Level.RoomNum].enemies[b].cnt
               gs.Level.Level[gs.Level.RoomNum].enemies[b].off = true
-              addkill(b)
+              addKill(&gs.Player, gs.Level, b)
+              rl.PlaySound(gs.Audio.Sfx[7])
               makeFX(2, cntr)
             }
 
@@ -2888,7 +2884,7 @@ func drawUpPlayerProj() { //MARK:DRAW UP PLAYER PROJECTILES
               gs.Core.Pause = true
               gs.Level.MinsEND = gs.Level.Mins
               gs.Level.SecsEND = gs.Level.Secs
-              addtime()
+              addTime(&gs.Timing, gs.Level.MinsEND, gs.Level.SecsEND)
               gs.Level.EndgopherRec = rl.NewRectangle(gs.Core.Cnt.X-bsU4, gs.Level.LevRec.Y+gs.Level.LevRec.Height, bsU8, bsU8)
               gs.Level.EndgameT = gs.Core.Fps * 3
               gs.Level.Endgame = true
@@ -2936,7 +2932,7 @@ func drawUpEtc() { //MARK:DRAW UP ETC
       }
       //DRAW BLOK
       if gs.Level.Level[gs.Level.RoomNum].etc[a].name == "turret" {
-        drawBlokDrec(gs.Level.Level[gs.Level.RoomNum].etc[a], true, false, 0)
+        drawBlokDrec(&gs.Render, &gs.Core, gs.Level.Level[gs.Level.RoomNum].etc[a], true, false, 0)
 
         gs.Level.Level[gs.Level.RoomNum].etc[a].ro++
         if gs.Level.Level[gs.Level.RoomNum].etc[a].timer <= 0 {
@@ -2945,7 +2941,7 @@ func drawUpEtc() { //MARK:DRAW UP ETC
         }
       } else if gs.Level.Level[gs.Level.RoomNum].etc[a].name == "spring" {
 
-        drawBlokDrec(gs.Level.Level[gs.Level.RoomNum].etc[a], false, true, 4)
+        drawBlokDrec(&gs.Render, &gs.Core, gs.Level.Level[gs.Level.RoomNum].etc[a], false, true, 4)
 
         if rl.CheckCollisionRecs(gs.Player.Pl.crec, gs.Level.Level[gs.Level.RoomNum].etc[a].crec) && gs.Level.Level[gs.Level.RoomNum].etc[a].timer == 0 {
           gs.Level.Level[gs.Level.RoomNum].etc[a].timer = gs.Core.Fps * 3
@@ -2977,12 +2973,12 @@ func drawUpEtc() { //MARK:DRAW UP ETC
         }
 
       } else if gs.Level.Level[gs.Level.RoomNum].etc[a].name == "gascloudtrap" {
-        drawBlokDrec(gs.Level.Level[gs.Level.RoomNum].etc[a], false, true, 4)
+        drawBlokDrec(&gs.Render,&gs.Core,gs.Level.Level[gs.Level.RoomNum].etc[a], false, true, 4)
         gs.Level.Level[gs.Level.RoomNum].etc[a].ro++
 
         if rl.CheckCollisionRecs(gs.Player.Pl.crec, gs.Level.Level[gs.Level.RoomNum].etc[a].rec) && gs.Level.Level[gs.Level.RoomNum].etc[a].timer == 0 {
           gs.Level.Level[gs.Level.RoomNum].etc[a].timer = gs.Core.Fps * 3
-          makegascloud(gs.Level.Level[gs.Level.RoomNum].etc[a].cnt)
+          makeGasCloud(&gs.Render, &gs.Level, gs.Level.Level[gs.Level.RoomNum].etc[a].cnt)
           rl.PlaySound(gs.Audio.Sfx[20])
         }
 
@@ -3002,7 +2998,7 @@ func drawUpEtc() { //MARK:DRAW UP ETC
             gs.Player.Pl.poison = true
             gs.Player.Pl.poisonCount = 2
             gs.Player.Pl.poisonT = gs.Core.Fps * 3
-            txtHere("poisoned", gs.Player.Pl.rec)
+            txtHere(&gs.UI,"poisoned", gs.Player.Pl.rec)
             rl.PlaySound(gs.Audio.Sfx[23])
           }
         }
@@ -3059,14 +3055,14 @@ func drawUpEtc() { //MARK:DRAW UP ETC
               gs.Player.Pl.poison = true
               gs.Player.Pl.poisonCount = 2
               gs.Player.Pl.poisonT = gs.Core.Fps * 3
-              txtHere("poisoned", gs.Player.Pl.rec)
+              txtHere(&gs.UI, "poisoned", gs.Player.Pl.rec)
             }
           }
         }
 
       } else if gs.Level.Level[gs.Level.RoomNum].etc[a].name == "footprints" {
 
-        drawBlokDrec(gs.Level.Level[gs.Level.RoomNum].etc[a], false, true, 4)
+        drawBlokDrec(&gs.Render, &gs.Core,gs.Level.Level[gs.Level.RoomNum].etc[a], false, true, 4)
 
         gs.Level.Level[gs.Level.RoomNum].etc[a].fade -= 0.01
         if gs.Level.Level[gs.Level.RoomNum].etc[a].fade <= 0 {
@@ -3099,7 +3095,7 @@ func drawUpEtc() { //MARK:DRAW UP ETC
         }
 
       } else if gs.Level.Level[gs.Level.RoomNum].etc[a].name == "spear" {
-        drawBlokDrec(gs.Level.Level[gs.Level.RoomNum].etc[a], false, true, 4)
+        drawBlokDrec(&gs.Render,&gs.Core,gs.Level.Level[gs.Level.RoomNum].etc[a], false, true, 4)
 
         if rl.CheckCollisionRecs(gs.Player.Pl.crec, gs.Level.Level[gs.Level.RoomNum].etc[a].crec) {
           hitPL(0, 2)
@@ -3183,9 +3179,9 @@ func drawUpEtc() { //MARK:DRAW UP ETC
               gs.Player.Mods.key = false
             }
             delInven(&gs.Player,"key")
-            makechestitem(a)
+            makeChestItem(&gs.Render, &gs.Level, a)
           } else if rl.CheckCollisionRecs(gs.Player.Pl.arec, gs.Level.Level[gs.Level.RoomNum].etc[a].crec) && !gs.Player.Mods.key && !gs.Level.Level[gs.Level.RoomNum].etc[a].onoffswitch && gs.Level.Level[gs.Level.RoomNum].etc[a].txtT == 0 {
-            txtHere("locked", gs.Level.Level[gs.Level.RoomNum].etc[a].rec)
+            txtHere(&gs.UI, "locked", gs.Level.Level[gs.Level.RoomNum].etc[a].rec)
             gs.Level.Level[gs.Level.RoomNum].etc[a].txtT = gs.Core.Fps * 3
             rl.PlaySound(gs.Audio.Sfx[25])
           }
@@ -3537,7 +3533,8 @@ func drawUpEnemies() { //MARK:DRAW UP ENEMIES
             gs.Level.Level[gs.Level.RoomNum].enemies[a].hp -= gs.Player.Pl.atkDMG
             if gs.Level.Level[gs.Level.RoomNum].enemies[a].hp <= 0 {
               cntr := gs.Level.Level[gs.Level.RoomNum].enemies[a].cnt
-              addkill(a)
+              addKill(&gs.Player, gs.Level, a)
+              rl.PlaySound(gs.Audio.Sfx[7])
               gs.Level.Level[gs.Level.RoomNum].enemies[a].off = true
               makeFX(2, cntr)
             } else {
@@ -3664,7 +3661,7 @@ func drawUpBoss() { //MARK: DRAW UP BOSS
           if !gs.Level.Endgame {
             gs.Level.MinsEND = gs.Level.Mins
             gs.Level.SecsEND = gs.Level.Secs
-            addtime()
+            addTime(&gs.Timing, gs.Level.MinsEND, gs.Level.SecsEND)
             gs.Level.Endgame = true
           }
         }
@@ -3679,30 +3676,28 @@ func drawUpBoss() { //MARK: DRAW UP BOSS
 }
 
 // MARK: CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK
-func checkcontroller() { //MARK:CHECK CONTROLLER
-
-  gs.Input.IsController = rl.IsGamepadAvailable(0)
-  if gs.Input.IsController && gs.Input.ControllerOn {
-    gs.Input.UseController = true
-  } else if !gs.Input.IsController {
-    gs.Input.UseController = false
-    gs.Input.ControllerDisconnect = true
-  }
-
-  if gs.Input.IsController {
-    gs.Input.ControllerOn = true
-    gs.Input.ControllerDisconnect = false
-    gs.Input.ControllerWasOn = true
-  }
-
-  if gs.Input.ControllerDisconnect && gs.Input.ControllerWasOn && !gs.Core.Pause {
-    gs.Input.ControllerOn = false
-    gs.Input.ControllerWasOn = false
-    gs.UI.OptionsOn = true
-    gs.UI.OptionNum = 0
-    gs.Core.Pause = true
-  }
+func checkController(input *InputState, ui *UIState, core *CoreState) { //MARK:CHECK CONTROLLER
+	input.IsController = rl.IsGamepadAvailable(0)
+	if input.IsController && input.ControllerOn {
+		input.UseController = true
+	} else if !input.IsController {
+		input.UseController = false
+		input.ControllerDisconnect = true
+	}
+	if input.IsController {
+		input.ControllerOn = true
+		input.ControllerDisconnect = false
+		input.ControllerWasOn = true
+	}
+	if input.ControllerDisconnect && input.ControllerWasOn && !core.Pause {
+		input.ControllerOn = false
+		input.ControllerWasOn = false
+		ui.OptionsOn = true
+		ui.OptionNum = 0
+		core.Pause = true
+	}
 }
+
 func checkNextMoveV2InnerRec(
   cnt rl.Vector2,
   velx, velxy float32,
@@ -3787,19 +3782,20 @@ func checkNextMove(rec rl.Rectangle, velx, vely float32, destroyEtc bool) bool {
   return canmove
 
 }
-func checkInnerBloksExits(roomN int, rec rl.Rectangle) bool { //MARK:CHECK INNER BLOK EXITS
+
+func checkInnerBloksExits(lvl LevelState, roomN int, rec rl.Rectangle) bool { //MARK:CHECK INNER BLOK EXITS
 
   canadd := true
 
-  for a := 0; a < len(gs.Level.Level[roomN].doorExitRecs); a++ {
-    if rl.CheckCollisionRecs(rec, gs.Level.Level[roomN].doorExitRecs[a]) {
+  for a := 0; a < len(lvl.Level[roomN].doorExitRecs); a++ {
+    if rl.CheckCollisionRecs(rec, lvl.Level[roomN].doorExitRecs[a]) {
       canadd = false
     }
   }
 
   if canadd {
-    for a := 0; a < len(gs.Level.Level[roomN].innerBloks); a++ {
-      if rl.CheckCollisionRecs(rec, gs.Level.Level[roomN].innerBloks[a].rec) {
+    for a := 0; a < len(lvl.Level[roomN].innerBloks); a++ {
+      if rl.CheckCollisionRecs(rec, lvl.Level[roomN].innerBloks[a].rec) {
         canadd = false
       }
     }
@@ -3807,6 +3803,7 @@ func checkInnerBloksExits(roomN int, rec rl.Rectangle) bool { //MARK:CHECK INNER
 
   return canadd
 }
+
 func checkMoveBlok(blokNum int) bool { //MARK:CHECK MOVE BLOK
 
   canmove := true
@@ -3949,62 +3946,54 @@ func checkplayermove(direc int) bool { //MARK:CHECK PLAYER MOVE
 }
 
 // MARK: FIND FIND FIND FIND FIND FIND FIND FIND FIND FIND FIND FIND FIND FIND FIND FIND FIND
-func findRecPoswithSpacing(wid, space float32, numRoom int) (rec rl.Rectangle, found bool) { //MARK: FIND REC POS WITH SPACING
-
-  countbreak := 500
-  found = true
-
-  wid2 := wid + (space * 2)
-
-  for {
-    rec = rl.NewRectangle(rF32(gs.Level.LevRecInner.X, gs.Level.LevRecInner.X+gs.Level.LevRecInner.Width-wid2), rF32(gs.Level.LevRecInner.Y, gs.Level.LevRecInner.Y+gs.Level.LevRecInner.Width-wid2), wid2, wid2)
-    canadd := true
-
-    for a := 0; a < len(gs.Level.Level[numRoom].doorExitRecs); a++ {
-      if rl.CheckCollisionRecs(rec, gs.Level.Level[numRoom].doorExitRecs[a]) {
-        canadd = false
-      }
-    }
-    if canadd {
-      for a := 0; a < len(gs.Level.Level[numRoom].movBloks); a++ {
-        if rl.CheckCollisionRecs(rec, gs.Level.Level[numRoom].movBloks[a].rec) {
-          canadd = false
-        }
-      }
-    }
-    if canadd {
-      for a := 0; a < len(gs.Level.Level[numRoom].innerBloks); a++ {
-        if rl.CheckCollisionRecs(rec, gs.Level.Level[numRoom].innerBloks[a].rec) {
-          canadd = false
-        }
-      }
-    }
-    if canadd {
-      for a := 0; a < len(gs.Level.Level[numRoom].etc); a++ {
-        if rl.CheckCollisionRecs(rec, gs.Level.Level[numRoom].etc[a].rec) && gs.Level.Level[numRoom].etc[a].solid {
-          canadd = false
-        }
-      }
-    }
-
-    countbreak--
-    if countbreak == 0 || canadd {
-
-      rec.X += space
-      rec.Y += space
-      rec.Width -= space * 2
-      rec.Height -= space * 2
-
-      if countbreak == 0 {
-        found = false
-      }
-      break
-    }
-
-  }
-
-  return rec, found
+func findRecPoswithSpacing(level *LevelState, wid, space float32, numRoom int) (rec rl.Rectangle, found bool) { //MARK: FIND REC POS WITH SPACING
+	countbreak := 500
+	found = true
+	wid2 := wid + (space * 2)
+	for {
+		rec = rl.NewRectangle(rF32(level.LevRecInner.X, level.LevRecInner.X+level.LevRecInner.Width-wid2), rF32(level.LevRecInner.Y, level.LevRecInner.Y+level.LevRecInner.Width-wid2), wid2, wid2)
+		canadd := true
+		for a := 0; a < len(level.Level[numRoom].doorExitRecs); a++ {
+			if rl.CheckCollisionRecs(rec, level.Level[numRoom].doorExitRecs[a]) {
+				canadd = false
+			}
+		}
+		if canadd {
+			for a := 0; a < len(level.Level[numRoom].movBloks); a++ {
+				if rl.CheckCollisionRecs(rec, level.Level[numRoom].movBloks[a].rec) {
+					canadd = false
+				}
+			}
+		}
+		if canadd {
+			for a := 0; a < len(level.Level[numRoom].innerBloks); a++ {
+				if rl.CheckCollisionRecs(rec, level.Level[numRoom].innerBloks[a].rec) {
+					canadd = false
+				}
+			}
+		}
+		if canadd {
+			for a := 0; a < len(level.Level[numRoom].etc); a++ {
+				if rl.CheckCollisionRecs(rec, level.Level[numRoom].etc[a].rec) && level.Level[numRoom].etc[a].solid {
+					canadd = false
+				}
+			}
+		}
+		countbreak--
+		if countbreak == 0 || canadd {
+			rec.X += space
+			rec.Y += space
+			rec.Width -= space * 2
+			rec.Height -= space * 2
+			if countbreak == 0 {
+				found = false
+			}
+			break
+		}
+	}
+	return rec, found
 }
+
 func findRecPos(wid float32, numRoom int) (rec rl.Rectangle, found bool) { //MARK: FIND REC POS
 
   countbreak := 500
@@ -4045,34 +4034,31 @@ func findRecPos(wid float32, numRoom int) (rec rl.Rectangle, found bool) { //MAR
 
   return rec, found
 }
-func findRanRecLoc(w, h float32, roomNum int) (tl rl.Vector2) { //MARK: FIND RANDOM RECTANGLE LOCATION
 
-  v2 := rl.Vector2{}
-  countbreak := 100
-  for {
-    v2 = rl.NewVector2(gs.Level.LevRecInner.X+bsU2, gs.Level.LevRecInner.Y+bsU2)
-    wid := gs.Level.LevRecInner.Width - bsU4
-    heig := wid
-    wid -= w
-    heig -= h
-    v2.X += rF32(0, wid)
-    v2.Y += rF32(0, heig)
-
-    checkrec := rl.NewRectangle(v2.X, v2.Y, w, h)
-    canadd := true
-    for a := 0; a < len(gs.Level.Level[roomNum].doorExitRecs); a++ {
-      if rl.CheckCollisionRecs(checkrec, gs.Level.Level[roomNum].doorExitRecs[a]) {
-        canadd = false
-      }
-    }
-
-    countbreak--
-    if canadd || countbreak == 0 {
-      break
-    }
-  }
-
-  return v2
+func findRanRecLoc(level *LevelState, w, h float32, roomNum int) (tl rl.Vector2) { //MARK: FIND RANDOM RECTANGLE LOCATION
+	v2 := rl.Vector2{}
+	countbreak := 100
+	for {
+		v2 = rl.NewVector2(level.LevRecInner.X+bsU2, level.LevRecInner.Y+bsU2)
+		wid := level.LevRecInner.Width - bsU4
+		heig := wid
+		wid -= w
+		heig -= h
+		v2.X += rF32(0, wid)
+		v2.Y += rF32(0, heig)
+		checkrec := rl.NewRectangle(v2.X, v2.Y, w, h)
+		canadd := true
+		for a := 0; a < len(level.Level[roomNum].doorExitRecs); a++ {
+			if rl.CheckCollisionRecs(checkrec, level.Level[roomNum].doorExitRecs[a]) {
+				canadd = false
+			}
+		}
+		countbreak--
+		if canadd || countbreak == 0 {
+			break
+		}
+	}
+	return v2
 }
 
 // MARK: MOVE MOVE MOVE MOVE MOVE MOVE MOVE MOVE MOVE MOVE MOVE MOVE MOVE MOVE MOVE MOVE MOVE
@@ -4133,7 +4119,7 @@ func moveboss() { //MARK:MOVE BOSS
             if !gs.Level.Endgame {
               gs.Level.MinsEND = gs.Level.Mins
               gs.Level.SecsEND = gs.Level.Secs
-              addtime()
+              addTime(&gs.Timing, gs.Level.MinsEND, gs.Level.SecsEND)
               gs.Level.Endgame = true
             }
           }
@@ -4153,7 +4139,7 @@ func moveboss() { //MARK:MOVE BOSS
           if !gs.Level.Endgame {
             gs.Level.MinsEND = gs.Level.Mins
             gs.Level.SecsEND = gs.Level.Secs
-            addtime()
+            addTime(&gs.Timing, gs.Level.MinsEND, gs.Level.SecsEND)
             gs.Level.Endgame = true
           }
           rl.PlaySound(gs.Audio.Sfx[29])
@@ -4171,7 +4157,7 @@ func moveboss() { //MARK:MOVE BOSS
             if !gs.Level.Endgame {
               gs.Level.MinsEND = gs.Level.Mins
               gs.Level.SecsEND = gs.Level.Secs
-              addtime()
+              addTime(&gs.Timing, gs.Level.MinsEND, gs.Level.SecsEND)
               gs.Level.Endgame = true
             }
           }
@@ -4193,7 +4179,7 @@ func moveboss() { //MARK:MOVE BOSS
             if !gs.Level.Endgame {
               gs.Level.MinsEND = gs.Level.Mins
               gs.Level.SecsEND = gs.Level.Secs
-              addtime()
+              addTime(&gs.Timing, gs.Level.MinsEND, gs.Level.SecsEND)
               gs.Level.Endgame = true
             }
             rl.PlaySound(gs.Audio.Sfx[29])
@@ -4216,7 +4202,7 @@ func moveboss() { //MARK:MOVE BOSS
             if !gs.Level.Endgame {
               gs.Level.MinsEND = gs.Level.Mins
               gs.Level.SecsEND = gs.Level.Secs
-              addtime()
+              addTime(&gs.Timing, gs.Level.MinsEND, gs.Level.SecsEND)
               gs.Level.Endgame = true
             }
           }
@@ -4275,6 +4261,7 @@ func moveFollow(v2, targetV2 rl.Vector2, vel float32) (velx, vely float32) { //M
 
   return velx, vely
 }
+
 func moveenemy(num int) { //MARK:MOVE ENEMY
 
   checkRec := gs.Level.Level[gs.Level.RoomNum].enemies[num].rec
@@ -4349,7 +4336,8 @@ func moveenemy(num int) { //MARK:MOVE ENEMY
           gs.Level.Level[gs.Level.RoomNum].enemies[num].hp--
           if gs.Level.Level[gs.Level.RoomNum].enemies[num].hp <= 0 {
             cntr := gs.Level.Level[gs.Level.RoomNum].enemies[num].cnt
-            addkill(num)
+            addKill(&gs.Player, gs.Level, num)
+            rl.PlaySound(gs.Audio.Sfx[7])
             gs.Level.Level[gs.Level.RoomNum].enemies[num].off = true
             makeFX(2, cntr)
           } else {
@@ -4366,7 +4354,8 @@ func moveenemy(num int) { //MARK:MOVE ENEMY
         gs.Level.Level[gs.Level.RoomNum].enemies[num].hp--
         if gs.Level.Level[gs.Level.RoomNum].enemies[num].hp <= 0 {
           cntr := gs.Level.Level[gs.Level.RoomNum].enemies[num].cnt
-          addkill(num)
+          addKill(&gs.Player, gs.Level, num)
+          rl.PlaySound(gs.Audio.Sfx[7])
           gs.Level.Level[gs.Level.RoomNum].enemies[num].off = true
           makeFX(2, cntr)
         } else {
@@ -4380,7 +4369,8 @@ func moveenemy(num int) { //MARK:MOVE ENEMY
           gs.Level.Level[gs.Level.RoomNum].enemies[num].hp--
           if gs.Level.Level[gs.Level.RoomNum].enemies[num].hp <= 0 {
             cntr := gs.Level.Level[gs.Level.RoomNum].enemies[num].cnt
-            addkill(num)
+            addKill(&gs.Player, gs.Level, num)
+            rl.PlaySound(gs.Audio.Sfx[7])
             gs.Level.Level[gs.Level.RoomNum].enemies[num].off = true
             makeFX(2, cntr)
           } else {
@@ -4400,7 +4390,8 @@ func moveenemy(num int) { //MARK:MOVE ENEMY
         if gs.Level.Level[gs.Level.RoomNum].etc[a].name == "airbomb" && rl.CheckCollisionRecs(gs.Level.Level[gs.Level.RoomNum].etc[a].crec, gs.Level.Level[gs.Level.RoomNum].enemies[num].crec) {
           gs.Level.Level[gs.Level.RoomNum].enemies[num].hp = 0
           cntr := gs.Level.Level[gs.Level.RoomNum].enemies[num].cnt
-          addkill(num)
+          addKill(&gs.Player, gs.Level, num)
+          rl.PlaySound(gs.Audio.Sfx[7])
           gs.Level.Level[gs.Level.RoomNum].enemies[num].off = true
           makeFX(2, cntr)
         }
@@ -4414,7 +4405,8 @@ func moveenemy(num int) { //MARK:MOVE ENEMY
           gs.Level.Level[gs.Level.RoomNum].enemies[num].hp--
           if gs.Level.Level[gs.Level.RoomNum].enemies[num].hp <= 0 {
             cntr := gs.Level.Level[gs.Level.RoomNum].enemies[num].cnt
-            addkill(num)
+            addKill(&gs.Player, gs.Level, num)
+            rl.PlaySound(gs.Audio.Sfx[7])
             gs.Level.Level[gs.Level.RoomNum].enemies[num].off = true
             makeFX(2, cntr)
           } else {
@@ -4667,29 +4659,26 @@ func savesettings() { //MARK:SAVE SETTINGS
   }
 }
 
-func addtime() { //MARK:ADD TIME
-
-  totaltime := gs.Level.MinsEND*60 + gs.Level.SecsEND
-
-  checktime := totaltime
-  canadd := false
-  changenum := 0
-
-  for i := 0; i < len(gs.Timing.Times); i++ {
-    if checktime < gs.Timing.Times[i] {
-      canadd = true
-      checktime = gs.Timing.Times[i]
-      changenum = i
-    }
-  }
-  if canadd {
-    gs.Timing.Times[changenum] = totaltime
-    sort.Ints(gs.Timing.Times)
-    gs.Timing.BestTime = true
-    saveTimes(gs.Timing)
-  }
-
+func addTime(timing *TimingState, minsEND int, secsEND int) { //MARK:ADD TIME
+	totaltime := minsEND*60 + secsEND
+	checktime := totaltime
+	canadd := false
+	changenum := 0
+	for i := 0; i < len(timing.Times); i++ {
+		if checktime < timing.Times[i] {
+			canadd = true
+			checktime = timing.Times[i]
+			changenum = i
+		}
+	}
+	if canadd {
+		timing.Times[changenum] = totaltime
+		sort.Ints(timing.Times)
+		timing.BestTime = true
+		saveTimes(*timing)
+	}
 }
+
 func restartgame() { //MARK: RESTART GAME
 
   for a := 0; a < len(gs.Level.Level); a++ {
@@ -5501,7 +5490,7 @@ func collectInven(blokNum int) { //MARK:COLLECT INVENTORY
     case "fish":
       gs.Player.Mods.flood = true
       gs.FX.FloodRec = rl.NewRectangle(0, gs.Core.ScrHF32+bsU, gs.Core.ScrWF32, gs.Core.ScrHF32)
-      makefish()
+      makeFish(&gs.FX, gs.Core, gs.Render)
     case "cherry":
       if gs.Player.Mods.cherryN < gs.Player.Max.cherry {
         gs.Player.Mods.cherryN++
@@ -5692,7 +5681,7 @@ func birthdaycake() { //MARK:BIRTHDAY CAKE
   }
 
 }
-func txtHere(txt string, rec rl.Rectangle) { //MARK:TEXT HERE
+func txtHere(ui *UIState, txt string, rec rl.Rectangle) { //MARK:TEXT HERE
 
   ztxt := xtxt{}
   ztxt.txt = txt
@@ -5708,37 +5697,29 @@ func txtHere(txt string, rec rl.Rectangle) { //MARK:TEXT HERE
   ztxt.y = y
   ztxt.onoff = true
 
-  gs.UI.GameTxt = append(gs.UI.GameTxt, ztxt)
-
+  ui.GameTxt = append(ui.GameTxt, ztxt)
 }
 
-func onoff(x32, y32 int32, siz float32, name bool) bool { //MARK: ON/OFF
-
-  x := float32(x32)
-  y := float32(y32)
-
-  rec := rl.NewRectangle(x, y, siz*2, siz)
-  rl.DrawRectangleRec(rec, rl.Black)
-  rec2 := rec
-  rec2.Width = rec2.Width / 2
-  if name {
-    rec2.X += siz
-    rl.DrawRectangleRec(rec2, rl.Green)
-  } else {
-    rl.DrawRectangleRec(rec2, rl.Red)
-  }
-
-  rl.DrawRectangleLinesEx(rec, 1, rl.White)
-
-  if rl.CheckCollisionPointRec(gs.Core.Mousev2cam, rec) {
-
-    if rl.IsMouseButtonPressed(rl.MouseLeftButton) {
-      name = !name
-    }
-  }
-
-  return name
-
+func onoff(core *CoreState, x32, y32 int32, siz float32, name bool) bool { //MARK: ON/OFF
+	x := float32(x32)
+	y := float32(y32)
+	rec := rl.NewRectangle(x, y, siz*2, siz)
+	rl.DrawRectangleRec(rec, rl.Black)
+	rec2 := rec
+	rec2.Width = rec2.Width / 2
+	if name {
+		rec2.X += siz
+		rl.DrawRectangleRec(rec2, rl.Green)
+	} else {
+		rl.DrawRectangleRec(rec2, rl.Red)
+	}
+	rl.DrawRectangleLinesEx(rec, 1, rl.White)
+	if rl.CheckCollisionPointRec(core.Mousev2cam, rec) {
+		if rl.IsMouseButtonPressed(rl.MouseLeftButton) {
+			name = !name
+		}
+	}
+	return name
 }
 
 func clearInven(player *PlayerState, name string) { //MARK:CLEAR INVEN
@@ -5788,7 +5769,7 @@ func escapeplayer() { //MARK:ESCAPE PLAYER
     upPlayerRec(&gs.Player.Pl)
     if gs.Player.Pl.cnt.Y <= gs.Level.LevRecInner.Y {
       gs.Player.Escaped = true
-      upRoomChange()
+      upRoomChange(&gs.Player, &gs.Enemies, &gs.FX, &gs.Core, &gs.Level, &gs.Render)
       gs.Player.Pl.hp = 2
     }
 
@@ -5932,24 +5913,23 @@ func hitPL(numEnProj, numType int) { //MARK:HIT PLAYER
 
 }
 
-func addkill(num int) { //MARK:ADD KILL
-  switch gs.Level.Level[gs.Level.RoomNum].enemies[num].name {
+func addKill(player *PlayerState, lvl LevelState, num int) { //MARK:ADD KILL
+  switch lvl.Level[lvl.RoomNum].enemies[num].name {
   case "rabbit1":
-    gs.Player.Kills.bunnies++
+    player.Kills.bunnies++
   case "bat":
-    gs.Player.Kills.bats++
+    player.Kills.bats++
   case "mushroom":
-    gs.Player.Kills.mushrooms++
+    player.Kills.mushrooms++
   case "ghost":
-    gs.Player.Kills.ghosts++
+    player.Kills.ghosts++
   case "spikehog":
-    gs.Player.Kills.spikehogs++
+    player.Kills.spikehogs++
   case "rock":
-    gs.Player.Kills.rocks++
+    player.Kills.rocks++
   case "slime":
-    gs.Player.Kills.slimes++
+    player.Kills.slimes++
   }
-  rl.PlaySound(gs.Audio.Sfx[7])
 }
 
 func txtSold(ui *UIState, level LevelState, name string) { //MARK:TEXT SOLD
@@ -6009,10 +5989,10 @@ func up() { //MARK:UP
   if !gs.Core.Pause {
     uplevel()
     upplayer()
-    timers()
+    timers(&gs.Shop, &gs.Level, &gs.Core)
   }
 
-  checkcontroller()
+  checkController(&gs.Input, &gs.UI, &gs.Core)
 
   if gs.Input.KeypressT > 0 {
     gs.Input.KeypressT--
@@ -6210,7 +6190,7 @@ func upPlayerMods() { //MARK:UP PLAYER MODS
       if gs.Player.Mods.snowon {
         gs.Player.Mods.snowon = false
       } else {
-        makesnow()
+        makeSnow(&gs.Core, &gs.Level, &gs.Render, &gs.FX)
         gs.Player.Mods.snowon = true
       }
       gs.Player.Mods.santaT = rI32(7, 21) * gs.Core.Fps
@@ -6227,38 +6207,34 @@ func upPlayerMods() { //MARK:UP PLAYER MODS
 
 }
 
-func upRoomChange() { //MARK:UP ROOM CHANGE
-
-  gs.Player.PlProj = nil
-  gs.Enemies.EnProj = nil
-  gs.FX.Fx = nil
-
-  //FLOOD
-  if gs.Player.Mods.flood {
-    gs.Player.Pl.underWater = false
-    gs.FX.FloodRec = rl.NewRectangle(0, gs.Core.ScrHF32+bsU, gs.Core.ScrWF32, gs.Core.ScrHF32)
-    makefish()
-  }
-  //ARMOR RECHARGE
-  if gs.Player.Mods.recharge && gs.Player.Mods.armorN > 0 {
-    gs.Player.Pl.rechargeN++
-    if gs.Player.Pl.rechargeN == 2 {
-      gs.Player.Pl.rechargeN = 0
-      if gs.Player.Pl.armor < gs.Player.Pl.armorMax {
-        gs.Player.Pl.armor++
-      }
-    }
-  }
-
-  //PEACE PAUSE
-  if gs.Player.Mods.peace {
-    gs.Player.Pl.peaceT = gs.Core.Fps * 2
-  }
-  //ANCHOR PAUSE
-  if gs.Player.Mods.anchor {
-    gs.Level.AnchorT = gs.Core.Fps * 2
-  }
-
+func upRoomChange(player *PlayerState, enemies *EnemyState, fx *FXState, core *CoreState, level *LevelState, render *RenderState) { //MARK:UP ROOM CHANGE
+	player.PlProj = nil
+	enemies.EnProj = nil
+	fx.Fx = nil
+	//FLOOD
+	if player.Mods.flood {
+		player.Pl.underWater = false
+		fx.FloodRec = rl.NewRectangle(0, core.ScrHF32+bsU, core.ScrWF32, core.ScrHF32)
+		makeFish(fx, *core, *render)
+	}
+	//ARMOR RECHARGE
+	if player.Mods.recharge && player.Mods.armorN > 0 {
+		player.Pl.rechargeN++
+		if player.Pl.rechargeN == 2 {
+			player.Pl.rechargeN = 0
+			if player.Pl.armor < player.Pl.armorMax {
+				player.Pl.armor++
+			}
+		}
+	}
+	//PEACE PAUSE
+	if player.Mods.peace {
+		player.Pl.peaceT = core.Fps * 2
+	}
+	//ANCHOR PAUSE
+	if player.Mods.anchor {
+		level.AnchorT = core.Fps * 2
+	}
 }
 
 func upplayer() { //MARK:UP PLAYER
@@ -6383,7 +6359,7 @@ func upplayer() { //MARK:UP PLAYER
     if !rl.CheckCollisionPointRec(gs.Player.Pl.cnt, gs.Level.LevRec) {
       gs.Level.RoomChanged = true
       gs.Level.RoomChangedTimer = gs.Core.Fps / 2
-      upRoomChange()
+      upRoomChange(&gs.Player, &gs.Enemies, &gs.FX, &gs.Core, &gs.Level, &gs.Render)
       cntCompanion := gs.Player.Pl.cnt
       if gs.Player.Pl.cnt.X <= gs.Level.LevX {
         for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].doorSides); a++ {
@@ -6518,39 +6494,39 @@ func makeaudio() { //MARK:MAKE AUDIO
   upVolume(gs.Audio)
 
 }
-func makechestitem(num int) { //MARK:MAKE CHEST ITEM
 
-  newcnt := gs.Level.Level[gs.Level.RoomNum].etc[num].cnt
-  newcnt.Y -= bsU2
-  zblok := makeBlokGeneric(bsU+bsU/2, newcnt)
-  choose := rInt(0, len(gs.Render.Gems))
-  zblok.onoff = true
-  zblok.numof = 1
-  zblok.name = "gem"
-  zblok.color = rl.White
-  zblok.img = gs.Render.Gems[choose]
-  switch choose {
-  case 0:
-    zblok.numCoins = 5
-  case 1:
-    zblok.numCoins = 6
-  case 2:
-    zblok.numCoins = 7
-  case 3:
-    zblok.numCoins = 8
-  case 4:
-    zblok.numCoins = 9
-  case 5:
-    zblok.numCoins = 10
-  case 6:
-    zblok.numCoins = 11
-  case 7:
-    zblok.numCoins = 12
-  }
-
-  gs.Level.Level[gs.Level.RoomNum].etc = append(gs.Level.Level[gs.Level.RoomNum].etc, zblok)
+func makeChestItem(render *RenderState, level *LevelState, num int) { //MARK:MAKE CHEST ITEM
+	newcnt := level.Level[level.RoomNum].etc[num].cnt
+	newcnt.Y -= bsU2
+	zblok := makeBlokGeneric(bsU+bsU/2, newcnt)
+	choose := rInt(0, len(render.Gems))
+	zblok.onoff = true
+	zblok.numof = 1
+	zblok.name = "gem"
+	zblok.color = rl.White
+	zblok.img = render.Gems[choose]
+	switch choose {
+	case 0:
+		zblok.numCoins = 5
+	case 1:
+		zblok.numCoins = 6
+	case 2:
+		zblok.numCoins = 7
+	case 3:
+		zblok.numCoins = 8
+	case 4:
+		zblok.numCoins = 9
+	case 5:
+		zblok.numCoins = 10
+	case 6:
+		zblok.numCoins = 11
+	case 7:
+		zblok.numCoins = 12
+	}
+	level.Level[level.RoomNum].etc = append(level.Level[level.RoomNum].etc, zblok)
 }
-func maketimes() { //MARK: MAKE TIMES
+
+func makeTimes(time *TimingState) { //MARK: MAKE TIMES
 
   contents, err := os.ReadFile("etc/sc.000")
   if err != nil {
@@ -6561,11 +6537,12 @@ func maketimes() { //MARK: MAKE TIMES
 
   for i := 0; i < len(txtTimes); i++ {
     num, _ := strconv.Atoi(txtTimes[i])
-    gs.Timing.Times = append(gs.Timing.Times, num)
-    sort.Ints(gs.Timing.Times)
+    time.Times = append(time.Times, num)
+    sort.Ints(time.Times)
   }
 
 }
+
 func makesettings() { //MARK: MAKE SETTINGS
 
   contents, err := os.ReadFile("etc/st.000")
@@ -6653,7 +6630,7 @@ func makeshop() { //MARK: MAKE SHOP
     siz := bsU8
 
     canadd := true
-    zblok.rec, canadd = findRecPoswithSpacing(siz, bsU4, gs.Level.ShopRoomNum)
+    zblok.rec, canadd = findRecPoswithSpacing(&gs.Level, siz, bsU4, gs.Level.ShopRoomNum)
     zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Width/2)
     zblok.crec = zblok.rec
     zblok.crec.X += zblok.crec.Width / 8
@@ -7092,7 +7069,7 @@ func makeendlevel() { //MARK: MAKE END LEVEL
   if flipcoin() {
     zblok := makeBlokGenNoRecNoCntr()
     canadd := true
-    zblok.rec, canadd = findRecPoswithSpacing(bsU2, bsU/2, 0)
+    zblok.rec, canadd = findRecPoswithSpacing(&gs.Level, bsU2, bsU/2, 0)
     zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Width/2)
     zblok.name = "switch"
     zblok.numType = roll6()
@@ -7113,7 +7090,7 @@ func makeendlevel() { //MARK: MAKE END LEVEL
   if flipcoin() {
     zblok := makeBlokGenNoRecNoCntr()
     canadd := true
-    zblok.rec, canadd = findRecPoswithSpacing(bsU2, bsU/2, 0)
+    zblok.rec, canadd = findRecPoswithSpacing(&gs.Level, bsU2, bsU/2, 0)
     zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Width/2)
     zblok.name = "switch"
     zblok.numType = roll6()
@@ -7158,7 +7135,7 @@ func makeendlevel() { //MARK: MAKE END LEVEL
   for {
     zblok := makeBlokGenNoRecNoCntr()
     canadd := true
-    zblok.rec, canadd = findRecPoswithSpacing(bsU2, bsU/2, 0)
+    zblok.rec, canadd = findRecPoswithSpacing(&gs.Level, bsU2, bsU/2, 0)
     zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Width/2)
     zblok.solid = true
     zblok.onoff = true
@@ -7177,7 +7154,7 @@ func makeendlevel() { //MARK: MAKE END LEVEL
 
   makeInnerBloks()
   makemovebloks()
-  makeblades()
+  makeBlades(&gs.Level, gs.Render.Blades)
   maketurrets()
   makespears()
   makespikes()
@@ -7620,12 +7597,12 @@ func makelevel() { //MARK:MAKE LEVEL
 
   makeInnerBloks()
   makemovebloks()
-  makestatues()
+  makeStatues(&gs.Level, gs.Render.Statues)
   makeshop()
   makeetc()
 
   if gs.Level.Levelnum > 3 {
-    makeblades()
+    makeBlades(&gs.Level, gs.Render.Blades)
     maketurrets()
   }
   if gs.Level.Levelnum > 2 {
@@ -7637,7 +7614,7 @@ func makelevel() { //MARK:MAKE LEVEL
 
   makeenemies()
 
-  makeexit()
+  makeExit(&gs.Level, &gs.Render)
 
   cleanlevel()
 
@@ -7706,7 +7683,7 @@ func makeInnerBloks() { //MARK: MAKE INNER BLOKS
       for {
         siz := rF32(bsU4, bsU8)
         zblok := xblok{}
-        tl := findRanRecLoc(siz, siz, a)
+        tl := findRanRecLoc(&gs.Level, siz, siz, a)
         zblok.rec = rl.NewRectangle(tl.X, tl.Y, siz, siz)
         zblok.img = gs.Level.WallT
         switch gs.Level.Levelnum {
@@ -7887,27 +7864,37 @@ func makeairstrike() { //MARK:MAKE AIR STRIKE
   gs.FX.AirstrikebombT = rI32(int(gs.Core.Fps/4), int(gs.Core.Fps*2))
   gs.FX.AirstrikeOn = true
 }
-func makefish() { //MARK:MAKE FISH
 
-  gs.FX.FishV2 = rl.Vector2{}
-  gs.FX.Fish2V2 = rl.Vector2{}
+func makeFish(fx *FXState, core CoreState, render RenderState) { //MARK:MAKE FISH
 
-  gs.FX.FishSiz = rF32(bsU4, bsU7)
-  gs.FX.FishSiz2 = rF32(bsU4, bsU7)
+  fx.FishV2 = rl.Vector2{}
+  fx.Fish2V2 = rl.Vector2{}
 
-  gs.FX.FishV2.X = -gs.FX.FishSiz
-  gs.FX.Fish2V2.X = gs.Core.ScrWF32 + gs.FX.FishSiz2
+  fx.FishSiz = rF32(bsU4, bsU7)
+  fx.FishSiz2 = rF32(bsU4, bsU7)
 
-  gs.FX.FishV2.Y = rF32(gs.Core.ScrHF32/3, gs.Core.ScrHF32)
-  gs.FX.Fish2V2.Y = rF32(gs.Core.ScrHF32/3, gs.Core.ScrHF32)
+  fx.FishV2.X = -fx.FishSiz
+  fx.Fish2V2.X = core.ScrWF32 + fx.FishSiz2
 
-  gs.FX.FishRec = rl.NewRectangle(gs.FX.FishV2.X, gs.FX.FishV2.Y, gs.FX.FishSiz, gs.FX.FishSiz)
-  gs.FX.FishRec2 = rl.NewRectangle(gs.FX.Fish2V2.X, gs.FX.Fish2V2.Y, gs.FX.FishSiz2, gs.FX.FishSiz2)
+  fx.FishV2.Y = rF32(core.ScrHF32/3, core.ScrHF32)
+  fx.Fish2V2.Y = rF32(core.ScrHF32/3, core.ScrHF32)
 
-  gs.FX.Fish1 = gs.Render.FishR.recTL
-  gs.FX.Fish2 = gs.Render.FishL.recTL
+  fx.FishRec = rl.NewRectangle(
+    fx.FishV2.X,
+    fx.FishV2.Y,
+    fx.FishSiz,
+    fx.FishSiz)
+  fx.FishRec2 = rl.NewRectangle(
+    fx.Fish2V2.X,
+    fx.Fish2V2.Y,
+    fx.FishSiz2,
+    fx.FishSiz2)
+
+  fx.Fish1 = render.FishR.recTL
+  fx.Fish2 = render.FishL.recTL
 
 }
+
 func makeplayer() { //MARK:MAKE PLAYER
 
   gs.Player.Pl.atkDMG = 1
@@ -8381,33 +8368,32 @@ func makeTeleport(player *PlayerState) { //MARK:MAKE TELEPORT
   }
 
 }
-func makegascloud(cnt rl.Vector2) { //MARK:MAKE GAS CLOUD
 
-  siz := bsU10
-
-  zblok := xblok{}
-  zblok.fade = 1
-  zblok.cnt = cnt
-  zblok.rec = rl.NewRectangle(zblok.cnt.X-siz/2, zblok.cnt.Y-siz/2, siz, siz)
-  zblok.crec = zblok.rec
-  zblok.crec.X += zblok.crec.Width / 4
-  zblok.crec.Y += zblok.crec.Width / 4
-  zblok.crec.Width = zblok.crec.Width / 2
-  zblok.crec.Height = zblok.crec.Height / 2
-  zblok.drec = zblok.rec
-  zblok.drec.X += zblok.rec.Width / 2
-  zblok.drec.Y += zblok.rec.Height / 2
-  zblok.ori = rl.NewVector2(zblok.rec.Width/2, zblok.rec.Width/2)
-  zblok.name = "gascloud"
-  zblok.onoff = true
-  zblok.color = ranGreen()
-  zblok.img = gs.Render.Posiongas.recTL
-  zblok.vel = bsU / 4
-  zblok.velX = rF32(-zblok.vel, zblok.vel)
-  zblok.velY = rF32(-zblok.vel, zblok.vel)
-  gs.Level.Level[gs.Level.RoomNum].etc = append(gs.Level.Level[gs.Level.RoomNum].etc, zblok)
-
+func makeGasCloud(render *RenderState, level *LevelState, cnt rl.Vector2) { //MARK:MAKE GAS CLOUD
+	siz := bsU10
+	zblok := xblok{}
+	zblok.fade = 1
+	zblok.cnt = cnt
+	zblok.rec = rl.NewRectangle(zblok.cnt.X-siz/2, zblok.cnt.Y-siz/2, siz, siz)
+	zblok.crec = zblok.rec
+	zblok.crec.X += zblok.crec.Width / 4
+	zblok.crec.Y += zblok.crec.Width / 4
+	zblok.crec.Width = zblok.crec.Width / 2
+	zblok.crec.Height = zblok.crec.Height / 2
+	zblok.drec = zblok.rec
+	zblok.drec.X += zblok.rec.Width / 2
+	zblok.drec.Y += zblok.rec.Height / 2
+	zblok.ori = rl.NewVector2(zblok.rec.Width/2, zblok.rec.Width/2)
+	zblok.name = "gascloud"
+	zblok.onoff = true
+	zblok.color = ranGreen()
+	zblok.img = render.Posiongas.recTL
+	zblok.vel = bsU / 4
+	zblok.velX = rF32(-zblok.vel, zblok.vel)
+	zblok.velY = rF32(-zblok.vel, zblok.vel)
+	level.Level[level.RoomNum].etc = append(level.Level[level.RoomNum].etc, zblok)
 }
+
 func makeSwitchArrows() { //MARK:MAKE SWITCH ARROWS
 
   choose := rInt(1, 5)
@@ -8461,52 +8447,47 @@ func makeSwitchArrows() { //MARK:MAKE SWITCH ARROWS
 
 }
 
-func makeexit() { //MARK:MAKE EXIT
-
-  for {
-    gs.Level.ExitRoomNum = rInt(1, len(gs.Level.Level))
-    if gs.Level.ExitRoomNum != gs.Level.ShopRoomNum {
-      gs.Level.Level[gs.Level.ExitRoomNum].exit = true
-      break
-    }
-  }
-
-  zblok := makeBlokGenNoRecNoCntr()
-  zblok.img = gs.Render.Etc[53]
-  zblok.name = "exit"
-  zblok.color = ranBrown()
-  siz := bsU3
-  for {
-    canadd := true
-    zblok.rec, canadd = findRecPoswithSpacing(siz, bsU2, gs.Level.ExitRoomNum)
-    if canadd {
-      break
-    }
-  }
-
-  gs.Level.Level[gs.Level.ExitRoomNum].etc = append(gs.Level.Level[gs.Level.ExitRoomNum].etc, zblok)
-
+func makeExit(level *LevelState, render *RenderState) { //MARK:MAKE EXIT
+	for {
+		level.ExitRoomNum = rInt(1, len(level.Level))
+		if level.ExitRoomNum != level.ShopRoomNum {
+			level.Level[level.ExitRoomNum].exit = true
+			break
+		}
+	}
+	zblok := makeBlokGenNoRecNoCntr()
+	zblok.img = render.Etc[53]
+	zblok.name = "exit"
+	zblok.color = ranBrown()
+	siz := bsU3
+	for {
+		canadd := true
+		zblok.rec, canadd = findRecPoswithSpacing(level, siz, bsU2, level.ExitRoomNum)
+		if canadd {
+			break
+		}
+	}
+	level.Level[level.ExitRoomNum].etc = append(level.Level[level.ExitRoomNum].etc, zblok)
 }
-func makestatues() { //MARK:MAKE STATUES
 
+func makeStatues(lvl *LevelState, statues []rl.Rectangle) { //MARK:MAKE STATUES
   for a := 0; a < len(gs.Level.Level); a++ {
-
     if roll6() > 4 {
       zblok := makeBlokGenNoRecNoCntr()
       siz := rF32(bsU3, bsU5)
       found := true
-      zblok.rec, found = findRecPoswithSpacing(siz, bsU2, a)
-      zblok.img = gs.Render.Statues[rInt(0, len(gs.Render.Statues))]
+      zblok.rec, found = findRecPoswithSpacing(lvl, siz, bsU2, a)
+      zblok.img = statues[rInt(0, len(statues))]
       zblok.name = "statue"
       zblok.solid = true
 
       if found {
-        gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
+        lvl.Level[a].etc = append(lvl.Level[a].etc, zblok)
       }
     }
   }
-
 }
+
 func makespears() { //MARK:MAKE SPEARS
 
   for a := 0; a < len(gs.Level.Level); a++ {
@@ -8520,7 +8501,7 @@ func makespears() { //MARK:MAKE SPEARS
       zblok.rec = rl.NewRectangle(gs.Level.LevRecInner.X, gs.Level.LevRecInner.Y, multi*gs.Render.Spear.recTL.Width, multi*gs.Render.Spear.recTL.Height)
       for {
         zblok.rec.X += rF32(0, gs.Level.LevRecInner.Width-bsU2)
-        if checkInnerBloksExits(a, zblok.rec) {
+        if checkInnerBloksExits(gs.Level, a, zblok.rec) {
           break
         }
       }
@@ -8535,7 +8516,7 @@ func makespears() { //MARK:MAKE SPEARS
 
       for {
         zblok.rec.Y += rF32(0, gs.Level.LevRecInner.Width-bsU2)
-        if checkInnerBloksExits(a, zblok.rec) {
+        if checkInnerBloksExits(gs.Level, a, zblok.rec) {
           break
         }
       }
@@ -8551,7 +8532,7 @@ func makespears() { //MARK:MAKE SPEARS
       zblok.rec = rl.NewRectangle(gs.Level.LevRecInner.X, gs.Level.LevRecInner.Y+gs.Level.LevRecInner.Height-(multi*gs.Render.Spear.recTL.Height), multi*gs.Render.Spear.recTL.Width, multi*gs.Render.Spear.recTL.Height)
       for {
         zblok.rec.X += rF32(0, gs.Level.LevRecInner.Width-bsU2)
-        if checkInnerBloksExits(a, zblok.rec) {
+        if checkInnerBloksExits(gs.Level, a, zblok.rec) {
           break
         }
       }
@@ -8567,7 +8548,7 @@ func makespears() { //MARK:MAKE SPEARS
 
       for {
         zblok.rec.Y += rF32(0, gs.Level.LevRecInner.Width-bsU2)
-        if checkInnerBloksExits(a, zblok.rec) {
+        if checkInnerBloksExits(gs.Level, a, zblok.rec) {
           break
         }
       }
@@ -8587,49 +8568,28 @@ func makespears() { //MARK:MAKE SPEARS
 
   }
 }
-func makeblades() { //MARK:MAKE BLADES
 
-  for a := 0; a < len(gs.Level.Level); a++ {
-
+func makeBlades(lvl *LevelState, blades xanim) { //MARK:MAKE BLADES
+  for a := 0; a < len(lvl.Level); a++ {
     if flipcoin() {
       siz := rF32(bsU2, bsU4)
       zblok := makeBlokGenNoRecNoCntr()
       found := true
       zblok.rec, found = findRecPos(siz, a)
-      zblok.img = gs.Render.Blades.recTL
+      zblok.img = blades.recTL
       zblok.name = "blades"
       zblok.vel = bsU / 4
       zblok.velX = rF32(-zblok.vel, zblok.vel)
       zblok.velY = rF32(-zblok.vel, zblok.vel)
 
       if found {
-        gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
+        lvl.Level[a].etc = append(lvl.Level[a].etc, zblok)
       }
     }
   }
 }
-func makeshrines() { //MARK:MAKE SHRINES
 
-  choose := rInt(0, len(gs.Level.Level))
 
-  siz := rF32(bsU3, bsU5)
-  zblok := xblok{}
-  for {
-    zblok = makeBlokGenRandom(siz)
-    if checkInnerBloksExits(choose, zblok.rec) {
-      break
-    }
-  }
-
-  zblok.img = gs.Render.Shrines[rInt(0, len(gs.Render.Shrines))]
-  zblok.name = "shrine"
-  zblok.color = ranCol()
-  zblok.fade = 0.2
-  zblok.solid = true
-  zblok.onoff = true
-  gs.Level.Level[choose].etc = append(gs.Level.Level[choose].etc, zblok)
-
-}
 func makeetc() { //MARK:MAKE ETC
 
   for a := 0; a < len(gs.Level.Level); a++ {
@@ -8638,7 +8598,7 @@ func makeetc() { //MARK:MAKE ETC
     if roll6() == 6 {
       zblok := makeBlokGenNoRecNoCntr()
       canadd := true
-      zblok.rec, canadd = findRecPoswithSpacing(bsU2, bsU/2, a)
+      zblok.rec, canadd = findRecPoswithSpacing(&gs.Level, bsU2, bsU/2, a)
       zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Width/2)
       zblok.drec = zblok.rec
       zblok.drec.X += zblok.rec.Width / 2
@@ -8656,7 +8616,7 @@ func makeetc() { //MARK:MAKE ETC
     if roll6() == 6 {
       zblok := makeBlokGenNoRecNoCntr()
       canadd := true
-      zblok.rec, canadd = findRecPoswithSpacing(bsU2, bsU/2, a)
+      zblok.rec, canadd = findRecPoswithSpacing(&gs.Level, bsU2, bsU/2, a)
       zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Width/2)
       zblok.name = "switch"
       zblok.numType = roll6()
@@ -8680,7 +8640,7 @@ func makeetc() { //MARK:MAKE ETC
       siz := bsU2 + bsU/2
       zblok := makeBlokGenNoRecNoCntr()
       canadd := true
-      zblok.rec, canadd = findRecPoswithSpacing(siz, bsU/2, a)
+      zblok.rec, canadd = findRecPoswithSpacing(&gs.Level, siz, bsU/2, a)
       zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Width/2)
       zblok.name = "chest"
       zblok.fade = rF32(0.5, 0.8)
@@ -8808,7 +8768,7 @@ func makeetc() { //MARK:MAKE ETC
     if roll6() > 2 {
       zblok := makeBlokGenNoRecNoCntr()
       canadd := true
-      zblok.rec, canadd = findRecPoswithSpacing(bsU+bsU/2, bsU/4, a)
+      zblok.rec, canadd = findRecPoswithSpacing(&gs.Level, bsU+bsU/2, bsU/4, a)
       zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Width/2)
       zblok.solid = true
       zblok.name = "powerupBlok"
@@ -8825,7 +8785,7 @@ func makeetc() { //MARK:MAKE ETC
     for {
       zblok := makeBlokGenNoRecNoCntr()
       canadd := true
-      zblok.rec, canadd = findRecPoswithSpacing(bsU2, bsU/2, a)
+      zblok.rec, canadd = findRecPoswithSpacing(&gs.Level, bsU2, bsU/2, a)
       zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Width/2)
       zblok.solid = true
       zblok.onoff = true
@@ -8949,7 +8909,7 @@ func makeetc() { //MARK:MAKE ETC
       zblok = makeBlokGenNoRecNoCntr()
 
       canadd := true
-      zblok.rec, canadd = findRecPoswithSpacing(siz, bsU2, a)
+      zblok.rec, canadd = findRecPoswithSpacing(&gs.Level, siz, bsU2, a)
       zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Width/2)
       zblok.solid = true
       zblok.name = "springblok"
@@ -9034,40 +8994,34 @@ func makeetc() { //MARK:MAKE ETC
 }
 
 
-func makesnow() { //MARK:MAKE SNOW
-
-  num := rInt(50, 100)
-
-  for {
-
-    x := rF32(0, gs.Core.ScrWF32)
-    y := gs.Level.LevY - rF32(bsU, gs.Core.ScrHF32)
-    siz := rF32(bsU, bsU3)
-
-    zimg := ximg{}
-    zimg.rec = rl.NewRectangle(x, y, siz, siz)
-    zimg.cnt = rl.NewVector2(zimg.rec.X+zimg.rec.Width/2, zimg.rec.Y+zimg.rec.Height/2)
-    choose := rInt(1, 4)
-    switch choose {
-    case 1:
-      zimg.img = gs.Render.Etc[15]
-    case 2:
-      zimg.img = gs.Render.Etc[16]
-    case 3:
-      zimg.img = gs.Render.Etc[17]
-    }
-    zimg.ori = rl.NewVector2(zimg.rec.Width/2, zimg.rec.Height/2)
-    zimg.ro = rF32(0, 360)
-    zimg.col = rl.White
-    zimg.fade = rF32(0.3, 0.7)
-    gs.FX.Snow = append(gs.FX.Snow, zimg)
-
-    num--
-    if num == 0 {
-      break
-    }
-  }
-
+func makeSnow(core *CoreState, level *LevelState, render *RenderState, fx *FXState) { //MARK:MAKE SNOW
+	num := rInt(50, 100)
+	for {
+		x := rF32(0, core.ScrWF32)
+		y := level.LevY - rF32(bsU, core.ScrHF32)
+		siz := rF32(bsU, bsU3)
+		zimg := ximg{}
+		zimg.rec = rl.NewRectangle(x, y, siz, siz)
+		zimg.cnt = rl.NewVector2(zimg.rec.X+zimg.rec.Width/2, zimg.rec.Y+zimg.rec.Height/2)
+		choose := rInt(1, 4)
+		switch choose {
+		case 1:
+			zimg.img = render.Etc[15]
+		case 2:
+			zimg.img = render.Etc[16]
+		case 3:
+			zimg.img = render.Etc[17]
+		}
+		zimg.ori = rl.NewVector2(zimg.rec.Width/2, zimg.rec.Height/2)
+		zimg.ro = rF32(0, 360)
+		zimg.col = rl.White
+		zimg.fade = rF32(0.3, 0.7)
+		fx.Snow = append(fx.Snow, zimg)
+		num--
+		if num == 0 {
+			break
+		}
+	}
 }
 
 func makeProjectile(name string) { //MARK:MAKE PROJECTILE
@@ -9492,7 +9446,7 @@ func maketurrets() { //MARK: MAKE TURRETS
         for {
           zblok.cnt = findRanCntV2(gs.Core.Cnt, gs.Level.LevW)
           zblok.rec = rl.NewRectangle(zblok.cnt.X-siz/2, zblok.cnt.Y-siz/2, siz, siz)
-          if checkInnerBloksExits(a, zblok.rec) {
+          if checkInnerBloksExits(gs.Level, a, zblok.rec) {
             break
           }
         }
@@ -9686,15 +9640,15 @@ func makeBlokGeneric(size float32, cnt rl.Vector2) xblok { //MARK:MAKE GENERIC B
     size)
   return zblok
 }
-func makeBlokGenRandom(size float32) xblok { //MARK:MAKE GENERIC BLOCK RANDOM POSITION
+func makeBlokGenRandom(lvl LevelState, size float32) xblok { //MARK:MAKE GENERIC BLOCK RANDOM POSITION
   zblok := xblok{}
   zblok.fade = 1
   zblok.color = ranCol()
 
-  x := gs.Level.LevRecInner.X + bsU
-  y := gs.Level.LevRecInner.Y + bsU
-  x = rF32(x, x+gs.Level.LevRecInner.Width-bsU3)
-  y = rF32(y, y+gs.Level.LevRecInner.Width-bsU3)
+  x := lvl.LevRecInner.X + bsU
+  y := lvl.LevRecInner.Y + bsU
+  x = rF32(x, x+lvl.LevRecInner.Width-bsU3)
+  y = rF32(y, y+lvl.LevRecInner.Width-bsU3)
 
   zblok.rec = rl.NewRectangle(x, y, size, size)
   zblok.cnt = rl.NewVector2(
@@ -9820,30 +9774,26 @@ func makecompanions() { //MARK: MAKE COMPANIONS
   gs.Companions.MrAlien.timer = gs.Core.Fps * rI32(3, 8)
 
 }
-func makefxinitial() { //MARK:MAKE FX INITAL
 
-  //RAIN
-  num := 300
-  for a := 0; a < num; a++ {
-    siz := rF32(2, 5)
-    rec := rl.NewRectangle(rF32(0, gs.Core.ScrWF32), rF32(-gs.Core.ScrHF32, -bsU), siz, siz)
-    gs.FX.Rain = append(gs.FX.Rain, rec)
-  }
-
-  //SCAN LINES
-  y := float32(-2)
-  x := float32(0)
-  change := float32(3)
-
-  for {
-    gs.FX.ScanlineV2 = append(gs.FX.ScanlineV2, rl.NewVector2(x, y))
-    y += change
-    if y >= gs.Core.ScrHF32+1 {
-      break
-    }
-  }
-
+func makeFxInitial(fx *FXState, core *CoreState) { //MARK:MAKE FX INITIAL
+	num := 300
+	for a := 0; a < num; a++ {
+		siz := rF32(2, 5)
+		rec := rl.NewRectangle(rF32(0, core.ScrWF32), rF32(-core.ScrHF32, -bsU), siz, siz)
+		fx.Rain = append(fx.Rain, rec)
+	}
+	y := float32(-2)
+	x := float32(0)
+	change := float32(3)
+	for {
+		fx.ScanlineV2 = append(fx.ScanlineV2, rl.NewVector2(x, y))
+		y += change
+		if y >= core.ScrHF32+1 {
+			break
+		}
+	}
 }
+
 func makebosses() { //MARK:MAKE BOSSES
   siz := bsU8
   zboss := xboss{}
@@ -9999,16 +9949,6 @@ func makeimgs() { //MARK:MAKE IMGS
   for a := 0; a < 4; a++ {
     gs.Render.Knight = append(gs.Render.Knight, rl.NewRectangle(x, y, 32, 32))
     y += 32
-  }
-  //BUILDINGS
-  x = 0
-  y = 132
-  for {
-    gs.Render.Shrines = append(gs.Render.Shrines, rl.NewRectangle(x, y, 32, 32))
-    x += 32
-    if x > 64 {
-      break
-    }
   }
   //SKULLS
   x = 474
@@ -10503,33 +10443,28 @@ func inp() { //MARK:INP
   }
 }
 
-func timers() { //MARK:TIMERS
-
-  if gs.Shop.ShopExitT > 0 {
-    gs.Shop.ShopExitT--
-  }
-
-  gs.Level.RunT++
-  if gs.Level.RunT%gs.Core.Fps == 0 {
-    gs.Level.Secs++
-    gs.Level.RunT = 0
-  }
-  if gs.Level.Secs == 60 {
-    gs.Level.Secs = 0
-    gs.Level.Mins++
-  }
-
-  if gs.Level.AnchorT > 0 {
-    gs.Level.AnchorT--
-  }
-
-  if gs.Level.RoomChangedTimer > 0 {
-    gs.Level.RoomChangedTimer--
-    if gs.Level.RoomChangedTimer == 1 {
-      gs.Level.RoomChanged = false
-    }
-  }
-
+func timers(shop *ShopState, level *LevelState, core *CoreState) { //MARK:TIMERS
+	if shop.ShopExitT > 0 {
+		shop.ShopExitT--
+	}
+	level.RunT++
+	if level.RunT%core.Fps == 0 {
+		level.Secs++
+		level.RunT = 0
+	}
+	if level.Secs == 60 {
+		level.Secs = 0
+		level.Mins++
+	}
+	if level.AnchorT > 0 {
+		level.AnchorT--
+	}
+	if level.RoomChangedTimer > 0 {
+		level.RoomChangedTimer--
+		if level.RoomChangedTimer == 1 {
+			level.RoomChanged = false
+		}
+	}
 }
 func cams(cam2 *rl.Camera2D, core CoreState, ui UIState, lvl LevelState) { //MARK:CAMS
 
@@ -10563,13 +10498,13 @@ func initialWindow() { //MARK:INITIAL WINDOW
   makesettings()
   makeShaders(&gs.Render, gs.Core)
   makeaudio()
-  makefxinitial()
+  makeFxInitial(&gs.FX, &gs.Core)
   makeimgs()
   makebosses()
   makelevel()
   makecompanions()
   makeplayer()
-  maketimes()
+  makeTimes(&gs.Timing)
   cams(&gs.Render.Cam2, gs.Core, gs.UI, gs.Level)
 
   gs.Audio.Music = gs.Audio.BackMusic[gs.Audio.BgMusicNum]
@@ -10768,8 +10703,11 @@ func main() { //MARK:MAIN
       drawnocam()
     }
 
-    drawnoRender()
+    drawnoRender(gs.Player, gs.Level, gs.Core, gs.Render)
 
+    if gs.Core.Debug {
+      drawDebug(*gs)
+    }
     up() //UPDATE
     rl.EndDrawing()
   }
