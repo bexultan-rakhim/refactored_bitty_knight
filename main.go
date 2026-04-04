@@ -412,7 +412,7 @@ func drawEndGame() { //MARK:DRAW END GAME
         gs.Level.Endgame = false
         gs.Level.EndgameT = 0
         gs.Level.EndgopherRec = rl.NewRectangle(gs.Core.Cnt.X-bsU4, gs.Level.LevRec.Y+gs.Level.LevRec.Height, bsU8, bsU8)
-        restartgame()
+        restartgame(gs)
       }
     }
   }
@@ -781,7 +781,7 @@ func drawTimes() { //MARK:DRAW TIMES
     if gs.Timing.BestTimesT <= 0 {
       gs.Timing.TimesOn = false
       if !gs.UI.OptionsOn {
-        restartgame()
+        restartgame(gs)
       }
     }
   }
@@ -928,7 +928,7 @@ func drawrestartconfirm() { //MARK:DRAW RESTART CONFIRM
   if gs.Level.ExitLR {
     rec.X += rec.Width
     if rl.IsKeyPressed(rl.KeySpace) || rl.IsGamepadButtonPressed(0, 7) || rl.IsGamepadButtonPressed(0, 12) {
-      restartgame()
+      restartgame(gs)
       gs.UI.OptionsOn = false
       gs.UI.RestartOn = false
     }
@@ -965,7 +965,7 @@ func drawrestartconfirm() { //MARK:DRAW RESTART CONFIRM
   }
 
   if rl.IsKeyPressed(rl.KeyY) {
-    restartgame()
+    restartgame(gs)
     gs.UI.OptionsOn = false
     gs.UI.RestartOn = false
   } else if rl.IsKeyPressed(rl.KeyN) {
@@ -1125,7 +1125,7 @@ func drawOptions() { //MARK:DRAW OPTIONS
         gs.UI.Resettimes = true
       case 15:
         gs.Level.Hardcore = !gs.Level.Hardcore
-        restartgame()
+        restartgame(gs)
         gs.UI.OptionsOn = false
       case 16:
         gs.Level.Exiton = true
@@ -1977,7 +1977,7 @@ func drawUpCompanions() { //MARK:DRAW UP COMPANIONS
 }
 
 
-func drawnocam() { //MARK:DRAW NO CAM
+func drawnocam(gs *GameState) { //MARK:DRAW NO CAM
 
   //INTRO
   if gs.UI.Intro && !gs.UI.OptionsOn {
@@ -3279,7 +3279,7 @@ func drawUpEtc() { //MARK:DRAW UP ETC
   if gs.Level.Exited {
     gs.Core.Pause = true
     rl.DrawRectangle(0, 0, gs.Core.ScrW32, gs.Core.ScrH32, rl.Black)
-    makenewlevel()
+    makenewlevel(&gs.Level, &gs.Player, &gs.FX, gs.Companions, &gs.Shop, &gs.Enemies, gs.Core, gs.Render)
     gs.Level.Exited = false
   }
 
@@ -4531,7 +4531,7 @@ func moveenemy(num int) { //MARK:MOVE ENEMY
 
 }
 
-func uplevel() { //MARK:MOVE BLOKS
+func uplevel(gs *GameState) { //MARK:MOVE BLOKS
 
   for a := 0; a < len(gs.Level.Level[gs.Level.RoomNum].movBloks); a++ {
 
@@ -4567,7 +4567,7 @@ func uplevel() { //MARK:MOVE BLOKS
 }
 
 // MARK: ETC ETC ETC ETC ETC ETC ETC ETC ETC ETC ETC ETC ETC ETC ETC ETC ETC ETC ETC ETC ETC
-func savesettings() { //MARK:SAVE SETTINGS
+func savesettings(ui UIState, render RenderState, player PlayerState, level LevelState, audio AudioState, input InputState) { //MARK:SAVE SETTINGS
 
   f, err := os.Create("etc/st.000")
   if err != nil {
@@ -4577,54 +4577,54 @@ func savesettings() { //MARK:SAVE SETTINGS
 
   settingsTXT := ""
 
-  if gs.UI.HpBarsOn {
+  if ui.HpBarsOn {
     settingsTXT = settingsTXT + "1,"
   } else {
     settingsTXT = settingsTXT + "0,"
   }
-  if gs.UI.ScanLinesOn {
+  if ui.ScanLinesOn {
     settingsTXT = settingsTXT + "1,"
   } else {
     settingsTXT = settingsTXT + "0,"
   }
-  if gs.UI.ArtifactsOn {
+  if ui.ArtifactsOn {
     settingsTXT = settingsTXT + "1,"
   } else {
     settingsTXT = settingsTXT + "0,"
   }
-  if gs.Render.ShaderOn {
+  if render.ShaderOn {
     settingsTXT = settingsTXT + "1,"
   } else {
     settingsTXT = settingsTXT + "0,"
   }
-  if gs.Player.PlatkrecOn {
+  if player.PlatkrecOn {
     settingsTXT = settingsTXT + "1,"
   } else {
     settingsTXT = settingsTXT + "0,"
   }
-  if gs.UI.Invincible {
+  if ui.Invincible {
     settingsTXT = settingsTXT + "1,"
   } else {
     settingsTXT = settingsTXT + "0,"
   }
-  if gs.Input.UseController {
+  if input.UseController {
     settingsTXT = settingsTXT + "1,"
   } else {
     settingsTXT = settingsTXT + "0,"
   }
-  if gs.Audio.MusicOn {
+  if audio.MusicOn {
     settingsTXT = settingsTXT + "1,"
   } else {
     settingsTXT = settingsTXT + "0,"
   }
 
-  musicTXT := fmt.Sprint(gs.Audio.BgMusicNum)
+  musicTXT := fmt.Sprint(audio.BgMusicNum)
   settingsTXT = settingsTXT + musicTXT + ","
 
-  voltxt := fmt.Sprintf("%.0f", gs.Audio.Volume*10)
+  voltxt := fmt.Sprintf("%.0f", audio.Volume*10)
   settingsTXT = settingsTXT + voltxt + ","
 
-  if gs.Level.Hardcore {
+  if level.Hardcore {
     settingsTXT = settingsTXT + "1"
   } else {
     settingsTXT = settingsTXT + "0"
@@ -4656,7 +4656,7 @@ func addTime(timing *TimingState, minsEND int, secsEND int) { //MARK:ADD TIME
   }
 }
 
-func restartgame() { //MARK: RESTART GAME
+func restartgame(gs *GameState) { //MARK: RESTART GAME
 
   for a := 0; a < len(gs.Level.Level); a++ {
     gs.Level.Level[a].etc = nil
@@ -4701,7 +4701,7 @@ func restartgame() { //MARK: RESTART GAME
   gs.Level.Levelnum = 1
 
   makePlayer(&gs.Player, &gs.Render, &gs.Core)
-  makelevel()
+  makelevel(&gs.Level, &gs.Shop, &gs.Enemies, gs.Core, gs.Render)
 
   gs.Player.Pl.cnt = gs.Core.Cnt
   gs.Level.RoomNum = 0
@@ -4712,7 +4712,6 @@ func restartgame() { //MARK: RESTART GAME
   gs.UI.Intro = true
   gs.Player.StartdmgT = gs.Core.Fps * 7
   rl.PlaySound(gs.Audio.Sfx[13])
-
 }
 
 func saveTimes(time TimingState) { //MARK: SAVE TIMES
@@ -4741,7 +4740,7 @@ func saveTimes(time TimingState) { //MARK: SAVE TIMES
 func exitGame(timing TimingState, render RenderState, audio AudioState) { //MARK: EXIT GAME
 
   if gs.UI.OptionsChange {
-    savesettings()
+    savesettings(gs.UI, gs.Render, gs.Player, gs.Level, gs.Audio, gs.Input)
   }
   saveTimes(timing)
 
@@ -5651,6 +5650,7 @@ func birthdaycake() { //MARK:BIRTHDAY CAKE
   }
 
 }
+
 func txtHere(ui *UIState, txt string, rec rl.Rectangle) { //MARK:TEXT HERE
 
   ztxt := xtxt{}
@@ -5768,7 +5768,7 @@ func escapePlayer(player *PlayerState, enemies *EnemyState, fx *FXState, core *C
 	}
 }
 
-func cleanLevel(level *LevelState, core *CoreState) { //MARK:CLEAN LEVEL
+func cleanLevel(level *LevelState, core CoreState) { //MARK:CLEAN LEVEL
 	//EMPTY ETC BLOKS
 	for a := 0; a < len(level.Level); a++ {
 		var blokstoClear []int
@@ -5936,11 +5936,11 @@ func txtAddCoin(
 }
 
 // MARK: UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP UP
-func up() { //MARK:UP
+func up(gs *GameState) { //MARK:UP
 
   if !gs.Core.Pause {
-    uplevel()
-    upplayer()
+    uplevel(gs)
+    upplayer(gs)
     timers(&gs.Shop, &gs.Level, &gs.Core)
   }
 
@@ -5956,7 +5956,7 @@ func up() { //MARK:UP
     gs.Player.StartdmgT--
   }
 
-  inp()
+  inp(gs)
   gs.Core.MouseV2 = rl.GetMousePosition()
   gs.Core.Mousev2cam = rl.GetScreenToWorld2D(gs.Core.MouseV2, gs.Render.Cam2)
 
@@ -6006,77 +6006,77 @@ func upVolume(audio AudioState) { //MARK:UP VOLUME
 
 }
 
-func upPlayerMods() { //MARK:UP PLAYER MODS
+func upPlayerMods(fx *FXState, player *PlayerState, mario *MarioState, level *LevelState, core CoreState, render RenderState, audio AudioState) { //MARK:UP PLAYER MODS
 
   //AIR STRIKE
-  if gs.Player.Mods.airstrike {
-    gs.FX.AirstrikeT--
-    if gs.FX.AirstrikeT <= 0 {
-      gs.FX.AirstrikeT = gs.Core.Fps * rI32(3, 8)
-      makeAirstrike(&gs.FX, &gs.Level, &gs.Core)
+  if player.Mods.airstrike {
+    fx.AirstrikeT--
+    if fx.AirstrikeT <= 0 {
+      fx.AirstrikeT = core.Fps * rI32(3, 8)
+      makeAirstrike(fx, level, core)
     }
 
   }
 
   //FLOOD
-  if gs.Player.Mods.flood {
-    if gs.Mario.MarioOn {
-      gs.FX.FloodRec.Y = gs.Core.ScrHF32 + bsU
-    } else if gs.Level.Levelnum == 6 {
-      gs.Mario.MarioOn = false
+  if player.Mods.flood {
+    if mario.MarioOn {
+      fx.FloodRec.Y = core.ScrHF32 + bsU
+    } else if level.Levelnum == 6 {
+      mario.MarioOn = false
     } else {
-      levrecV2WorldtoScreen := rl.GetWorldToScreen2D(rl.NewVector2(gs.Level.LevRecInner.X, gs.Level.LevRecInner.Y), gs.Render.Cam2)
-      if gs.FX.FloodRec.Y > levrecV2WorldtoScreen.Y+bsU12 {
-        gs.FX.FloodRec.Y -= 4
+      levrecV2WorldtoScreen := rl.GetWorldToScreen2D(rl.NewVector2(level.LevRecInner.X, level.LevRecInner.Y), render.Cam2)
+      if fx.FloodRec.Y > levrecV2WorldtoScreen.Y+bsU12 {
+        fx.FloodRec.Y -= 4
       } else {
-        if gs.FX.FishLR {
-          gs.FX.FishV2.X -= 5
-          if gs.FX.FishV2.X < -gs.FX.FishSiz {
-            gs.FX.FishLR = false
-            gs.FX.Fish1 = gs.Render.FishR.recTL
-            gs.FX.FishV2.Y = rF32(gs.Core.ScrHF32/3, gs.Core.ScrHF32)
+        if fx.FishLR {
+          fx.FishV2.X -= 5
+          if fx.FishV2.X < -fx.FishSiz {
+            fx.FishLR = false
+            fx.Fish1 = render.FishR.recTL
+            fx.FishV2.Y = rF32(core.ScrHF32/3, core.ScrHF32)
           }
         } else {
-          gs.FX.FishV2.X += 7
-          if gs.FX.FishV2.X > gs.Core.ScrWF32 {
-            gs.FX.FishLR = true
-            gs.FX.Fish1 = gs.Render.FishL.recTL
-            gs.FX.FishV2.Y = rF32(gs.Core.ScrHF32/3, gs.Core.ScrHF32)
+          fx.FishV2.X += 7
+          if fx.FishV2.X > core.ScrWF32 {
+            fx.FishLR = true
+            fx.Fish1 = render.FishL.recTL
+            fx.FishV2.Y = rF32(core.ScrHF32/3, core.ScrHF32)
           }
         }
-        if gs.FX.Fish2LR {
-          gs.FX.Fish2V2.X += 4
-          if gs.FX.Fish2V2.X > gs.Core.ScrWF32 {
-            gs.FX.Fish2LR = false
-            gs.FX.Fish2 = gs.Render.FishL.recTL
-            gs.FX.Fish2V2.Y = rF32(gs.Core.ScrHF32/3, gs.Core.ScrHF32)
+        if fx.Fish2LR {
+          fx.Fish2V2.X += 4
+          if fx.Fish2V2.X > core.ScrWF32 {
+            fx.Fish2LR = false
+            fx.Fish2 = render.FishL.recTL
+            fx.Fish2V2.Y = rF32(core.ScrHF32/3, core.ScrHF32)
           }
         } else {
-          gs.FX.Fish2V2.X -= 7
-          if gs.FX.Fish2V2.X <= 0 {
-            gs.FX.Fish2LR = true
-            gs.FX.Fish2 = gs.Render.FishR.recTL
-            gs.FX.Fish2V2.Y = rF32(gs.Core.ScrHF32/3, gs.Core.ScrHF32)
+          fx.Fish2V2.X -= 7
+          if fx.Fish2V2.X <= 0 {
+            fx.Fish2LR = true
+            fx.Fish2 = render.FishR.recTL
+            fx.Fish2V2.Y = rF32(core.ScrHF32/3, core.ScrHF32)
           }
         }
       }
     }
   }
   //SOCKS
-  if gs.Player.Mods.socks {
+  if player.Mods.socks {
     sockstimer := 30
-    if gs.Core.Frames%sockstimer == 0 {
+    if core.Frames%sockstimer == 0 {
       zblok := makeBlokGenNoRecNoCntr()
       zblok.fade = 0.7
       zblok.color = ranGreen()
-      zblok.cnt = gs.Player.Pl.cnt
+      zblok.cnt = player.Pl.cnt
       siz := bsU2
       zblok.rec = rl.NewRectangle(zblok.cnt.X-siz/2, zblok.cnt.Y, siz, siz)
       zblok.cnt = makeCnt(zblok)
       zblok.drec = makeDrec(zblok.rec)
-      zblok.img = gs.Render.Etc[52]
+      zblok.img = render.Etc[52]
       zblok.name = "footprints"
-      switch gs.Player.Pl.direc {
+      switch player.Pl.direc {
       case 2:
         zblok.ro = 90
       case 3:
@@ -6084,76 +6084,76 @@ func upPlayerMods() { //MARK:UP PLAYER MODS
       case 4:
         zblok.ro = 270
       }
-      gs.Level.Level[gs.Level.RoomNum].etc = append(gs.Level.Level[gs.Level.RoomNum].etc, zblok)
+      level.Level[level.RoomNum].etc = append(level.Level[level.RoomNum].etc, zblok)
     }
   }
 
   //FIRETRAIL
-  if gs.Player.Mods.firetrail {
+  if player.Mods.firetrail {
 
     flametimer := 60
-    if gs.Player.Mods.firetrailN == 2 {
+    if player.Mods.firetrailN == 2 {
       flametimer = 30
-    } else if gs.Player.Mods.firetrailN == 3 {
+    } else if player.Mods.firetrailN == 3 {
       flametimer = 15
     }
 
-    if gs.Core.Frames%flametimer == 0 {
+    if core.Frames%flametimer == 0 {
       zblok := makeBlokGenNoRecNoCntr()
       zblok.color = ranOrange()
-      zblok.cnt = gs.Player.Pl.cnt
+      zblok.cnt = player.Pl.cnt
       siz := bsU2
       zblok.rec = rl.NewRectangle(zblok.cnt.X-siz/2, zblok.cnt.Y, siz, siz)
-      zblok.img = gs.Render.Firetrailanim.recTL
+      zblok.img = render.Firetrailanim.recTL
       zblok.name = "flamefiretrail"
-      gs.Level.Level[gs.Level.RoomNum].etc = append(gs.Level.Level[gs.Level.RoomNum].etc, zblok)
+      level.Level[level.RoomNum].etc = append(level.Level[level.RoomNum].etc, zblok)
     }
 
   }
 
   //HP POTION
-  if gs.Player.Mods.hppotion && gs.Player.Pl.hppotionT == 0 {
-    if gs.Player.Pl.hp <= 2 {
-      gs.Player.Pl.hppotionT = gs.Core.Fps
-      gs.Player.Pl.hp = gs.Player.Pl.hpmax
-      gs.Player.Mods.hppotionN--
-      gs.Player.Pl.hppause = gs.Core.Fps * 3
-      if gs.Player.Mods.hppotionN <= 0 {
-        gs.Player.Mods.hppotion = false
-        clearInven(&gs.Player, "health potion")
+  if player.Mods.hppotion && player.Pl.hppotionT == 0 {
+    if player.Pl.hp <= 2 {
+      player.Pl.hppotionT = core.Fps
+      player.Pl.hp = player.Pl.hpmax
+      player.Mods.hppotionN--
+      player.Pl.hppause = core.Fps * 3
+      if player.Mods.hppotionN <= 0 {
+        player.Mods.hppotion = false
+        clearInven(player, "health potion")
       }
     }
   }
 
   //ESCAPE VINE
-  if gs.Player.Pl.hp == 1 && gs.Player.Mods.vine && gs.Level.Levelnum != 6 {
-    rl.PlaySound(gs.Audio.Sfx[27])
-    gs.Player.Mods.vine = false
-    clearInven(&gs.Player, "vine")
-    gs.Player.Escaped = false
-    gs.Player.EscapeRoomFound = false
-    gs.Player.Pl.escape = true
-    gs.Player.Pl.hppause = gs.Core.Fps * 5
+  if player.Pl.hp == 1 && player.Mods.vine && level.Levelnum != 6 {
+    rl.PlaySound(audio.Sfx[27])
+    player.Mods.vine = false
+    clearInven(player, "vine")
+    player.Escaped = false
+    player.EscapeRoomFound = false
+    player.Pl.escape = true
+    player.Pl.hppause = core.Fps * 5
   }
 
   //SANTA
-  if gs.Player.Mods.santa {
-    gs.Player.Mods.santaT--
-    if gs.Player.Mods.santaT <= 0 {
-      if gs.Player.Mods.snowon {
-        gs.Player.Mods.snowon = false
+  if player.Mods.santa {
+    player.Mods.santaT--
+    if player.Mods.santaT <= 0 {
+      if player.Mods.snowon {
+        player.Mods.snowon = false
       } else {
-        makeSnow(&gs.Core, &gs.Level, &gs.Render, &gs.FX)
-        gs.Player.Mods.snowon = true
+        makeSnow(core, level, render, fx)
+        player.Mods.snowon = true
       }
-      gs.Player.Mods.santaT = rI32(7, 21) * gs.Core.Fps
+      player.Mods.santaT = rI32(7, 21) * core.Fps
     }
   }
   //AXE
-  if gs.Player.Mods.axe {
-    gs.Player.Mods.axeT2--
-    if gs.Player.Mods.axeT2 <= 0 {
-      gs.Player.Mods.axeT2 = gs.Player.Mods.axeT
+  if player.Mods.axe {
+    player.Mods.axeT2--
+    if player.Mods.axeT2 <= 0 {
+      player.Mods.axeT2 = player.Mods.axeT
       makeProjectile("axe")
     }
   }
@@ -6190,7 +6190,7 @@ func upRoomChange(player *PlayerState, enemies *EnemyState, fx *FXState, core *C
   }
 }
 
-func upplayer() { //MARK:UP PLAYER
+func upplayer(gs *GameState) { //MARK:UP PLAYER
 
   //TIMERS
   if gs.Player.Mods.flood {
@@ -6275,7 +6275,7 @@ func upplayer() { //MARK:UP PLAYER
   }
 
   //UP MODS
-  upPlayerMods()
+  upPlayerMods(&gs.FX, &gs.Player, &gs.Mario, &gs.Level, gs.Core, gs.Render, gs.Audio)
 
   //UP IMG
   switch gs.Player.Pl.direc {
@@ -6553,28 +6553,29 @@ func makeSettings(ui *UIState, render *RenderState, player *PlayerState, input *
   num, _ = strconv.Atoi(txtSettings[9])
   audio.Volume = float32(num) / 10
 }
-func makeshop() { //MARK: MAKE SHOP
 
-  gs.Shop.ShopItems = nil
-  gs.Shop.ShopNum = 0
+func makeshop(shop *ShopState, level *LevelState, render RenderState, cnt rl.Vector2) { //MARK: MAKE SHOP
+
+  shop.ShopItems = nil
+  shop.ShopNum = 0
   countbreak := 100
 
   //SHOP IMG
   for {
-    gs.Level.ShopRoomNum = rInt(0, len(gs.Level.Level))
+    level.ShopRoomNum = rInt(0, len(level.Level))
 
     zblok := xblok{}
     zblok.name = "shop"
     zblok.solid = true
     zblok.onoff = true
-    zblok.img = gs.Render.Etc[14]
-    zblok.cnt = gs.Core.Cnt
+    zblok.img = render.Etc[14]
+    zblok.cnt = cnt
     zblok.cnt.Y -= bsU8
 
     siz := bsU8
 
     canadd := true
-    zblok.rec, canadd = findRecPoswithSpacing(&gs.Level, siz, bsU4, gs.Level.ShopRoomNum)
+    zblok.rec, canadd = findRecPoswithSpacing(level, siz, bsU4, level.ShopRoomNum)
     zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Width/2)
     zblok.crec = zblok.rec
     zblok.crec.X += zblok.crec.Width / 8
@@ -6607,7 +6608,7 @@ func makeshop() { //MARK: MAKE SHOP
 
     countbreak--
     if canadd || countbreak == 0 {
-      gs.Level.Level[gs.Level.ShopRoomNum].etc = append(gs.Level.Level[gs.Level.ShopRoomNum].etc, zblok)
+      level.Level[level.ShopRoomNum].etc = append(level.Level[level.ShopRoomNum].etc, zblok)
       break
     }
   }
@@ -6627,94 +6628,94 @@ func makeshop() { //MARK: MAKE SHOP
       zblok.name = "fireworks"
       zblok.desc = "shoot fireworks when activating powerup block"
       zblok.color = rl.White
-      zblok.img = gs.Render.Etc[49]
+      zblok.img = render.Etc[49]
     case 14: //PEACE
       zblok.name = "peace"
       zblok.desc = "take no damage for 2 seconds on entering room"
       zblok.color = rl.White
-      zblok.img = gs.Render.Etc[46]
+      zblok.img = render.Etc[46]
     case 13: //ANCHOR
       zblok.name = "anchor"
       zblok.desc = "enemies pause for 2 seconds on entering room"
       zblok.color = rl.White
-      zblok.img = gs.Render.Etc[39]
+      zblok.img = render.Etc[39]
     case 12: //RECHARGE
       zblok.name = "recharge"
       zblok.desc = "only works with armor - recharges 1 armor every 2 rooms"
       zblok.color = rl.White
-      zblok.img = gs.Render.Etc[12]
+      zblok.img = render.Etc[12]
     case 11: //ORBITAL
       zblok.name = "orbital"
       zblok.desc = "erratic revolving orbs that damage enemies"
       zblok.color = rl.White
-      zblok.img = gs.Render.Etc[35]
+      zblok.img = render.Etc[35]
     case 10: //COFFEE
       zblok.name = "coffee"
       zblok.desc = "move faster - collect more = faster movement"
       zblok.color = rl.White
-      zblok.img = gs.Render.Etc[31]
+      zblok.img = render.Etc[31]
     case 9: //INVISIBLE
       zblok.name = "invisible"
       zblok.desc = "enemies will not follow you"
       zblok.color = rl.White
-      zblok.img = gs.Render.Etc[30]
+      zblok.img = render.Etc[30]
     case 8: //FIRE TRAIL
       zblok.name = "firetrail"
       zblok.desc = "trail of fire - does not effect flying enemies"
       zblok.color = ranOrange()
-      zblok.img = gs.Render.Etc[29]
+      zblok.img = render.Etc[29]
     case 7: //FIREBALL
       zblok.name = "fireball"
       zblok.desc = "fires on attack - collect more = more fireballs"
       zblok.color = ranOrange()
-      zblok.img = gs.Render.FireballPlayer.recTL
+      zblok.img = render.FireballPlayer.recTL
     case 6: //MAP
       zblok.name = "map"
       zblok.desc = "reveals location of exit room"
       zblok.color = ranGrey()
-      zblok.img = gs.Render.Etc[28]
+      zblok.img = render.Etc[28]
     case 5: //APPLE
       zblok.name = "apple"
       zblok.desc = "prevents poisoning - destroyed on use"
       zblok.color = rl.White
-      zblok.img = gs.Render.Etc[8]
+      zblok.img = render.Etc[8]
     case 4: //SKELETON KEY
       zblok.name = "key"
       zblok.desc = "open locked things"
       zblok.color = rl.White
-      zblok.img = gs.Render.Etc[7]
+      zblok.img = render.Etc[7]
     case 3: //BOUNCE PROJECTILE
       zblok.name = "bounce"
       zblok.desc = "projectiles bounce > collect more = more bounces"
       zblok.color = rl.Yellow
-      zblok.img = gs.Render.Etc[5]
+      zblok.img = render.Etc[5]
     case 2: //THROWING AXE
       zblok.name = "throwing axe"
       zblok.desc = "fires at interval > collect more = faster fire rate"
       zblok.color = rl.SkyBlue
-      zblok.img = gs.Render.Etc[3]
+      zblok.img = render.Etc[3]
     case 1: //HP POTION
       zblok.name = "health potion"
       zblok.desc = "automatically used when health < 2"
       zblok.color = rl.Red
-      zblok.img = gs.Render.Etc[1]
+      zblok.img = render.Etc[1]
     }
 
-    if len(gs.Shop.ShopItems) > 0 {
+    if len(shop.ShopItems) > 0 {
       canadd := true
-      for a := 0; a < len(gs.Shop.ShopItems); a++ {
-        if gs.Shop.ShopItems[a].name == zblok.name {
+      for a := 0; a < len(shop.ShopItems); a++ {
+        if shop.ShopItems[a].name == zblok.name {
           canadd = false
         }
       }
       if canadd {
         zblok.shopprice = rInt(2, 8)
-        gs.Shop.ShopItems = append(gs.Shop.ShopItems, zblok)
+        shop.ShopItems = append(shop.ShopItems, zblok)
         num--
       }
     } else {
       zblok.shopprice = rInt(2, 8)
-      gs.Shop.ShopItems = append(gs.Shop.ShopItems, zblok)
+      shop.ShopItems = append(shop.ShopItems, zblok)
       num--
     }
 
@@ -6854,37 +6855,37 @@ func makeProjectileEnemy(enemies *EnemyState, render *RenderState, num int, cnt 
 	}
 }
 
-func makeendlevel() { //MARK: MAKE END LEVEL
+func makeendlevel(level *LevelState, core CoreState, render RenderState ) { //MARK: MAKE END LEVEL
 
-  gs.Level.Level = nil
+  level.Level = nil
 
-  gs.Level.RoomNum = 0
+  level.RoomNum = 0
 
   //MAKE LEVEL ROOMS
 
-  gs.Level.Bossnum = rInt(0, len(gs.Level.Bosses))
+  level.Bossnum = rInt(0, len(level.Bosses))
 
   countedBorderBlocks := false
 
-  floorT := gs.Render.Floortiles[rInt(0, len(gs.Render.Floortiles))]
-  gs.Level.WallT = gs.Render.Walltiles[rInt(0, len(gs.Render.Walltiles))]
+  floorT := render.Floortiles[rInt(0, len(render.Floortiles))]
+  level.WallT = render.Walltiles[rInt(0, len(render.Walltiles))]
 
   zroom := xroom{}
   zroom.floorT = floorT
-  zroom.wallT = gs.Level.WallT
+  zroom.wallT = level.WallT
 
   //BOUNDARY WALLS
-  x := gs.Level.LevX
-  y := gs.Level.LevY
+  x := level.LevX
+  y := level.LevY
 
-  for x < gs.Level.LevX+gs.Level.LevW {
+  for x < level.LevX+level.LevW {
     if !countedBorderBlocks {
-      gs.Level.LevBorderBlokNum++
+      level.LevBorderBlokNum++
     }
     zblok := xblok{}
     zblok.fade = 1
     zblok.img = zroom.wallT
-    switch gs.Level.Levelnum {
+    switch level.Levelnum {
     case 1:
       zblok.color = ranBlue()
     case 2:
@@ -6898,10 +6899,10 @@ func makeendlevel() { //MARK: MAKE END LEVEL
     case 6:
       zblok.color = ranRed()
     }
-    zblok.rec = rl.NewRectangle(x, y, gs.Level.BorderWallBlokSiz, gs.Level.BorderWallBlokSiz)
+    zblok.rec = rl.NewRectangle(x, y, level.BorderWallBlokSiz, level.BorderWallBlokSiz)
     zroom.walls = append(zroom.walls, zblok)
-    zblok.rec.Y = gs.Level.LevY + gs.Level.LevW - gs.Level.BorderWallBlokSiz
-    switch gs.Level.Levelnum {
+    zblok.rec.Y = level.LevY + level.LevW - level.BorderWallBlokSiz
+    switch level.Levelnum {
     case 1:
       zblok.color = ranBlue()
     case 2:
@@ -6916,18 +6917,18 @@ func makeendlevel() { //MARK: MAKE END LEVEL
       zblok.color = ranRed()
     }
     zroom.walls = append(zroom.walls, zblok)
-    x += gs.Level.BorderWallBlokSiz
+    x += level.BorderWallBlokSiz
   }
   if !countedBorderBlocks {
     countedBorderBlocks = true
   }
-  x = gs.Level.LevX
-  y = gs.Level.LevY + gs.Level.BorderWallBlokSiz
-  for y < gs.Level.LevY+gs.Level.LevW-gs.Level.BorderWallBlokSiz {
+  x = level.LevX
+  y = level.LevY + level.BorderWallBlokSiz
+  for y < level.LevY+level.LevW-level.BorderWallBlokSiz {
     zblok := xblok{}
     zblok.fade = 1
     zblok.img = zroom.wallT
-    switch gs.Level.Levelnum {
+    switch level.Levelnum {
     case 1:
       zblok.color = ranBlue()
     case 2:
@@ -6941,10 +6942,10 @@ func makeendlevel() { //MARK: MAKE END LEVEL
     case 6:
       zblok.color = ranRed()
     }
-    zblok.rec = rl.NewRectangle(x, y, gs.Level.BorderWallBlokSiz, gs.Level.BorderWallBlokSiz)
+    zblok.rec = rl.NewRectangle(x, y, level.BorderWallBlokSiz, level.BorderWallBlokSiz)
     zroom.walls = append(zroom.walls, zblok)
-    zblok.rec.X = gs.Level.LevX + gs.Level.LevW - gs.Level.BorderWallBlokSiz
-    switch gs.Level.Levelnum {
+    zblok.rec.X = level.LevX + level.LevW - level.BorderWallBlokSiz
+    switch level.Levelnum {
     case 1:
       zblok.color = ranBlue()
     case 2:
@@ -6959,19 +6960,19 @@ func makeendlevel() { //MARK: MAKE END LEVEL
       zblok.color = ranRed()
     }
     zroom.walls = append(zroom.walls, zblok)
-    y += gs.Level.BorderWallBlokSiz
+    y += level.BorderWallBlokSiz
   }
 
   //FLOOR
-  x = gs.Level.LevX
-  y = gs.Level.LevY
+  x = level.LevX
+  y = level.LevY
   siz := bsU3
   zblok := xblok{}
   zblok.img = zroom.floorT
   for {
     zblok.rec = rl.NewRectangle(x, y, siz, siz)
     zblok.fade = rF32(0.1, 0.25)
-    switch gs.Level.Levelnum {
+    switch level.Levelnum {
     case 1:
       zblok.color = ranRed()
     case 2:
@@ -6988,22 +6989,22 @@ func makeendlevel() { //MARK: MAKE END LEVEL
     zroom.floor = append(zroom.floor, zblok)
 
     x += siz
-    if x >= gs.Level.LevX+gs.Level.LevW {
-      x = gs.Level.LevX
+    if x >= level.LevX+level.LevW {
+      x = level.LevX
       y += siz
     }
-    if y >= gs.Level.LevY+gs.Level.LevW {
+    if y >= level.LevY+level.LevW {
       break
     }
   }
 
-  gs.Level.Level = append(gs.Level.Level, zroom)
+  level.Level = append(level.Level, zroom)
 
   //SWITCHES
   if flipcoin() {
     zblok := makeBlokGenNoRecNoCntr()
     canadd := true
-    zblok.rec, canadd = findRecPoswithSpacing(&gs.Level, bsU2, bsU/2, 0)
+    zblok.rec, canadd = findRecPoswithSpacing(level, bsU2, bsU/2, 0)
     zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Width/2)
     zblok.name = "switch"
     zblok.numType = roll6()
@@ -7013,18 +7014,18 @@ func makeendlevel() { //MARK: MAKE END LEVEL
     zblok.onoffswitch = flipcoin()
     zblok.color = rl.SkyBlue
     if zblok.onoffswitch {
-      zblok.img = gs.Render.Etc[21]
+      zblok.img = render.Etc[21]
     } else {
-      zblok.img = gs.Render.Etc[22]
+      zblok.img = render.Etc[22]
     }
     if canadd {
-      gs.Level.Level[0].etc = append(gs.Level.Level[0].etc, zblok)
+      level.Level[0].etc = append(level.Level[0].etc, zblok)
     }
   }
   if flipcoin() {
     zblok := makeBlokGenNoRecNoCntr()
     canadd := true
-    zblok.rec, canadd = findRecPoswithSpacing(&gs.Level, bsU2, bsU/2, 0)
+    zblok.rec, canadd = findRecPoswithSpacing(level, bsU2, bsU/2, 0)
     zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Width/2)
     zblok.name = "switch"
     zblok.numType = roll6()
@@ -7034,12 +7035,12 @@ func makeendlevel() { //MARK: MAKE END LEVEL
     zblok.onoffswitch = flipcoin()
     zblok.color = rl.SkyBlue
     if zblok.onoffswitch {
-      zblok.img = gs.Render.Etc[21]
+      zblok.img = render.Etc[21]
     } else {
-      zblok.img = gs.Render.Etc[22]
+      zblok.img = render.Etc[22]
     }
     if canadd {
-      gs.Level.Level[0].etc = append(gs.Level.Level[0].etc, zblok)
+      level.Level[0].etc = append(level.Level[0].etc, zblok)
     }
   }
 
@@ -7049,14 +7050,14 @@ func makeendlevel() { //MARK: MAKE END LEVEL
     zblok := makeBlokGenNoRecNoCntr()
     siz := rF32((bsU/4)*3, bsU+bsU/2)
     canadd := true
-    zblok.rec, canadd = findRecPos(&gs.Level, siz, 0)
+    zblok.rec, canadd = findRecPos(level, siz, 0)
     zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Width/2)
     zblok.name = "skull"
     zblok.fade = rF32(0.3, 0.6)
     zblok.color = ranGrey()
-    zblok.img = gs.Render.Skulls[rInt(0, len(gs.Render.Skulls))]
+    zblok.img = render.Skulls[rInt(0, len(render.Skulls))]
     if canadd {
-      gs.Level.Level[0].etc = append(gs.Level.Level[0].etc, zblok)
+      level.Level[0].etc = append(level.Level[0].etc, zblok)
       num--
     }
     if num <= 0 {
@@ -7069,15 +7070,15 @@ func makeendlevel() { //MARK: MAKE END LEVEL
   for {
     zblok := makeBlokGenNoRecNoCntr()
     canadd := true
-    zblok.rec, canadd = findRecPoswithSpacing(&gs.Level, bsU2, bsU/2, 0)
+    zblok.rec, canadd = findRecPoswithSpacing(level, bsU2, bsU/2, 0)
     zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Width/2)
     zblok.solid = true
     zblok.onoff = true
     zblok.name = "oilbarrel"
     zblok.color = rl.DarkGreen
-    zblok.img = gs.Render.Etc[20]
+    zblok.img = render.Etc[20]
     if canadd {
-      gs.Level.Level[0].etc = append(gs.Level.Level[0].etc, zblok)
+      level.Level[0].etc = append(level.Level[0].etc, zblok)
       num--
     }
 
@@ -7086,60 +7087,60 @@ func makeendlevel() { //MARK: MAKE END LEVEL
     }
   }
 
-  makeInnerBloks(&gs.Core, &gs.Level)
-  makemovebloks()
-  makeBlades(&gs.Level, gs.Render.Blades)
-  makeTurrets(&gs.Level, &gs.Render, &gs.Core)
-  makeSpears(&gs.Level, &gs.Render)
-  makeSpikes(&gs.Level, &gs.Render, &gs.Core)
+  makeInnerBloks(core, level)
+  makemovebloks(level, render)
+  makeBlades(level, render.Blades)
+  makeTurrets(level, render, core)
+  makeSpears(level, render)
+  makeSpikes(level, render, core)
 
   //REMOVE BLOKS COLLIDING WITH BOSS REC
-  checkrec := rl.NewRectangle(gs.Core.Cnt.X-bsU4, gs.Level.LevRecInner.Y+bsU2, bsU8, bsU8)
+  checkrec := rl.NewRectangle(core.Cnt.X-bsU4, level.LevRecInner.Y+bsU2, bsU8, bsU8)
   numcollis := 0
   found := false
-  for i := 0; i < len(gs.Level.Level[0].innerBloks); i++ {
-    if rl.CheckCollisionRecs(checkrec, gs.Level.Level[0].innerBloks[i].rec) {
+  for i := 0; i < len(level.Level[0].innerBloks); i++ {
+    if rl.CheckCollisionRecs(checkrec, level.Level[0].innerBloks[i].rec) {
       numcollis = i
       found = true
     }
   }
   if found {
-    gs.Level.Level[0].innerBloks = remBlok(gs.Level.Level[0].innerBloks, numcollis)
+    level.Level[0].innerBloks = remBlok(level.Level[0].innerBloks, numcollis)
   }
 
-  cleanLevel(&gs.Level, &gs.Core)
+  cleanLevel(level, core)
 
 }
 
-func makelevel() { //MARK:MAKE LEVEL
+func makelevel(level *LevelState, shop *ShopState, enemies *EnemyState, core CoreState, render RenderState) { //MARK:MAKE LEVEL
 
-  gs.Level.Level = nil
+  level.Level = nil
 
   //MAKE LEVEL ROOMS
   numRooms := rInt(7, 13)
   orignumRooms := numRooms
   countedBorderBlocks := false
 
-  floorT := gs.Render.Floortiles[rInt(0, len(gs.Render.Floortiles))]
-  gs.Level.WallT = gs.Render.Walltiles[rInt(0, len(gs.Render.Walltiles))]
+  floorT := render.Floortiles[rInt(0, len(render.Floortiles))]
+  level.WallT = render.Walltiles[rInt(0, len(render.Walltiles))]
 
   for numRooms > 0 {
     zroom := xroom{}
     zroom.floorT = floorT
-    zroom.wallT = gs.Level.WallT
+    zroom.wallT = level.WallT
 
     //BOUNDARY WALLS
-    x := gs.Level.LevX
-    y := gs.Level.LevY
+    x := level.LevX
+    y := level.LevY
 
-    for x < gs.Level.LevX+gs.Level.LevW {
+    for x < level.LevX+level.LevW {
       if !countedBorderBlocks {
-        gs.Level.LevBorderBlokNum++
+        level.LevBorderBlokNum++
       }
       zblok := xblok{}
       zblok.fade = 1
       zblok.img = zroom.wallT
-      switch gs.Level.Levelnum {
+      switch level.Levelnum {
       case 1:
         zblok.color = ranBlue()
       case 2:
@@ -7151,10 +7152,10 @@ func makelevel() { //MARK:MAKE LEVEL
       case 5:
         zblok.color = ranCol()
       }
-      zblok.rec = rl.NewRectangle(x, y, gs.Level.BorderWallBlokSiz, gs.Level.BorderWallBlokSiz)
+      zblok.rec = rl.NewRectangle(x, y, level.BorderWallBlokSiz, level.BorderWallBlokSiz)
       zroom.walls = append(zroom.walls, zblok)
-      zblok.rec.Y = gs.Level.LevY + gs.Level.LevW - gs.Level.BorderWallBlokSiz
-      switch gs.Level.Levelnum {
+      zblok.rec.Y = level.LevY + level.LevW - level.BorderWallBlokSiz
+      switch level.Levelnum {
       case 1:
         zblok.color = ranBlue()
       case 2:
@@ -7167,18 +7168,18 @@ func makelevel() { //MARK:MAKE LEVEL
         zblok.color = ranCol()
       }
       zroom.walls = append(zroom.walls, zblok)
-      x += gs.Level.BorderWallBlokSiz
+      x += level.BorderWallBlokSiz
     }
     if !countedBorderBlocks {
       countedBorderBlocks = true
     }
-    x = gs.Level.LevX
-    y = gs.Level.LevY + gs.Level.BorderWallBlokSiz
-    for y < gs.Level.LevY+gs.Level.LevW-gs.Level.BorderWallBlokSiz {
+    x = level.LevX
+    y = level.LevY + level.BorderWallBlokSiz
+    for y < level.LevY+level.LevW-level.BorderWallBlokSiz {
       zblok := xblok{}
       zblok.fade = 1
       zblok.img = zroom.wallT
-      switch gs.Level.Levelnum {
+      switch level.Levelnum {
       case 1:
         zblok.color = ranBlue()
       case 2:
@@ -7190,10 +7191,10 @@ func makelevel() { //MARK:MAKE LEVEL
       case 5:
         zblok.color = ranCol()
       }
-      zblok.rec = rl.NewRectangle(x, y, gs.Level.BorderWallBlokSiz, gs.Level.BorderWallBlokSiz)
+      zblok.rec = rl.NewRectangle(x, y, level.BorderWallBlokSiz, level.BorderWallBlokSiz)
       zroom.walls = append(zroom.walls, zblok)
-      zblok.rec.X = gs.Level.LevX + gs.Level.LevW - gs.Level.BorderWallBlokSiz
-      switch gs.Level.Levelnum {
+      zblok.rec.X = level.LevX + level.LevW - level.BorderWallBlokSiz
+      switch level.Levelnum {
       case 1:
         zblok.color = ranBlue()
       case 2:
@@ -7206,19 +7207,19 @@ func makelevel() { //MARK:MAKE LEVEL
         zblok.color = ranCol()
       }
       zroom.walls = append(zroom.walls, zblok)
-      y += gs.Level.BorderWallBlokSiz
+      y += level.BorderWallBlokSiz
     }
 
     //FLOOR
-    x = gs.Level.LevX
-    y = gs.Level.LevY
+    x = level.LevX
+    y = level.LevY
     siz := bsU3
     zblok := xblok{}
     zblok.img = zroom.floorT
     for {
       zblok.rec = rl.NewRectangle(x, y, siz, siz)
       zblok.fade = rF32(0.1, 0.25)
-      switch gs.Level.Levelnum {
+      switch level.Levelnum {
       case 1:
         zblok.color = ranRed()
       case 2:
@@ -7233,33 +7234,33 @@ func makelevel() { //MARK:MAKE LEVEL
       zroom.floor = append(zroom.floor, zblok)
 
       x += siz
-      if x >= gs.Level.LevX+gs.Level.LevW {
-        x = gs.Level.LevX
+      if x >= level.LevX+level.LevW {
+        x = level.LevX
         y += siz
       }
-      if y >= gs.Level.LevY+gs.Level.LevW {
+      if y >= level.LevY+level.LevW {
         break
       }
     }
 
-    gs.Level.Level = append(gs.Level.Level, zroom)
+    level.Level = append(level.Level, zroom)
 
     numRooms--
   }
   numRooms = orignumRooms
 
   //MAKE LEVEL MAP
-  gs.Level.LevMap = nil
+  level.LevMap = nil
   mapRecSize := float32(96)
-  rec := rl.NewRectangle(gs.Core.Cnt.X-mapRecSize/2, gs.Core.Cnt.Y-mapRecSize/2, mapRecSize, mapRecSize)
-  gs.Level.LevMap = append(gs.Level.LevMap, rec)
+  rec := rl.NewRectangle(core.Cnt.X-mapRecSize/2, core.Cnt.Y-mapRecSize/2, mapRecSize, mapRecSize)
+  level.LevMap = append(level.LevMap, rec)
   numRooms--
   countbreak := 0
   for numRooms > 0 {
 
-    choose := gs.Level.LevMap[0]
-    if len(gs.Level.LevMap) > 1 {
-      choose = gs.Level.LevMap[rInt(0, len(gs.Level.LevMap))]
+    choose := level.LevMap[0]
+    if len(level.LevMap) > 1 {
+      choose = level.LevMap[rInt(0, len(level.LevMap))]
     }
 
     side := rInt(1, 5)
@@ -7276,8 +7277,8 @@ func makelevel() { //MARK:MAKE LEVEL
     }
 
     canadd := true
-    for a := 0; a < len(gs.Level.LevMap); a++ {
-      if rl.CheckCollisionPointRec(checkV2, gs.Level.LevMap[a]) {
+    for a := 0; a < len(level.LevMap); a++ {
+      if rl.CheckCollisionPointRec(checkV2, level.LevMap[a]) {
         canadd = false
       }
     }
@@ -7298,7 +7299,7 @@ func makelevel() { //MARK:MAKE LEVEL
         rec.X -= mapRecSize
       }
 
-      gs.Level.LevMap = append(gs.Level.LevMap, rec)
+      level.LevMap = append(level.LevMap, rec)
       numRooms--
     } else {
       countbreak++
@@ -7310,46 +7311,46 @@ func makelevel() { //MARK:MAKE LEVEL
   }
 
   //FIND DOORS
-  for a := 0; a < len(gs.Level.LevMap); a++ {
+  for a := 0; a < len(level.LevMap); a++ {
 
-    checkV2 := rl.NewVector2(gs.Level.LevMap[a].X+gs.Level.LevMap[a].Width/2, gs.Level.LevMap[a].Y+gs.Level.LevMap[a].Width/2)
+    checkV2 := rl.NewVector2(level.LevMap[a].X+level.LevMap[a].Width/2, level.LevMap[a].Y+level.LevMap[a].Width/2)
     ocheckV2 := checkV2
-    checkV2.Y -= gs.Level.LevMap[a].Width
-    for b := 0; b < len(gs.Level.LevMap); b++ {
+    checkV2.Y -= level.LevMap[a].Width
+    for b := 0; b < len(level.LevMap); b++ {
       if a != b {
-        if rl.CheckCollisionPointRec(checkV2, gs.Level.LevMap[b]) {
-          gs.Level.Level[a].doorSides = append(gs.Level.Level[a].doorSides, 1)
-          gs.Level.Level[a].nextRooms = append(gs.Level.Level[a].nextRooms, b)
+        if rl.CheckCollisionPointRec(checkV2, level.LevMap[b]) {
+          level.Level[a].doorSides = append(level.Level[a].doorSides, 1)
+          level.Level[a].nextRooms = append(level.Level[a].nextRooms, b)
         }
       }
     }
     checkV2 = ocheckV2
-    checkV2.X += gs.Level.LevMap[a].Width
-    for b := 0; b < len(gs.Level.LevMap); b++ {
+    checkV2.X += level.LevMap[a].Width
+    for b := 0; b < len(level.LevMap); b++ {
       if a != b {
-        if rl.CheckCollisionPointRec(checkV2, gs.Level.LevMap[b]) {
-          gs.Level.Level[a].doorSides = append(gs.Level.Level[a].doorSides, 2)
-          gs.Level.Level[a].nextRooms = append(gs.Level.Level[a].nextRooms, b)
+        if rl.CheckCollisionPointRec(checkV2, level.LevMap[b]) {
+          level.Level[a].doorSides = append(level.Level[a].doorSides, 2)
+          level.Level[a].nextRooms = append(level.Level[a].nextRooms, b)
         }
       }
     }
     checkV2 = ocheckV2
-    checkV2.Y += gs.Level.LevMap[a].Width
-    for b := 0; b < len(gs.Level.LevMap); b++ {
+    checkV2.Y += level.LevMap[a].Width
+    for b := 0; b < len(level.LevMap); b++ {
       if a != b {
-        if rl.CheckCollisionPointRec(checkV2, gs.Level.LevMap[b]) {
-          gs.Level.Level[a].doorSides = append(gs.Level.Level[a].doorSides, 3)
-          gs.Level.Level[a].nextRooms = append(gs.Level.Level[a].nextRooms, b)
+        if rl.CheckCollisionPointRec(checkV2, level.LevMap[b]) {
+          level.Level[a].doorSides = append(level.Level[a].doorSides, 3)
+          level.Level[a].nextRooms = append(level.Level[a].nextRooms, b)
         }
       }
     }
     checkV2 = ocheckV2
-    checkV2.X -= gs.Level.LevMap[a].Width
-    for b := 0; b < len(gs.Level.LevMap); b++ {
+    checkV2.X -= level.LevMap[a].Width
+    for b := 0; b < len(level.LevMap); b++ {
       if a != b {
-        if rl.CheckCollisionPointRec(checkV2, gs.Level.LevMap[b]) {
-          gs.Level.Level[a].doorSides = append(gs.Level.Level[a].doorSides, 4)
-          gs.Level.Level[a].nextRooms = append(gs.Level.Level[a].nextRooms, b)
+        if rl.CheckCollisionPointRec(checkV2, level.LevMap[b]) {
+          level.Level[a].doorSides = append(level.Level[a].doorSides, 4)
+          level.Level[a].nextRooms = append(level.Level[a].nextRooms, b)
         }
       }
     }
@@ -7357,169 +7358,169 @@ func makelevel() { //MARK:MAKE LEVEL
   }
 
   //REMOVE DOOR BLOKS
-  for a := 0; a < len(gs.Level.Level); a++ {
+  for a := 0; a < len(level.Level); a++ {
 
-    for b := 0; b < len(gs.Level.Level[a].doorSides); b++ {
+    for b := 0; b < len(level.Level[a].doorSides); b++ {
 
-      if gs.Level.Level[a].doorSides[b] == 1 {
-        checkV2 := rl.NewVector2(gs.Level.LevX+gs.Level.LevW/2, gs.Level.LevY+gs.Level.BorderWallBlokSiz/2)
+      if level.Level[a].doorSides[b] == 1 {
+        checkV2 := rl.NewVector2(level.LevX+level.LevW/2, level.LevY+level.BorderWallBlokSiz/2)
         checkV2L1 := checkV2
-        checkV2L1.X -= gs.Level.BorderWallBlokSiz
+        checkV2L1.X -= level.BorderWallBlokSiz
         checkV2L2 := checkV2L1
-        checkV2L2.X -= gs.Level.BorderWallBlokSiz
+        checkV2L2.X -= level.BorderWallBlokSiz
         checkV2R1 := checkV2
-        checkV2R1.X += gs.Level.BorderWallBlokSiz
+        checkV2R1.X += level.BorderWallBlokSiz
         checkV2R2 := checkV2R1
-        checkV2R2.X += gs.Level.BorderWallBlokSiz
+        checkV2R2.X += level.BorderWallBlokSiz
 
-        exitRec := rl.NewRectangle(checkV2L2.X-gs.Level.BorderWallBlokSiz/2, checkV2L2.Y-gs.Level.BorderWallBlokSiz/2, gs.Level.BorderWallBlokSiz*5, bsU5)
-        gs.Level.Level[a].doorExitRecs = append(gs.Level.Level[a].doorExitRecs, exitRec)
+        exitRec := rl.NewRectangle(checkV2L2.X-level.BorderWallBlokSiz/2, checkV2L2.Y-level.BorderWallBlokSiz/2, level.BorderWallBlokSiz*5, bsU5)
+        level.Level[a].doorExitRecs = append(level.Level[a].doorExitRecs, exitRec)
 
-        for c := 0; c < len(gs.Level.Level[a].walls); c++ {
-          if rl.CheckCollisionPointRec(checkV2, gs.Level.Level[a].walls[c].rec) {
-            gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
+        for c := 0; c < len(level.Level[a].walls); c++ {
+          if rl.CheckCollisionPointRec(checkV2, level.Level[a].walls[c].rec) {
+            level.Level[a].walls = remBlok(level.Level[a].walls, c)
           }
         }
-        for c := 0; c < len(gs.Level.Level[a].walls); c++ {
-          if rl.CheckCollisionPointRec(checkV2L1, gs.Level.Level[a].walls[c].rec) {
-            gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
+        for c := 0; c < len(level.Level[a].walls); c++ {
+          if rl.CheckCollisionPointRec(checkV2L1, level.Level[a].walls[c].rec) {
+            level.Level[a].walls = remBlok(level.Level[a].walls, c)
           }
         }
-        for c := 0; c < len(gs.Level.Level[a].walls); c++ {
-          if rl.CheckCollisionPointRec(checkV2L2, gs.Level.Level[a].walls[c].rec) {
-            gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
+        for c := 0; c < len(level.Level[a].walls); c++ {
+          if rl.CheckCollisionPointRec(checkV2L2, level.Level[a].walls[c].rec) {
+            level.Level[a].walls = remBlok(level.Level[a].walls, c)
           }
         }
-        for c := 0; c < len(gs.Level.Level[a].walls); c++ {
-          if rl.CheckCollisionPointRec(checkV2R1, gs.Level.Level[a].walls[c].rec) {
-            gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
+        for c := 0; c < len(level.Level[a].walls); c++ {
+          if rl.CheckCollisionPointRec(checkV2R1, level.Level[a].walls[c].rec) {
+            level.Level[a].walls = remBlok(level.Level[a].walls, c)
           }
         }
-        for c := 0; c < len(gs.Level.Level[a].walls); c++ {
-          if rl.CheckCollisionPointRec(checkV2R2, gs.Level.Level[a].walls[c].rec) {
-            gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
+        for c := 0; c < len(level.Level[a].walls); c++ {
+          if rl.CheckCollisionPointRec(checkV2R2, level.Level[a].walls[c].rec) {
+            level.Level[a].walls = remBlok(level.Level[a].walls, c)
           }
         }
       }
-      if gs.Level.Level[a].doorSides[b] == 2 {
-        checkV2 := rl.NewVector2(gs.Level.LevX+gs.Level.LevW-gs.Level.BorderWallBlokSiz/2, gs.Level.LevY+gs.Level.LevW/2)
+      if level.Level[a].doorSides[b] == 2 {
+        checkV2 := rl.NewVector2(level.LevX+level.LevW-level.BorderWallBlokSiz/2, level.LevY+level.LevW/2)
         checkV2L1 := checkV2
-        checkV2L1.Y -= gs.Level.BorderWallBlokSiz
+        checkV2L1.Y -= level.BorderWallBlokSiz
         checkV2L2 := checkV2L1
-        checkV2L2.Y -= gs.Level.BorderWallBlokSiz
+        checkV2L2.Y -= level.BorderWallBlokSiz
         checkV2R1 := checkV2
-        checkV2R1.Y += gs.Level.BorderWallBlokSiz
+        checkV2R1.Y += level.BorderWallBlokSiz
         checkV2R2 := checkV2R1
-        checkV2R2.Y += gs.Level.BorderWallBlokSiz
+        checkV2R2.Y += level.BorderWallBlokSiz
 
-        exitRec := rl.NewRectangle((checkV2L2.X+gs.Level.BorderWallBlokSiz/2)-bsU5, checkV2L2.Y-gs.Level.BorderWallBlokSiz/2, bsU5, gs.Level.BorderWallBlokSiz*5)
-        gs.Level.Level[a].doorExitRecs = append(gs.Level.Level[a].doorExitRecs, exitRec)
+        exitRec := rl.NewRectangle((checkV2L2.X+level.BorderWallBlokSiz/2)-bsU5, checkV2L2.Y-level.BorderWallBlokSiz/2, bsU5, level.BorderWallBlokSiz*5)
+        level.Level[a].doorExitRecs = append(level.Level[a].doorExitRecs, exitRec)
 
-        for c := 0; c < len(gs.Level.Level[a].walls); c++ {
-          if rl.CheckCollisionPointRec(checkV2, gs.Level.Level[a].walls[c].rec) {
-            gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
+        for c := 0; c < len(level.Level[a].walls); c++ {
+          if rl.CheckCollisionPointRec(checkV2, level.Level[a].walls[c].rec) {
+            level.Level[a].walls = remBlok(level.Level[a].walls, c)
           }
         }
-        for c := 0; c < len(gs.Level.Level[a].walls); c++ {
-          if rl.CheckCollisionPointRec(checkV2L1, gs.Level.Level[a].walls[c].rec) {
-            gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
+        for c := 0; c < len(level.Level[a].walls); c++ {
+          if rl.CheckCollisionPointRec(checkV2L1, level.Level[a].walls[c].rec) {
+            level.Level[a].walls = remBlok(level.Level[a].walls, c)
           }
         }
-        for c := 0; c < len(gs.Level.Level[a].walls); c++ {
-          if rl.CheckCollisionPointRec(checkV2L2, gs.Level.Level[a].walls[c].rec) {
-            gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
+        for c := 0; c < len(level.Level[a].walls); c++ {
+          if rl.CheckCollisionPointRec(checkV2L2, level.Level[a].walls[c].rec) {
+            level.Level[a].walls = remBlok(level.Level[a].walls, c)
           }
         }
-        for c := 0; c < len(gs.Level.Level[a].walls); c++ {
-          if rl.CheckCollisionPointRec(checkV2R1, gs.Level.Level[a].walls[c].rec) {
-            gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
+        for c := 0; c < len(level.Level[a].walls); c++ {
+          if rl.CheckCollisionPointRec(checkV2R1, level.Level[a].walls[c].rec) {
+            level.Level[a].walls = remBlok(level.Level[a].walls, c)
           }
         }
-        for c := 0; c < len(gs.Level.Level[a].walls); c++ {
-          if rl.CheckCollisionPointRec(checkV2R2, gs.Level.Level[a].walls[c].rec) {
-            gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
-          }
-        }
-      }
-
-      if gs.Level.Level[a].doorSides[b] == 3 {
-        checkV2 := rl.NewVector2(gs.Level.LevX+gs.Level.LevW/2, gs.Level.LevY+gs.Level.LevW-gs.Level.BorderWallBlokSiz/2)
-        checkV2L1 := checkV2
-        checkV2L1.X -= gs.Level.BorderWallBlokSiz
-        checkV2L2 := checkV2L1
-        checkV2L2.X -= gs.Level.BorderWallBlokSiz
-        checkV2R1 := checkV2
-        checkV2R1.X += gs.Level.BorderWallBlokSiz
-        checkV2R2 := checkV2R1
-        checkV2R2.X += gs.Level.BorderWallBlokSiz
-
-        exitRec := rl.NewRectangle(checkV2L2.X-gs.Level.BorderWallBlokSiz/2, (checkV2L2.Y+gs.Level.BorderWallBlokSiz/2)-bsU5, gs.Level.BorderWallBlokSiz*5, bsU5)
-        gs.Level.Level[a].doorExitRecs = append(gs.Level.Level[a].doorExitRecs, exitRec)
-
-        for c := 0; c < len(gs.Level.Level[a].walls); c++ {
-          if rl.CheckCollisionPointRec(checkV2, gs.Level.Level[a].walls[c].rec) {
-            gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
-          }
-        }
-        for c := 0; c < len(gs.Level.Level[a].walls); c++ {
-          if rl.CheckCollisionPointRec(checkV2L1, gs.Level.Level[a].walls[c].rec) {
-            gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
-          }
-        }
-        for c := 0; c < len(gs.Level.Level[a].walls); c++ {
-          if rl.CheckCollisionPointRec(checkV2L2, gs.Level.Level[a].walls[c].rec) {
-            gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
-          }
-        }
-        for c := 0; c < len(gs.Level.Level[a].walls); c++ {
-          if rl.CheckCollisionPointRec(checkV2R1, gs.Level.Level[a].walls[c].rec) {
-            gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
-          }
-        }
-        for c := 0; c < len(gs.Level.Level[a].walls); c++ {
-          if rl.CheckCollisionPointRec(checkV2R2, gs.Level.Level[a].walls[c].rec) {
-            gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
+        for c := 0; c < len(level.Level[a].walls); c++ {
+          if rl.CheckCollisionPointRec(checkV2R2, level.Level[a].walls[c].rec) {
+            level.Level[a].walls = remBlok(level.Level[a].walls, c)
           }
         }
       }
 
-      if gs.Level.Level[a].doorSides[b] == 4 {
-        checkV2 := rl.NewVector2(gs.Level.LevX+gs.Level.BorderWallBlokSiz/2, gs.Level.LevY+gs.Level.LevW/2)
+      if level.Level[a].doorSides[b] == 3 {
+        checkV2 := rl.NewVector2(level.LevX+level.LevW/2, level.LevY+level.LevW-level.BorderWallBlokSiz/2)
         checkV2L1 := checkV2
-        checkV2L1.Y -= gs.Level.BorderWallBlokSiz
+        checkV2L1.X -= level.BorderWallBlokSiz
         checkV2L2 := checkV2L1
-        checkV2L2.Y -= gs.Level.BorderWallBlokSiz
+        checkV2L2.X -= level.BorderWallBlokSiz
         checkV2R1 := checkV2
-        checkV2R1.Y += gs.Level.BorderWallBlokSiz
+        checkV2R1.X += level.BorderWallBlokSiz
         checkV2R2 := checkV2R1
-        checkV2R2.Y += gs.Level.BorderWallBlokSiz
+        checkV2R2.X += level.BorderWallBlokSiz
 
-        exitRec := rl.NewRectangle((checkV2L2.X - gs.Level.BorderWallBlokSiz/2), checkV2L2.Y-gs.Level.BorderWallBlokSiz/2, bsU5, gs.Level.BorderWallBlokSiz*5)
-        gs.Level.Level[a].doorExitRecs = append(gs.Level.Level[a].doorExitRecs, exitRec)
+        exitRec := rl.NewRectangle(checkV2L2.X-level.BorderWallBlokSiz/2, (checkV2L2.Y+level.BorderWallBlokSiz/2)-bsU5, level.BorderWallBlokSiz*5, bsU5)
+        level.Level[a].doorExitRecs = append(level.Level[a].doorExitRecs, exitRec)
 
-        for c := 0; c < len(gs.Level.Level[a].walls); c++ {
-          if rl.CheckCollisionPointRec(checkV2, gs.Level.Level[a].walls[c].rec) {
-            gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
+        for c := 0; c < len(level.Level[a].walls); c++ {
+          if rl.CheckCollisionPointRec(checkV2, level.Level[a].walls[c].rec) {
+            level.Level[a].walls = remBlok(level.Level[a].walls, c)
           }
         }
-        for c := 0; c < len(gs.Level.Level[a].walls); c++ {
-          if rl.CheckCollisionPointRec(checkV2L1, gs.Level.Level[a].walls[c].rec) {
-            gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
+        for c := 0; c < len(level.Level[a].walls); c++ {
+          if rl.CheckCollisionPointRec(checkV2L1, level.Level[a].walls[c].rec) {
+            level.Level[a].walls = remBlok(level.Level[a].walls, c)
           }
         }
-        for c := 0; c < len(gs.Level.Level[a].walls); c++ {
-          if rl.CheckCollisionPointRec(checkV2L2, gs.Level.Level[a].walls[c].rec) {
-            gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
+        for c := 0; c < len(level.Level[a].walls); c++ {
+          if rl.CheckCollisionPointRec(checkV2L2, level.Level[a].walls[c].rec) {
+            level.Level[a].walls = remBlok(level.Level[a].walls, c)
           }
         }
-        for c := 0; c < len(gs.Level.Level[a].walls); c++ {
-          if rl.CheckCollisionPointRec(checkV2R1, gs.Level.Level[a].walls[c].rec) {
-            gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
+        for c := 0; c < len(level.Level[a].walls); c++ {
+          if rl.CheckCollisionPointRec(checkV2R1, level.Level[a].walls[c].rec) {
+            level.Level[a].walls = remBlok(level.Level[a].walls, c)
           }
         }
-        for c := 0; c < len(gs.Level.Level[a].walls); c++ {
-          if rl.CheckCollisionPointRec(checkV2R2, gs.Level.Level[a].walls[c].rec) {
-            gs.Level.Level[a].walls = remBlok(gs.Level.Level[a].walls, c)
+        for c := 0; c < len(level.Level[a].walls); c++ {
+          if rl.CheckCollisionPointRec(checkV2R2, level.Level[a].walls[c].rec) {
+            level.Level[a].walls = remBlok(level.Level[a].walls, c)
+          }
+        }
+      }
+
+      if level.Level[a].doorSides[b] == 4 {
+        checkV2 := rl.NewVector2(level.LevX+level.BorderWallBlokSiz/2, level.LevY+level.LevW/2)
+        checkV2L1 := checkV2
+        checkV2L1.Y -= level.BorderWallBlokSiz
+        checkV2L2 := checkV2L1
+        checkV2L2.Y -= level.BorderWallBlokSiz
+        checkV2R1 := checkV2
+        checkV2R1.Y += level.BorderWallBlokSiz
+        checkV2R2 := checkV2R1
+        checkV2R2.Y += level.BorderWallBlokSiz
+
+        exitRec := rl.NewRectangle((checkV2L2.X - level.BorderWallBlokSiz/2), checkV2L2.Y-level.BorderWallBlokSiz/2, bsU5, level.BorderWallBlokSiz*5)
+        level.Level[a].doorExitRecs = append(level.Level[a].doorExitRecs, exitRec)
+
+        for c := 0; c < len(level.Level[a].walls); c++ {
+          if rl.CheckCollisionPointRec(checkV2, level.Level[a].walls[c].rec) {
+            level.Level[a].walls = remBlok(level.Level[a].walls, c)
+          }
+        }
+        for c := 0; c < len(level.Level[a].walls); c++ {
+          if rl.CheckCollisionPointRec(checkV2L1, level.Level[a].walls[c].rec) {
+            level.Level[a].walls = remBlok(level.Level[a].walls, c)
+          }
+        }
+        for c := 0; c < len(level.Level[a].walls); c++ {
+          if rl.CheckCollisionPointRec(checkV2L2, level.Level[a].walls[c].rec) {
+            level.Level[a].walls = remBlok(level.Level[a].walls, c)
+          }
+        }
+        for c := 0; c < len(level.Level[a].walls); c++ {
+          if rl.CheckCollisionPointRec(checkV2R1, level.Level[a].walls[c].rec) {
+            level.Level[a].walls = remBlok(level.Level[a].walls, c)
+          }
+        }
+        for c := 0; c < len(level.Level[a].walls); c++ {
+          if rl.CheckCollisionPointRec(checkV2R2, level.Level[a].walls[c].rec) {
+            level.Level[a].walls = remBlok(level.Level[a].walls, c)
           }
         }
       }
@@ -7528,88 +7529,88 @@ func makelevel() { //MARK:MAKE LEVEL
 
   }
 
-  gs.Level.Level[0].visited = true
+  level.Level[0].visited = true
 
-  makeInnerBloks(&gs.Core, &gs.Level)
-  makemovebloks()
-  makeStatues(&gs.Level, gs.Render.Statues)
-  makeshop()
-  makeetc()
+  makeInnerBloks(core, level)
+  makemovebloks(level, render)
+  makeStatues(level, render.Statues)
+  makeshop(shop, level, render, core.Cnt)
+  makeetc(level, render)
 
-  if gs.Level.Levelnum > 3 {
-    makeBlades(&gs.Level, gs.Render.Blades)
-    makeTurrets(&gs.Level, &gs.Render, &gs.Core)
+  if level.Levelnum > 3 {
+    makeBlades(level, render.Blades)
+    makeTurrets(level, render, core)
   }
-  if gs.Level.Levelnum > 2 {
-    makeSpears(&gs.Level, &gs.Render)
+  if level.Levelnum > 2 {
+    makeSpears(level, render)
   }
-  if gs.Level.Levelnum > 1 {
-    makeSpikes(&gs.Level, &gs.Render, &gs.Core)
+  if level.Levelnum > 1 {
+    makeSpikes(level, render, core)
   }
 
-  makeenemies()
+  makeenemies(level, enemies, render, core.Fps)
 
-  makeExit(&gs.Level, &gs.Render)
+  makeExit(level, render)
 
-  cleanLevel(&gs.Level, &gs.Core)
+  cleanLevel(level, core)
 
 }
 
-func makenewlevel() { //MARK:MAKE NEW LEVEL
+func makenewlevel(level *LevelState, player *PlayerState, fx *FXState, companions CompanionState, shop *ShopState, enemies *EnemyState, core CoreState, render RenderState) { //MARK:MAKE NEW LEVEL
 
-  gs.Level.NextLevelScreen = true
-  gs.Level.Levelnum++
+  level.NextLevelScreen = true
+  level.Levelnum++
 
-  for a := 0; a < len(gs.Level.Level); a++ {
-    gs.Level.Level[a].etc = nil
-    gs.Level.Level[a].enemies = nil
-    gs.Level.Level[a].doorExitRecs = nil
-    gs.Level.Level[a].doorSides = nil
-    gs.Level.Level[a].floor = nil
-    gs.Level.Level[a].innerBloks = nil
-    gs.Level.Level[a].movBloks = nil
-    gs.Level.Level[a].nextRooms = nil
-    gs.Level.Level[a].spikes = nil
-    gs.Level.Level[a].visited = false
-    gs.Level.Level[a].walls = nil
+  for a := 0; a < len(level.Level); a++ {
+    level.Level[a].etc = nil
+    level.Level[a].enemies = nil
+    level.Level[a].doorExitRecs = nil
+    level.Level[a].doorSides = nil
+    level.Level[a].floor = nil
+    level.Level[a].innerBloks = nil
+    level.Level[a].movBloks = nil
+    level.Level[a].nextRooms = nil
+    level.Level[a].spikes = nil
+    level.Level[a].visited = false
+    level.Level[a].walls = nil
   }
 
-  gs.Level.Level = nil
-  gs.FX.Fx = nil
-  gs.Player.PlProj = nil
-  gs.Enemies.EnProj = nil
-  gs.FX.FloodRec.Y = gs.Core.ScrHF32 + bsU
+  level.Level = nil
+  fx.Fx = nil
+  player.PlProj = nil
+  enemies.EnProj = nil
+  fx.FloodRec.Y = core.ScrHF32 + bsU
 
-  if gs.Level.Levelnum == 6 {
-    gs.Player.Mods.planty = false
-    gs.Player.Mods.carrot = false
-    gs.Player.Mods.alien = false
-    gs.Player.Mods.vine = false
-    gs.Player.Mods.airstrike = false
-    makeendlevel()
+  if level.Levelnum == 6 {
+    player.Mods.planty = false
+    player.Mods.carrot = false
+    player.Mods.alien = false
+    player.Mods.vine = false
+    player.Mods.airstrike = false
+    makeendlevel(level, core, render)
   } else {
-    makelevel()
+    makelevel(level, shop, enemies, core, render)
   }
-  gs.Level.NextlevelT = gs.Core.Fps
+  level.NextlevelT = core.Fps
 
-  gs.Player.Pl.cnt = gs.Core.Cnt
-  cntCompanion := gs.Player.Pl.cnt
+  player.Pl.cnt = core.Cnt
+  cntCompanion := player.Pl.cnt
 
-  if gs.Player.Mods.carrot {
-    gs.Companions.MrCarrot.rec = rl.NewRectangle(cntCompanion.X-gs.Companions.MrCarrot.rec.Width/2, cntCompanion.Y-gs.Companions.MrCarrot.rec.Width/2, gs.Companions.MrCarrot.rec.Width, gs.Companions.MrCarrot.rec.Width)
+  if player.Mods.carrot {
+    companions.MrCarrot.rec = rl.NewRectangle(cntCompanion.X-companions.MrCarrot.rec.Width/2, cntCompanion.Y-companions.MrCarrot.rec.Width/2, companions.MrCarrot.rec.Width, companions.MrCarrot.rec.Width)
   }
-  if gs.Player.Mods.alien {
-    gs.Companions.MrAlien.rec = rl.NewRectangle(cntCompanion.X-gs.Companions.MrAlien.rec.Width/2, cntCompanion.Y-gs.Companions.MrAlien.rec.Width/2, gs.Companions.MrAlien.rec.Width, gs.Companions.MrAlien.rec.Width)
+  if player.Mods.alien {
+    companions.MrAlien.rec = rl.NewRectangle(cntCompanion.X-companions.MrAlien.rec.Width/2, cntCompanion.Y-companions.MrAlien.rec.Width/2, companions.MrAlien.rec.Width, companions.MrAlien.rec.Width)
   }
-  if gs.Player.Mods.planty {
-    gs.Companions.MrPlanty.rec = rl.NewRectangle(cntCompanion.X-gs.Companions.MrPlanty.rec.Width/2, cntCompanion.Y-gs.Companions.MrPlanty.rec.Width/2, gs.Companions.MrPlanty.rec.Width, gs.Companions.MrPlanty.rec.Width)
+  if player.Mods.planty {
+    companions.MrPlanty.rec = rl.NewRectangle(cntCompanion.X-companions.MrPlanty.rec.Width/2, cntCompanion.Y-companions.MrPlanty.rec.Width/2, companions.MrPlanty.rec.Width, companions.MrPlanty.rec.Width)
   }
 
-  gs.Level.RoomNum = 0
+  level.RoomNum = 0
 
 }
 
-func makeInnerBloks(core *CoreState, level *LevelState) { //MARK: MAKE INNER BLOKS
+func makeInnerBloks(core CoreState, level *LevelState) { //MARK: MAKE INNER BLOKS
 	for a := 0; a < len(level.Level); a++ {
 		num := rInt(3, 7)
 		for num > 0 {
@@ -7753,7 +7754,7 @@ func makemario() { //MARK:MAKE MARIO
 
 }
 
-func makeAirstrike(fx *FXState, level *LevelState, core *CoreState) { //MARK:MAKE AIR STRIKE
+func makeAirstrike(fx *FXState, level *LevelState, core CoreState) { //MARK:MAKE AIR STRIKE
 	fx.AirstrikeV2 = nil
 	fx.AirstrikeDir = rInt(1, 5)
 	switch fx.AirstrikeDir {
@@ -7867,145 +7868,145 @@ func makePlayer(player *PlayerState, render *RenderState, core *CoreState) { //M
   player.Max.cake = 99
 }
 
-func makeEnemyTypes() { //MARK: MAKE ENEMY TYPES
+func makeEnemyTypes(enemies *EnemyState) { //MARK: MAKE ENEMY TYPES
 
   siz := bsU4
 
-  gs.Enemies.EnSpikes.img = rl.NewRectangle(0, 404, 44, 44)
-  gs.Enemies.EnSpikes.fade = 1
-  gs.Enemies.EnSpikes.col = rl.White
-  gs.Enemies.EnSpikes.xImg = 0
-  gs.Enemies.EnSpikes.frameNum = 15
-  gs.Enemies.EnSpikes.vel = bsU / 5
-  gs.Enemies.EnSpikes.name = "spikehog"
-  gs.Enemies.EnSpikes.hp = 5
-  gs.Enemies.EnSpikes.hpmax = gs.Enemies.EnSpikes.hp
-  gs.Enemies.EnSpikes.rec = rl.NewRectangle(0, 0, siz, siz)
+  enemies.EnSpikes.img = rl.NewRectangle(0, 404, 44, 44)
+  enemies.EnSpikes.fade = 1
+  enemies.EnSpikes.col = rl.White
+  enemies.EnSpikes.xImg = 0
+  enemies.EnSpikes.frameNum = 15
+  enemies.EnSpikes.vel = bsU / 5
+  enemies.EnSpikes.name = "spikehog"
+  enemies.EnSpikes.hp = 5
+  enemies.EnSpikes.hpmax = enemies.EnSpikes.hp
+  enemies.EnSpikes.rec = rl.NewRectangle(0, 0, siz, siz)
 
-  gs.Enemies.EnGhost.imgl = rl.NewRectangle(4, 506, 44, 44)
-  gs.Enemies.EnGhost.imgr = rl.NewRectangle(454, 506, 44, 44)
-  gs.Enemies.EnGhost.img = gs.Enemies.EnGhost.imgr
-  gs.Enemies.EnGhost.col = rl.White
-  gs.Enemies.EnGhost.fade = 1
-  gs.Enemies.EnGhost.xImg = 4
-  gs.Enemies.EnGhost.xImg2 = 454
-  gs.Enemies.EnGhost.frameNum = 9
-  gs.Enemies.EnGhost.vel = bsU / 5
-  gs.Enemies.EnGhost.name = "ghost"
-  gs.Enemies.EnGhost.hp = 4
-  gs.Enemies.EnGhost.hpmax = gs.Enemies.EnGhost.hp
-  gs.Enemies.EnGhost.rec = rl.NewRectangle(0, 0, siz, siz)
+  enemies.EnGhost.imgl = rl.NewRectangle(4, 506, 44, 44)
+  enemies.EnGhost.imgr = rl.NewRectangle(454, 506, 44, 44)
+  enemies.EnGhost.img = enemies.EnGhost.imgr
+  enemies.EnGhost.col = rl.White
+  enemies.EnGhost.fade = 1
+  enemies.EnGhost.xImg = 4
+  enemies.EnGhost.xImg2 = 454
+  enemies.EnGhost.frameNum = 9
+  enemies.EnGhost.vel = bsU / 5
+  enemies.EnGhost.name = "ghost"
+  enemies.EnGhost.hp = 4
+  enemies.EnGhost.hpmax = enemies.EnGhost.hp
+  enemies.EnGhost.rec = rl.NewRectangle(0, 0, siz, siz)
 
-  gs.Enemies.EnSlime.imgl = rl.NewRectangle(4, 556, 44, 44)
-  gs.Enemies.EnSlime.imgr = rl.NewRectangle(458, 556, 44, 44)
-  gs.Enemies.EnSlime.img = gs.Enemies.EnSlime.imgr
-  gs.Enemies.EnSlime.col = rl.White
-  gs.Enemies.EnSlime.fade = 1
-  gs.Enemies.EnSlime.xImg = 4
-  gs.Enemies.EnSlime.xImg2 = 458
-  gs.Enemies.EnSlime.frameNum = 9
-  gs.Enemies.EnSlime.vel = bsU / 5
-  gs.Enemies.EnSlime.name = "slime"
-  gs.Enemies.EnSlime.hp = 5
-  gs.Enemies.EnSlime.hpmax = gs.Enemies.EnSlime.hp
-  gs.Enemies.EnSlime.rec = rl.NewRectangle(0, 0, siz, siz)
+  enemies.EnSlime.imgl = rl.NewRectangle(4, 556, 44, 44)
+  enemies.EnSlime.imgr = rl.NewRectangle(458, 556, 44, 44)
+  enemies.EnSlime.img = enemies.EnSlime.imgr
+  enemies.EnSlime.col = rl.White
+  enemies.EnSlime.fade = 1
+  enemies.EnSlime.xImg = 4
+  enemies.EnSlime.xImg2 = 458
+  enemies.EnSlime.frameNum = 9
+  enemies.EnSlime.vel = bsU / 5
+  enemies.EnSlime.name = "slime"
+  enemies.EnSlime.hp = 5
+  enemies.EnSlime.hpmax = enemies.EnSlime.hp
+  enemies.EnSlime.rec = rl.NewRectangle(0, 0, siz, siz)
 
-  gs.Enemies.EnRock.imgl = rl.NewRectangle(4, 608, 22, 22)
-  gs.Enemies.EnRock.imgr = rl.NewRectangle(318, 608, 22, 22)
-  gs.Enemies.EnRock.img = gs.Enemies.EnRock.imgr
-  gs.Enemies.EnRock.col = rl.White
-  gs.Enemies.EnRock.fade = 1
-  gs.Enemies.EnRock.xImg = 4
-  gs.Enemies.EnRock.xImg2 = 318
-  gs.Enemies.EnRock.frameNum = 13
-  gs.Enemies.EnRock.vel = bsU / 4
-  gs.Enemies.EnRock.name = "rock"
-  gs.Enemies.EnRock.hp = 3
-  gs.Enemies.EnRock.hpmax = gs.Enemies.EnRock.hp
-  gs.Enemies.EnRock.rec = rl.NewRectangle(0, 0, bsU3, bsU3)
+  enemies.EnRock.imgl = rl.NewRectangle(4, 608, 22, 22)
+  enemies.EnRock.imgr = rl.NewRectangle(318, 608, 22, 22)
+  enemies.EnRock.img = enemies.EnRock.imgr
+  enemies.EnRock.col = rl.White
+  enemies.EnRock.fade = 1
+  enemies.EnRock.xImg = 4
+  enemies.EnRock.xImg2 = 318
+  enemies.EnRock.frameNum = 13
+  enemies.EnRock.vel = bsU / 4
+  enemies.EnRock.name = "rock"
+  enemies.EnRock.hp = 3
+  enemies.EnRock.hpmax = enemies.EnRock.hp
+  enemies.EnRock.rec = rl.NewRectangle(0, 0, bsU3, bsU3)
 
-  gs.Enemies.EnMushroom.imgl = rl.NewRectangle(4, 634, 32, 32)
-  gs.Enemies.EnMushroom.imgr = rl.NewRectangle(4, 668, 32, 32)
-  gs.Enemies.EnMushroom.img = gs.Enemies.EnMushroom.imgr
-  gs.Enemies.EnMushroom.col = rl.White
-  gs.Enemies.EnMushroom.fade = 1
-  gs.Enemies.EnMushroom.xImg = 4
-  gs.Enemies.EnMushroom.xImg2 = 4
-  gs.Enemies.EnMushroom.frameNum = 13
-  gs.Enemies.EnMushroom.vel = bsU / 5
-  gs.Enemies.EnMushroom.name = "mushroom"
-  gs.Enemies.EnMushroom.hp = 5
-  gs.Enemies.EnMushroom.hpmax = gs.Enemies.EnMushroom.hp
-  gs.Enemies.EnMushroom.rec = rl.NewRectangle(0, 0, siz, siz)
+  enemies.EnMushroom.imgl = rl.NewRectangle(4, 634, 32, 32)
+  enemies.EnMushroom.imgr = rl.NewRectangle(4, 668, 32, 32)
+  enemies.EnMushroom.img = enemies.EnMushroom.imgr
+  enemies.EnMushroom.col = rl.White
+  enemies.EnMushroom.fade = 1
+  enemies.EnMushroom.xImg = 4
+  enemies.EnMushroom.xImg2 = 4
+  enemies.EnMushroom.frameNum = 13
+  enemies.EnMushroom.vel = bsU / 5
+  enemies.EnMushroom.name = "mushroom"
+  enemies.EnMushroom.hp = 5
+  enemies.EnMushroom.hpmax = enemies.EnMushroom.hp
+  enemies.EnMushroom.rec = rl.NewRectangle(0, 0, siz, siz)
 
 }
 
-func makeenemies() { //MARK:MAKE ENEMIES
+func makeenemies(level *LevelState, enemies *EnemyState, render RenderState, fps int32) { //MARK:MAKE ENEMIES
 
-  makeEnemyTypes()
+  makeEnemyTypes(enemies)
 
   zen := xenemy{}
   siz := bsU2
 
-  for a := 0; a < len(gs.Level.Level); a++ {
+  for a := 0; a < len(level.Level); a++ {
 
-    if gs.Level.Levelnum > 4 {
+    if level.Levelnum > 4 {
       if flipcoin() { //MUSHROOM
         zen = xenemy{}
-        zen = gs.Enemies.EnMushroom
-        zen.T1 = rI32(int(gs.Core.Fps*2), int(gs.Core.Fps*5))
+        zen = enemies.EnMushroom
+        zen.T1 = rI32(int(fps*2), int(fps*5))
         canadd := true
-        zen.rec, canadd = findRecPos(&gs.Level, gs.Enemies.EnMushroom.rec.Width, a)
+        zen.rec, canadd = findRecPos(level, enemies.EnMushroom.rec.Width, a)
         zen.crec = zen.rec
         zen.crec.Y += zen.crec.Height / 2
         zen.crec.Height -= zen.crec.Height / 2
         zen.velX = rF32(-zen.vel, zen.vel)
         zen.velY = rF32(-zen.vel, zen.vel)
         if canadd {
-          gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
+          level.Level[a].enemies = append(level.Level[a].enemies, zen)
         }
       }
-      if gs.Level.Hardcore {
+      if level.Hardcore {
         if flipcoin() { //MUSHROOM
           zen = xenemy{}
-          zen = gs.Enemies.EnMushroom
-          zen.T1 = rI32(int(gs.Core.Fps*2), int(gs.Core.Fps*5))
+          zen = enemies.EnMushroom
+          zen.T1 = rI32(int(fps*2), int(fps*5))
           canadd := true
-          zen.rec, canadd = findRecPos(&gs.Level, gs.Enemies.EnMushroom.rec.Width, a)
+          zen.rec, canadd = findRecPos(level, enemies.EnMushroom.rec.Width, a)
           zen.crec = zen.rec
           zen.crec.Y += zen.crec.Height / 2
           zen.crec.Height -= zen.crec.Height / 2
           zen.velX = rF32(-zen.vel, zen.vel)
           zen.velY = rF32(-zen.vel, zen.vel)
           if canadd {
-            gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
+            level.Level[a].enemies = append(level.Level[a].enemies, zen)
           }
         }
         if flipcoin() { //MUSHROOM
           zen = xenemy{}
-          zen = gs.Enemies.EnMushroom
-          zen.T1 = rI32(int(gs.Core.Fps*2), int(gs.Core.Fps*5))
+          zen = enemies.EnMushroom
+          zen.T1 = rI32(int(fps*2), int(fps*5))
           canadd := true
-          zen.rec, canadd = findRecPos(&gs.Level, gs.Enemies.EnMushroom.rec.Width, a)
+          zen.rec, canadd = findRecPos(level, enemies.EnMushroom.rec.Width, a)
           zen.crec = zen.rec
           zen.crec.Y += zen.crec.Height / 2
           zen.crec.Height -= zen.crec.Height / 2
           zen.velX = rF32(-zen.vel, zen.vel)
           zen.velY = rF32(-zen.vel, zen.vel)
           if canadd {
-            gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
+            level.Level[a].enemies = append(level.Level[a].enemies, zen)
           }
         }
       }
     }
-    if gs.Level.Levelnum > 3 {
+    if level.Levelnum > 3 {
 
       if flipcoin() { //GHOST
         zen = xenemy{}
-        zen = gs.Enemies.EnGhost
+        zen = enemies.EnGhost
         zen.fly = true
         canadd := true
-        zen.rec, canadd = findRecPos(&gs.Level, gs.Enemies.EnGhost.rec.Width, a)
+        zen.rec, canadd = findRecPos(level, enemies.EnGhost.rec.Width, a)
         zen.crec = zen.rec
         zen.crec.Y += zen.crec.Height / 3
         zen.crec.Height -= zen.crec.Height / 3
@@ -8021,16 +8022,16 @@ func makeenemies() { //MARK:MAKE ENEMIES
         zen.velY = rF32(-zen.vel, zen.vel)
 
         if canadd {
-          gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
+          level.Level[a].enemies = append(level.Level[a].enemies, zen)
         }
       }
-      if gs.Level.Hardcore {
+      if level.Hardcore {
         if flipcoin() { //GHOST
           zen = xenemy{}
-          zen = gs.Enemies.EnGhost
+          zen = enemies.EnGhost
           zen.fly = true
           canadd := true
-          zen.rec, canadd = findRecPos(&gs.Level,gs.Enemies.EnGhost.rec.Width, a)
+          zen.rec, canadd = findRecPos(level,enemies.EnGhost.rec.Width, a)
           zen.crec = zen.rec
           zen.crec.Y += zen.crec.Height / 3
           zen.crec.Height -= zen.crec.Height / 3
@@ -8046,15 +8047,15 @@ func makeenemies() { //MARK:MAKE ENEMIES
           zen.velY = rF32(-zen.vel, zen.vel)
 
           if canadd {
-            gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
+            level.Level[a].enemies = append(level.Level[a].enemies, zen)
           }
         }
         if flipcoin() { //GHOST
           zen = xenemy{}
-          zen = gs.Enemies.EnGhost
+          zen = enemies.EnGhost
           zen.fly = true
           canadd := true
-          zen.rec, canadd = findRecPos(&gs.Level,gs.Enemies.EnGhost.rec.Width, a)
+          zen.rec, canadd = findRecPos(level,enemies.EnGhost.rec.Width, a)
           zen.crec = zen.rec
           zen.crec.Y += zen.crec.Height / 3
           zen.crec.Height -= zen.crec.Height / 3
@@ -8070,60 +8071,60 @@ func makeenemies() { //MARK:MAKE ENEMIES
           zen.velY = rF32(-zen.vel, zen.vel)
 
           if canadd {
-            gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
+            level.Level[a].enemies = append(level.Level[a].enemies, zen)
           }
         }
 
       }
 
     }
-    if gs.Level.Levelnum > 1 {
+    if level.Levelnum > 1 {
 
       if flipcoin() { //SLIME
         zen = xenemy{}
-        zen = gs.Enemies.EnSlime
-        zen.T1 = rI32(int(gs.Core.Fps/2), int(gs.Core.Fps*2))
+        zen = enemies.EnSlime
+        zen.T1 = rI32(int(fps/2), int(fps*2))
         canadd := true
-        zen.rec, canadd = findRecPos(&gs.Level, gs.Enemies.EnSlime.rec.Width, a)
+        zen.rec, canadd = findRecPos(level, enemies.EnSlime.rec.Width, a)
         zen.crec = zen.rec
         zen.crec.Y += zen.crec.Height / 3
         zen.crec.Height -= zen.crec.Height / 3
         zen.velX = rF32(-zen.vel, zen.vel)
         zen.velY = rF32(-zen.vel, zen.vel)
         if canadd {
-          gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
+          level.Level[a].enemies = append(level.Level[a].enemies, zen)
         }
       }
 
-      if gs.Level.Hardcore {
+      if level.Hardcore {
         if flipcoin() { //SLIME
           zen = xenemy{}
-          zen = gs.Enemies.EnSlime
-          zen.T1 = rI32(int(gs.Core.Fps/2), int(gs.Core.Fps*2))
+          zen = enemies.EnSlime
+          zen.T1 = rI32(int(fps/2), int(fps*2))
           canadd := true
-          zen.rec, canadd = findRecPos(&gs.Level, gs.Enemies.EnSlime.rec.Width, a)
+          zen.rec, canadd = findRecPos(level, enemies.EnSlime.rec.Width, a)
           zen.crec = zen.rec
           zen.crec.Y += zen.crec.Height / 3
           zen.crec.Height -= zen.crec.Height / 3
           zen.velX = rF32(-zen.vel, zen.vel)
           zen.velY = rF32(-zen.vel, zen.vel)
           if canadd {
-            gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
+            level.Level[a].enemies = append(level.Level[a].enemies, zen)
           }
         }
         if flipcoin() { //SLIME
           zen = xenemy{}
-          zen = gs.Enemies.EnSlime
-          zen.T1 = rI32(int(gs.Core.Fps/2), int(gs.Core.Fps*2))
+          zen = enemies.EnSlime
+          zen.T1 = rI32(int(fps/2), int(fps*2))
           canadd := true
-          zen.rec, canadd = findRecPos(&gs.Level, gs.Enemies.EnSlime.rec.Width, a)
+          zen.rec, canadd = findRecPos(level, enemies.EnSlime.rec.Width, a)
           zen.crec = zen.rec
           zen.crec.Y += zen.crec.Height / 3
           zen.crec.Height -= zen.crec.Height / 3
           zen.velX = rF32(-zen.vel, zen.vel)
           zen.velY = rF32(-zen.vel, zen.vel)
           if canadd {
-            gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
+            level.Level[a].enemies = append(level.Level[a].enemies, zen)
           }
         }
       }
@@ -8131,24 +8132,24 @@ func makeenemies() { //MARK:MAKE ENEMIES
 
     if flipcoin() { //ROCK
       zen = xenemy{}
-      zen = gs.Enemies.EnRock
+      zen = enemies.EnRock
       zen.spawnN = rInt(2, 11)
-      zen.T1 = rI32(int(gs.Core.Fps*2), int(gs.Core.Fps*5))
+      zen.T1 = rI32(int(fps*2), int(fps*5))
       canadd := true
-      zen.rec, canadd = findRecPos(&gs.Level, gs.Enemies.EnRock.rec.Width, a)
+      zen.rec, canadd = findRecPos(level, enemies.EnRock.rec.Width, a)
       zen.crec = zen.rec
       zen.crec.Y += zen.crec.Height / 3
       zen.crec.Height -= zen.crec.Height / 3
       zen.velX = rF32(-zen.vel, zen.vel)
       zen.velY = rF32(-zen.vel, zen.vel)
       if canadd {
-        gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
+        level.Level[a].enemies = append(level.Level[a].enemies, zen)
       }
     } else { //SPIKEHOG
       zen = xenemy{}
-      zen = gs.Enemies.EnSpikes
+      zen = enemies.EnSpikes
       canadd := true
-      zen.rec, canadd = findRecPos(&gs.Level, gs.Enemies.EnSpikes.rec.Width, a)
+      zen.rec, canadd = findRecPos(level, enemies.EnSpikes.rec.Width, a)
       zen.crec = zen.rec
       zen.crec.Height = zen.crec.Height / 2
       zen.crec.Y += zen.crec.Height
@@ -8164,30 +8165,30 @@ func makeenemies() { //MARK:MAKE ENEMIES
         }
       }
       if canadd {
-        gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
+        level.Level[a].enemies = append(level.Level[a].enemies, zen)
       }
     }
-    if gs.Level.Hardcore {
+    if level.Hardcore {
       if flipcoin() { //ROCK
         zen = xenemy{}
-        zen = gs.Enemies.EnRock
+        zen = enemies.EnRock
         zen.spawnN = rInt(2, 11)
-        zen.T1 = rI32(int(gs.Core.Fps*2), int(gs.Core.Fps*5))
+        zen.T1 = rI32(int(fps*2), int(fps*5))
         canadd := true
-        zen.rec, canadd = findRecPos(&gs.Level,gs.Enemies.EnRock.rec.Width, a)
+        zen.rec, canadd = findRecPos(level,enemies.EnRock.rec.Width, a)
         zen.crec = zen.rec
         zen.crec.Y += zen.crec.Height / 3
         zen.crec.Height -= zen.crec.Height / 3
         zen.velX = rF32(-zen.vel, zen.vel)
         zen.velY = rF32(-zen.vel, zen.vel)
         if canadd {
-          gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
+          level.Level[a].enemies = append(level.Level[a].enemies, zen)
         }
       } else { //SPIKEHOG
         zen = xenemy{}
-        zen = gs.Enemies.EnSpikes
+        zen = enemies.EnSpikes
         canadd := true
-        zen.rec, canadd = findRecPos(&gs.Level,gs.Enemies.EnSpikes.rec.Width, a)
+        zen.rec, canadd = findRecPos(level,enemies.EnSpikes.rec.Width, a)
         zen.crec = zen.rec
         zen.crec.Height = zen.crec.Height / 2
         zen.crec.Y += zen.crec.Height
@@ -8203,7 +8204,7 @@ func makeenemies() { //MARK:MAKE ENEMIES
           }
         }
         if canadd {
-          gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
+          level.Level[a].enemies = append(level.Level[a].enemies, zen)
         }
       }
     }
@@ -8217,29 +8218,29 @@ func makeenemies() { //MARK:MAKE ENEMIES
       zen.vel = bsU / 3
       zen.velX = rF32(-zen.vel, zen.vel)
       zen.velY = rF32(-zen.vel, zen.vel)
-      zen.img = gs.Render.Bats[rInt(0, len(gs.Render.Bats))]
+      zen.img = render.Bats[rInt(0, len(render.Bats))]
       zen.fade = 1
       zen.col = rl.White
       zen.frameNum = 3
       zen.xImg = zen.img.X
       canadd := true
-      zen.rec, canadd = findRecPos(&gs.Level, siz, a)
+      zen.rec, canadd = findRecPos(level, siz, a)
       zen.ori = rl.NewVector2(0, 0)
       zen.crec = zen.rec
       if canadd {
-        gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
+        level.Level[a].enemies = append(level.Level[a].enemies, zen)
       }
 
       if flipcoin() {
         zen.velX = rF32(-zen.vel, zen.vel)
         zen.velY = rF32(-zen.vel, zen.vel)
-        zen.img = gs.Render.Bats[rInt(0, len(gs.Render.Bats))]
+        zen.img = render.Bats[rInt(0, len(render.Bats))]
         zen.xImg = zen.img.X
         canadd = true
-        zen.rec, canadd = findRecPos(&gs.Level, siz, a)
+        zen.rec, canadd = findRecPos(level, siz, a)
         zen.crec = zen.rec
         if canadd {
-          gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
+          level.Level[a].enemies = append(level.Level[a].enemies, zen)
         }
       }
     }
@@ -8254,17 +8255,17 @@ func makeenemies() { //MARK:MAKE ENEMIES
       zen.vel = bsU / 4
       zen.velX = rF32(-zen.vel, zen.vel)
       zen.velY = rF32(-zen.vel, zen.vel)
-      zen.img = gs.Render.Rabbit1.recTL
+      zen.img = render.Rabbit1.recTL
       zen.fade = 1
       zen.col = ranCol()
       canadd := true
-      zen.rec, canadd = findRecPos(&gs.Level,siz, a)
+      zen.rec, canadd = findRecPos(level,siz, a)
       zen.ori = rl.NewVector2(0, 0)
       zen.rec = rl.NewRectangle(zen.cnt.X-siz/2, zen.cnt.Y-siz/2, siz, siz)
       zen.crec = zen.rec
       if canadd {
-        if zen.rec.X > gs.Level.LevRecInner.X && zen.rec.Y > gs.Level.LevRecInner.Y {
-          gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
+        if zen.rec.X > level.LevRecInner.X && zen.rec.Y > level.LevRecInner.Y {
+          level.Level[a].enemies = append(level.Level[a].enemies, zen)
         }
       }
 
@@ -8273,19 +8274,19 @@ func makeenemies() { //MARK:MAKE ENEMIES
         zen.velY = rF32(-zen.vel, zen.vel)
         zen.col = ranCol()
         canadd := true
-        zen.rec, canadd = findRecPos(&gs.Level, siz, a)
+        zen.rec, canadd = findRecPos(level, siz, a)
         zen.crec = zen.rec
         if canadd {
-          if zen.rec.X > gs.Level.LevRecInner.X && zen.rec.Y > gs.Level.LevRecInner.Y {
-            gs.Level.Level[a].enemies = append(gs.Level.Level[a].enemies, zen)
+          if zen.rec.X > level.LevRecInner.X && zen.rec.Y > level.LevRecInner.Y {
+            level.Level[a].enemies = append(level.Level[a].enemies, zen)
           }
         }
       }
     }
 
   }
-
 }
+
 func makeTeleport(player *PlayerState) { //MARK:MAKE TELEPORT
   player.TeleportRadius = nil
   length := gs.Core.ScrWF32 / 2
@@ -8367,7 +8368,7 @@ func makeSwitchArrows(level *LevelState, enemies *EnemyState, render *RenderStat
 	}
 }
 
-func makeExit(level *LevelState, render *RenderState) { //MARK:MAKE EXIT
+func makeExit(level *LevelState, render RenderState) { //MARK:MAKE EXIT
   for {
     level.ExitRoomNum = rInt(1, len(level.Level))
     if level.ExitRoomNum != level.ShopRoomNum {
@@ -8408,7 +8409,7 @@ func makeStatues(lvl *LevelState, statues []rl.Rectangle) { //MARK:MAKE STATUES
   }
 }
 
-func makeSpears(level *LevelState, render *RenderState) { //MARK:MAKE SPEARS
+func makeSpears(level *LevelState, render RenderState) { //MARK:MAKE SPEARS
 	for a := 0; a < len(level.Level); a++ {
 		zblok := makeBlokGenNoRecNoCntr()
 		multi := float32(2)
@@ -8500,15 +8501,15 @@ func makeBlades(lvl *LevelState, blades xanim) { //MARK:MAKE BLADES
 }
 
 
-func makeetc() { //MARK:MAKE ETC
+func makeetc(level *LevelState, render RenderState) { //MARK:MAKE ETC
 
-  for a := 0; a < len(gs.Level.Level); a++ {
+  for a := 0; a < len(level.Level); a++ {
 
     //GAS CLOUD TRAPS
     if roll6() == 6 {
       zblok := makeBlokGenNoRecNoCntr()
       canadd := true
-      zblok.rec, canadd = findRecPoswithSpacing(&gs.Level, bsU2, bsU/2, a)
+      zblok.rec, canadd = findRecPoswithSpacing(level, bsU2, bsU/2, a)
       zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Width/2)
       zblok.drec = zblok.rec
       zblok.drec.X += zblok.rec.Width / 2
@@ -8516,9 +8517,9 @@ func makeetc() { //MARK:MAKE ETC
       zblok.ori = rl.NewVector2(zblok.rec.Width/2, zblok.rec.Width/2)
       zblok.name = "gascloudtrap"
       zblok.color = rl.SkyBlue
-      zblok.img = gs.Render.Etc[26]
+      zblok.img = render.Etc[26]
       if canadd {
-        gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
+        level.Level[a].etc = append(level.Level[a].etc, zblok)
       }
     }
 
@@ -8526,7 +8527,7 @@ func makeetc() { //MARK:MAKE ETC
     if roll6() == 6 {
       zblok := makeBlokGenNoRecNoCntr()
       canadd := true
-      zblok.rec, canadd = findRecPoswithSpacing(&gs.Level, bsU2, bsU/2, a)
+      zblok.rec, canadd = findRecPoswithSpacing(level, bsU2, bsU/2, a)
       zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Width/2)
       zblok.name = "switch"
       zblok.numType = roll6()
@@ -8536,12 +8537,12 @@ func makeetc() { //MARK:MAKE ETC
       zblok.onoffswitch = flipcoin()
       zblok.color = rl.SkyBlue
       if zblok.onoffswitch {
-        zblok.img = gs.Render.Etc[21]
+        zblok.img = render.Etc[21]
       } else {
-        zblok.img = gs.Render.Etc[22]
+        zblok.img = render.Etc[22]
       }
       if canadd {
-        gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
+        level.Level[a].etc = append(level.Level[a].etc, zblok)
       }
     }
     //CHESTS
@@ -8550,7 +8551,7 @@ func makeetc() { //MARK:MAKE ETC
       siz := bsU2 + bsU/2
       zblok := makeBlokGenNoRecNoCntr()
       canadd := true
-      zblok.rec, canadd = findRecPoswithSpacing(&gs.Level, siz, bsU/2, a)
+      zblok.rec, canadd = findRecPoswithSpacing(level, siz, bsU/2, a)
       zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Width/2)
       zblok.name = "chest"
       zblok.fade = rF32(0.5, 0.8)
@@ -8560,9 +8561,9 @@ func makeetc() { //MARK:MAKE ETC
       zblok.crec.Height += bsU
       zblok.crec.X -= bsU / 2
       zblok.crec.Y -= bsU / 2
-      zblok.img = gs.Render.Etc[23]
+      zblok.img = render.Etc[23]
       if canadd {
-        gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
+        level.Level[a].etc = append(level.Level[a].etc, zblok)
       }
     }
     //SKULLS
@@ -8571,14 +8572,14 @@ func makeetc() { //MARK:MAKE ETC
       zblok := makeBlokGenNoRecNoCntr()
       siz := rF32((bsU/4)*3, bsU+bsU/2)
       canadd := true
-      zblok.rec, canadd = findRecPos(&gs.Level, siz, a)
+      zblok.rec, canadd = findRecPos(level, siz, a)
       zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Width/2)
       zblok.name = "skull"
       zblok.fade = rF32(0.3, 0.6)
       zblok.color = ranGrey()
-      zblok.img = gs.Render.Skulls[rInt(0, len(gs.Render.Skulls))]
+      zblok.img = render.Skulls[rInt(0, len(render.Skulls))]
       if canadd {
-        gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
+        level.Level[a].etc = append(level.Level[a].etc, zblok)
         num--
       }
       if num <= 0 {
@@ -8592,15 +8593,15 @@ func makeetc() { //MARK:MAKE ETC
       zblok := makeBlokGenNoRecNoCntr()
       siz := rF32(bsU+bsU/2, bsU2)
       canadd := true
-      zblok.rec, canadd = findRecPos(&gs.Level, siz, a)
+      zblok.rec, canadd = findRecPos(level, siz, a)
       zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Width/2)
       zblok.onoff = true
       zblok.name = "candle"
       zblok.fade = rF32(0.5, 0.8)
       zblok.color = rl.White
-      zblok.img = gs.Render.Candles[rInt(0, len(gs.Render.Candles))]
+      zblok.img = render.Candles[rInt(0, len(render.Candles))]
       if canadd {
-        gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
+        level.Level[a].etc = append(level.Level[a].etc, zblok)
         num--
       }
 
@@ -8615,14 +8616,14 @@ func makeetc() { //MARK:MAKE ETC
       zblok := makeBlokGenNoRecNoCntr()
       siz := rF32(bsU+bsU/2, bsU2)
       canadd := true
-      zblok.rec, canadd = findRecPos(&gs.Level, siz, a)
+      zblok.rec, canadd = findRecPos(level, siz, a)
       zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Width/2)
       zblok.name = "sign"
       zblok.fade = rF32(0.4, 0.7)
       zblok.color = ranBrown()
-      zblok.img = gs.Render.Signs[rInt(0, len(gs.Render.Signs))]
+      zblok.img = render.Signs[rInt(0, len(render.Signs))]
       if canadd {
-        gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
+        level.Level[a].etc = append(level.Level[a].etc, zblok)
         num--
       }
 
@@ -8637,14 +8638,14 @@ func makeetc() { //MARK:MAKE ETC
       zblok := makeBlokGenNoRecNoCntr()
       siz := rF32(bsU+bsU/2, bsU2)
       canadd := true
-      zblok.rec, canadd = findRecPos(&gs.Level, siz, a)
+      zblok.rec, canadd = findRecPos(level, siz, a)
       zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Width/2)
       zblok.name = "plant"
       zblok.fade = rF32(0.3, 0.6)
       zblok.color = ranGreen()
-      zblok.img = gs.Render.Plants[rInt(0, len(gs.Render.Plants))]
+      zblok.img = render.Plants[rInt(0, len(render.Plants))]
       if canadd {
-        gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
+        level.Level[a].etc = append(level.Level[a].etc, zblok)
         num--
       }
 
@@ -8659,14 +8660,14 @@ func makeetc() { //MARK:MAKE ETC
       zblok := makeBlokGenNoRecNoCntr()
       siz := rF32(bsU, bsU+bsU/2)
       canadd := true
-      zblok.rec, canadd = findRecPos(&gs.Level, siz, a)
+      zblok.rec, canadd = findRecPos(level, siz, a)
       zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Width/2)
       zblok.name = "mushroom"
       zblok.fade = rF32(0.3, 0.6)
       zblok.color = rl.White
-      zblok.img = gs.Render.Mushrooms[rInt(0, len(gs.Render.Mushrooms))]
+      zblok.img = render.Mushrooms[rInt(0, len(render.Mushrooms))]
       if canadd {
-        gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
+        level.Level[a].etc = append(level.Level[a].etc, zblok)
         num--
       }
 
@@ -8678,14 +8679,14 @@ func makeetc() { //MARK:MAKE ETC
     if roll6() > 2 {
       zblok := makeBlokGenNoRecNoCntr()
       canadd := true
-      zblok.rec, canadd = findRecPoswithSpacing(&gs.Level, bsU+bsU/2, bsU/4, a)
+      zblok.rec, canadd = findRecPoswithSpacing(level, bsU+bsU/2, bsU/4, a)
       zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Width/2)
       zblok.solid = true
       zblok.name = "powerupBlok"
       zblok.color = brightYellow()
-      zblok.img = gs.Render.Etc[27]
+      zblok.img = render.Etc[27]
       if canadd {
-        gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
+        level.Level[a].etc = append(level.Level[a].etc, zblok)
 
       }
     }
@@ -8695,15 +8696,15 @@ func makeetc() { //MARK:MAKE ETC
     for {
       zblok := makeBlokGenNoRecNoCntr()
       canadd := true
-      zblok.rec, canadd = findRecPoswithSpacing(&gs.Level, bsU2, bsU/2, a)
+      zblok.rec, canadd = findRecPoswithSpacing(level, bsU2, bsU/2, a)
       zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Width/2)
       zblok.solid = true
       zblok.onoff = true
       zblok.name = "oilbarrel"
       zblok.color = rl.DarkGreen
-      zblok.img = gs.Render.Etc[20]
+      zblok.img = render.Etc[20]
       if canadd {
-        gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
+        level.Level[a].etc = append(level.Level[a].etc, zblok)
         num--
       }
 
@@ -8722,7 +8723,7 @@ func makeetc() { //MARK:MAKE ETC
       zblok.fade = 1
       zblok.color = rl.White
       zblok.rec = rl.NewRectangle(0, 0, siz, siz)
-      zblok.img = gs.Render.Spring.recTL
+      zblok.img = render.Spring.recTL
 
       addtolevel := false
 
@@ -8730,12 +8731,12 @@ func makeetc() { //MARK:MAKE ETC
         choose := rInt(1, 5)
         switch choose {
         case 1:
-          zblok.rec.Y = gs.Level.LevRecInner.Y
+          zblok.rec.Y = level.LevRecInner.Y
           for {
-            zblok.rec.X = gs.Level.LevRecInner.X + rF32(0, gs.Level.LevRecInner.Width-bsU2)
+            zblok.rec.X = level.LevRecInner.X + rF32(0, level.LevRecInner.Width-bsU2)
             canadd := true
-            for b := 0; b < len(gs.Level.Level[a].doorExitRecs); b++ {
-              if rl.CheckCollisionRecs(zblok.rec, gs.Level.Level[a].doorExitRecs[b]) {
+            for b := 0; b < len(level.Level[a].doorExitRecs); b++ {
+              if rl.CheckCollisionRecs(zblok.rec, level.Level[a].doorExitRecs[b]) {
                 canadd = false
               }
             }
@@ -8747,12 +8748,12 @@ func makeetc() { //MARK:MAKE ETC
           zblok.ro = 180
           zblok.slideDIR = 3
         case 2:
-          zblok.rec.X = gs.Level.LevRecInner.X + gs.Level.LevRecInner.Width - siz
+          zblok.rec.X = level.LevRecInner.X + level.LevRecInner.Width - siz
           for {
-            zblok.rec.Y = gs.Level.LevRecInner.Y + rF32(0, gs.Level.LevRecInner.Width-bsU2)
+            zblok.rec.Y = level.LevRecInner.Y + rF32(0, level.LevRecInner.Width-bsU2)
             canadd := true
-            for b := 0; b < len(gs.Level.Level[a].doorExitRecs); b++ {
-              if rl.CheckCollisionRecs(zblok.rec, gs.Level.Level[a].doorExitRecs[b]) {
+            for b := 0; b < len(level.Level[a].doorExitRecs); b++ {
+              if rl.CheckCollisionRecs(zblok.rec, level.Level[a].doorExitRecs[b]) {
                 canadd = false
               }
             }
@@ -8764,12 +8765,12 @@ func makeetc() { //MARK:MAKE ETC
           zblok.ro = 270
           zblok.slideDIR = 4
         case 3:
-          zblok.rec.Y = gs.Level.LevRecInner.Y + gs.Level.LevRecInner.Width - siz
+          zblok.rec.Y = level.LevRecInner.Y + level.LevRecInner.Width - siz
           for {
-            zblok.rec.X = gs.Level.LevRecInner.X + rF32(0, gs.Level.LevRecInner.Width-bsU2)
+            zblok.rec.X = level.LevRecInner.X + rF32(0, level.LevRecInner.Width-bsU2)
             canadd := true
-            for b := 0; b < len(gs.Level.Level[a].doorExitRecs); b++ {
-              if rl.CheckCollisionRecs(zblok.rec, gs.Level.Level[a].doorExitRecs[b]) {
+            for b := 0; b < len(level.Level[a].doorExitRecs); b++ {
+              if rl.CheckCollisionRecs(zblok.rec, level.Level[a].doorExitRecs[b]) {
                 canadd = false
               }
             }
@@ -8781,12 +8782,12 @@ func makeetc() { //MARK:MAKE ETC
           zblok.ro = 0
           zblok.slideDIR = 1
         case 4:
-          zblok.rec.X = gs.Level.LevRecInner.X
+          zblok.rec.X = level.LevRecInner.X
           for {
-            zblok.rec.Y = gs.Level.LevRecInner.Y + rF32(0, gs.Level.LevRecInner.Width-bsU2)
+            zblok.rec.Y = level.LevRecInner.Y + rF32(0, level.LevRecInner.Width-bsU2)
             canadd := true
-            for b := 0; b < len(gs.Level.Level[a].doorExitRecs); b++ {
-              if rl.CheckCollisionRecs(zblok.rec, gs.Level.Level[a].doorExitRecs[b]) {
+            for b := 0; b < len(level.Level[a].doorExitRecs); b++ {
+              if rl.CheckCollisionRecs(zblok.rec, level.Level[a].doorExitRecs[b]) {
                 canadd = false
               }
             }
@@ -8805,7 +8806,7 @@ func makeetc() { //MARK:MAKE ETC
           zblok.drec.Y += zblok.rec.Width / 2
           zblok.crec = zblok.rec
 
-          gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
+          level.Level[a].etc = append(level.Level[a].etc, zblok)
 
           num--
         }
@@ -8819,12 +8820,12 @@ func makeetc() { //MARK:MAKE ETC
       zblok = makeBlokGenNoRecNoCntr()
 
       canadd := true
-      zblok.rec, canadd = findRecPoswithSpacing(&gs.Level, siz, bsU2, a)
+      zblok.rec, canadd = findRecPoswithSpacing(level, siz, bsU2, a)
       zblok.cnt = rl.NewVector2(zblok.rec.X+zblok.rec.Width/2, zblok.rec.Y+zblok.rec.Width/2)
       zblok.solid = true
       zblok.name = "springblok"
       zblok.fade = 1
-      switch gs.Level.Levelnum {
+      switch level.Levelnum {
       case 1:
         zblok.color = ranBlue()
       case 2:
@@ -8836,14 +8837,14 @@ func makeetc() { //MARK:MAKE ETC
       case 5:
         zblok.color = ranCol()
       }
-      zblok.img = gs.Level.WallT
+      zblok.img = level.WallT
       if canadd {
-        gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
+        level.Level[a].etc = append(level.Level[a].etc, zblok)
 
         zblok.name = "spring"
         zblok.solid = false
         zblok.color = rl.White
-        zblok.img = gs.Render.Spring.recTL
+        zblok.img = render.Spring.recTL
 
         if flipcoin() {
           zblok.rec.X += siz
@@ -8853,7 +8854,7 @@ func makeetc() { //MARK:MAKE ETC
           zblok.drec.X += zblok.rec.Width / 2
           zblok.drec.Y += zblok.rec.Width / 2
           zblok.crec = zblok.rec
-          gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
+          level.Level[a].etc = append(level.Level[a].etc, zblok)
         } else {
           zblok.rec.X += siz
         }
@@ -8866,7 +8867,7 @@ func makeetc() { //MARK:MAKE ETC
           zblok.drec.X += zblok.rec.Width / 2
           zblok.drec.Y += zblok.rec.Width / 2
           zblok.crec = zblok.rec
-          gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
+          level.Level[a].etc = append(level.Level[a].etc, zblok)
         } else {
           zblok.rec.X -= siz * 2
         }
@@ -8880,7 +8881,7 @@ func makeetc() { //MARK:MAKE ETC
           zblok.drec.X += zblok.rec.Width / 2
           zblok.drec.Y += zblok.rec.Width / 2
           zblok.crec = zblok.rec
-          gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
+          level.Level[a].etc = append(level.Level[a].etc, zblok)
         } else {
           zblok.rec.Y += siz
           zblok.rec.X += siz
@@ -8894,7 +8895,7 @@ func makeetc() { //MARK:MAKE ETC
           zblok.drec.X += zblok.rec.Width / 2
           zblok.drec.Y += zblok.rec.Width / 2
           zblok.crec = zblok.rec
-          gs.Level.Level[a].etc = append(gs.Level.Level[a].etc, zblok)
+          level.Level[a].etc = append(level.Level[a].etc, zblok)
         } else {
           zblok.rec.Y -= siz * 2
         }
@@ -8904,7 +8905,7 @@ func makeetc() { //MARK:MAKE ETC
 }
 
 
-func makeSnow(core *CoreState, level *LevelState, render *RenderState, fx *FXState) { //MARK:MAKE SNOW
+func makeSnow(core CoreState, level *LevelState, render RenderState, fx *FXState) { //MARK:MAKE SNOW
   num := rInt(50, 100)
   for {
     x := rF32(0, core.ScrWF32)
@@ -9293,7 +9294,7 @@ func makeProjectile(name string) { //MARK:MAKE PROJECTILE
 
 }
 
-func makeSpikes(level *LevelState, render *RenderState, core *CoreState) { //MARK: MAKE SPIKES
+func makeSpikes(level *LevelState, render RenderState, core CoreState) { //MARK: MAKE SPIKES
 	siz := bsU2
 	zblok := xblok{}
 	zblok.name = "spikes"
@@ -9333,7 +9334,7 @@ func makeSpikes(level *LevelState, render *RenderState, core *CoreState) { //MAR
 	}
 }
 
-func makeTurrets(level *LevelState, render *RenderState, core *CoreState) { //MARK: MAKE TURRETS
+func makeTurrets(level *LevelState, render RenderState, core CoreState) { //MARK: MAKE TURRETS
 	siz := bsU2
 	zblok := xblok{}
 	zblok.name = "turret"
@@ -9561,14 +9562,14 @@ func makeBlokGenRandom(lvl LevelState, size float32) xblok { //MARK:MAKE GENERIC
 
 }
 
-func makemovebloks() { //MARK:MAKE MOVE BLOKS
+func makemovebloks(level *LevelState, render RenderState) { //MARK:MAKE MOVE BLOKS
 
   zblok := xblok{}
   bloksiz := bsU2
-  blokimg := gs.Render.Walltiles[rInt(0, len(gs.Render.Walltiles))]
+  blokimg := render.Walltiles[rInt(0, len(render.Walltiles))]
   zblok.fade = 1
 
-  for a := 0; a < len(gs.Level.Level); a++ {
+  for a := 0; a < len(level.Level); a++ {
 
     bloknum := rInt(0, 5)
 
@@ -9580,7 +9581,7 @@ func makemovebloks() { //MARK:MAKE MOVE BLOKS
         zblok = makeBlokGenNoRecNoCntr()
 
         canadd := true
-        zblok.rec, canadd = findRecPos(&gs.Level,bloksiz, a)
+        zblok.rec, canadd = findRecPos(level,bloksiz, a)
         zblok.cnt = makeCnt(zblok)
 
         zblok.color = ranPink()
@@ -9589,9 +9590,9 @@ func makemovebloks() { //MARK:MAKE MOVE BLOKS
         zblok.velY = 0
         zblok.vel = bsU / 2
 
-        if len(gs.Level.Level[a].movBloks) > 0 {
-          for c := 0; c < len(gs.Level.Level[a].movBloks); c++ {
-            if rl.CheckCollisionRecs(zblok.rec, gs.Level.Level[a].movBloks[c].rec) {
+        if len(level.Level[a].movBloks) > 0 {
+          for c := 0; c < len(level.Level[a].movBloks); c++ {
+            if rl.CheckCollisionRecs(zblok.rec, level.Level[a].movBloks[c].rec) {
               canadd = false
             }
           }
@@ -9615,14 +9616,14 @@ func makemovebloks() { //MARK:MAKE MOVE BLOKS
             zblok.velX = rF32(zblok.vel/4, zblok.vel)
           }
           zblok.movType = 2 //UD
-          gs.Level.Level[a].movBloks = append(gs.Level.Level[a].movBloks, zblok)
+          level.Level[a].movBloks = append(level.Level[a].movBloks, zblok)
         case 1: //LR
           zblok.velX = rF32(zblok.vel/4, zblok.vel)
           if roll12() == 12 {
             zblok.velY = rF32(zblok.vel/4, zblok.vel)
           }
           zblok.movType = 1 //LR
-          gs.Level.Level[a].movBloks = append(gs.Level.Level[a].movBloks, zblok)
+          level.Level[a].movBloks = append(level.Level[a].movBloks, zblok)
         }
       }
 
@@ -10063,7 +10064,7 @@ func makeImgs(render *RenderState, fx *FXState, player *PlayerState) { //MARK:MA
 }
 
 // MARK: CORE CORE CORE CORE CORE CORE CORE CORE CORE CORE CORE CORE CORE CORE CORE CORE CORE
-func inp() { //MARK:INP
+func inp(gs *GameState) { //MARK:INP
 
   //OPTIONS ON
 
@@ -10071,7 +10072,7 @@ func inp() { //MARK:INP
 
     if gs.UI.OptionsOn && !gs.Level.Exiton && !gs.Shop.ShopOn && !gs.Level.LevMapOn && !gs.Player.InvenOn && !gs.UI.CreditsOn && !gs.UI.HelpOn && !gs.Timing.TimesOn {
       if gs.UI.OptionsChange {
-        savesettings()
+        savesettings(gs.UI, gs.Render, gs.Player, gs.Level, gs.Audio, gs.Input)
       }
       gs.UI.OptionsOn = false
       gs.UI.CreditsOn = false
@@ -10106,14 +10107,14 @@ func inp() { //MARK:INP
       gs.UI.HelpOn = false
     } else if !gs.UI.OptionsOn && !gs.Shop.ShopOn && !gs.Level.LevMapOn && !gs.Player.InvenOn && !gs.UI.CreditsOn && !gs.UI.HelpOn && gs.Timing.TimesOn {
       gs.Timing.TimesOn = false
-      restartgame()
+      restartgame(gs)
     }
 
   } else if gs.UI.Intro {
     if rl.IsKeyPressed(rl.KeyEscape) || rl.IsGamepadButtonPressed(0, rl.GamepadButtonMiddleRight) {
       if gs.UI.OptionsOn {
         if gs.UI.OptionsChange {
-          savesettings()
+          savesettings(gs.UI, gs.Render, gs.Player, gs.Level, gs.Audio, gs.Input)
         }
         gs.UI.OptionsOn = false
       } else {
@@ -10125,7 +10126,7 @@ func inp() { //MARK:INP
 
     if gs.UI.OptionsOn && rl.IsGamepadButtonPressed(0, 6) {
       if gs.UI.OptionsChange {
-        savesettings()
+        savesettings(gs.UI, gs.Render, gs.Player, gs.Level, gs.Audio, gs.Input)
       }
       gs.UI.OptionsOn = false
     }
@@ -10134,7 +10135,7 @@ func inp() { //MARK:INP
     if rl.IsGamepadButtonPressed(0, rl.GamepadButtonMiddleRight) && !gs.Player.InvenOn && !gs.Shop.ShopOn && !gs.Level.LevMapOn && !gs.UI.Intro && !gs.Mario.MarioOn && !gs.Player.Died && !gs.Level.NextLevelScreen {
       if gs.UI.OptionsOn {
         if gs.UI.OptionsChange {
-          savesettings()
+          savesettings(gs.UI, gs.Render, gs.Player, gs.Level, gs.Audio, gs.Input)
         }
         gs.UI.CreditsOn = false
         gs.UI.HelpOn = false
@@ -10188,7 +10189,7 @@ func inp() { //MARK:INP
         }
       } else if rl.IsGamepadButtonPressed(0, 6) && gs.UI.OptionsOn && !gs.Shop.ShopOn && !gs.Timing.TimesOn && !gs.Level.NextLevelScreen && !gs.UI.HelpOn && !gs.UI.CreditsOn {
         if gs.UI.OptionsChange {
-          savesettings()
+          savesettings(gs.UI, gs.Render, gs.Player, gs.Level, gs.Audio, gs.Input)
         }
         gs.UI.OptionsOn = false
         gs.Core.Pause = false
@@ -10377,7 +10378,7 @@ func cams(cam2 *rl.Camera2D, core CoreState, ui UIState, lvl LevelState) { //MAR
   }
 }
 
-func initialWindow() { //MARK:INITIAL WINDOW
+func initialWindow(gs *GameState) { //MARK:INITIAL WINDOW
   rl.SetExitKey(rl.KeyEnd)
   rl.HideCursor()
   gs.Render.Imgs = rl.LoadTexture("img/imgs.png")
@@ -10396,7 +10397,7 @@ func initialWindow() { //MARK:INITIAL WINDOW
   makeFxInitial(&gs.FX, &gs.Core)
   makeImgs(&gs.Render, &gs.FX, &gs.Player)
   makeBosses(&gs.Core, &gs.Level)
-  makelevel()
+  makelevel(&gs.Level, &gs.Shop, &gs.Enemies, gs.Core, gs.Render)
   makeCompanions(&gs.Companions, &gs.Core, &gs.Render)
   makePlayer(&gs.Player, &gs.Render, &gs.Core)
   makeTimes(&gs.Timing)
@@ -10415,7 +10416,7 @@ func initialWindow() { //MARK:INITIAL WINDOW
 
 }
 
-func unload(render RenderState, audio AudioState) { //MARK:UNLOAD
+func unload(render RenderState, audio AudioState) {
   rl.UnloadShader(render.Shader)
   rl.UnloadShader(render.Shader2)
   rl.UnloadRenderTexture(render.RenderTarget)
@@ -10485,7 +10486,7 @@ func main() { //MARK:MAIN
   gs.Level.LevRecInner.Width -= gs.Level.BorderWallBlokSiz * 2
   gs.Level.LevRecInner.Height -= gs.Level.BorderWallBlokSiz * 2
 
-  initialWindow() //INITIAL INSIDE WINDOW
+  initialWindow(gs) //INITIAL INSIDE WINDOW
 
   rl.SetTargetFPS(gs.Core.Fps)
 
@@ -10504,7 +10505,7 @@ func main() { //MARK:MAIN
 
       rl.EndMode2D()
 
-      drawnocam()
+      drawnocam(gs)
 
       rl.EndTextureMode()
 
@@ -10522,7 +10523,7 @@ func main() { //MARK:MAIN
 
       rl.EndMode2D()
 
-      drawnocam()
+      drawnocam(gs)
 
       rl.EndTextureMode()
 
@@ -10544,7 +10545,7 @@ func main() { //MARK:MAIN
 
       rl.EndMode2D()
 
-      drawnocam()
+      drawnocam(gs)
 
       rl.EndTextureMode()
 
@@ -10566,7 +10567,7 @@ func main() { //MARK:MAIN
 
       rl.EndMode2D()
 
-      drawnocam()
+      drawnocam(gs)
 
       rl.EndTextureMode()
 
@@ -10583,7 +10584,7 @@ func main() { //MARK:MAIN
 
       rl.EndMode2D()
 
-      drawnocam()
+      drawnocam(gs)
 
       rl.EndTextureMode()
 
@@ -10595,7 +10596,7 @@ func main() { //MARK:MAIN
       rl.BeginMode2D(gs.Render.Cam2)
       drawcam()
       rl.EndMode2D()
-      drawnocam()
+      drawnocam(gs)
     }
 
     drawnoRender(gs.Player, gs.Level, gs.Core, gs.Render)
@@ -10603,7 +10604,7 @@ func main() { //MARK:MAIN
     if gs.Core.Debug {
       drawDebug(*gs)
     }
-    up() //UPDATE
+    up(gs) //UPDATE
     rl.EndDrawing()
   }
 
